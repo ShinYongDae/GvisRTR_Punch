@@ -208,6 +208,7 @@
     <None Include="res\GvisRTR_Punch.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\GigaVis-1280.bmp" />
     <Image Include="res\GvisRTR_Punch.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
