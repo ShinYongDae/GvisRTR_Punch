@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{EF3B8DA0-E852-4A15-89B7-124ABD7BDCD9}</ProjectGuid>
+    <ProjectGuid>{F18408F6-EB24-43E6-B5E9-884454DAD469}</ProjectGuid>
     <RootNamespace>GvisRTR_Punch</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <Keyword>MFCProj</Keyword>
@@ -181,19 +181,19 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChildView.h" />
     <ClInclude Include="GvisRTR_Punch.h" />
+    <ClInclude Include="GvisRTR_PunchDoc.h" />
+    <ClInclude Include="GvisRTR_PunchView.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="SingleInstance.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="GvisRTR_Punch.cpp" />
+    <ClCompile Include="GvisRTR_PunchDoc.cpp" />
+    <ClCompile Include="GvisRTR_PunchView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
-    <ClCompile Include="SingleInstance.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -210,6 +210,7 @@
   <ItemGroup>
     <Image Include="res\GigaVis-1280.bmp" />
     <Image Include="res\GvisRTR_Punch.ico" />
+    <Image Include="res\GvisRTR_PunchDoc.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

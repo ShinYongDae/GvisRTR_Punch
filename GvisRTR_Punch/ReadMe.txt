@@ -40,6 +40,16 @@ MainFrm.h, MainFrm.cpp
 
 /////////////////////////////////////////////////////////////////////////////
 
+응용 프로그램 마법사에서 문서 형식과 뷰를 한 개씩 만듭니다.
+
+GvisRTR_PunchDoc.h, GvisRTR_PunchDoc.cpp - 문서
+    이 파일에는 CGvisRTR_PunchDoc 클래스가 포함됩니다. 이 파일을 편집하여 특수 문서 데이터를 추가하고 CGvisRTR_PunchDoc::Serialize를 통해 파일 저장 및 로드를 구현합니다.
+
+GvisRTR_PunchView.h, GvisRTR_PunchView.cpp - 문서 뷰
+    이 파일에는 CGvisRTR_PunchView 클래스가 포함됩니다.
+    CGvisRTR_PunchView 개체는 CGvisRTR_PunchDoc 개체를 보는 데 사용됩니다.
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -52,6 +62,8 @@ StdAfx.h, StdAfx.cpp
 Resource.h
     새 리소스 ID를 정의하는 표준 헤더 파일입니다. Microsoft Visual C++에서 이 파일을 읽고 업데이트합니다.
 
+GvisRTR_Punch.manifest
+	응용 프로그램 매니페스트 파일은 Windows XP에서 특정 버전의 Side-by-Side 어셈블리에 대한 응용 프로그램 종속성을 설명하는 데 사용됩니다. 로더는 이 정보를 통해 어셈블리 캐시 또는 응용 프로그램의 private에서 적절한 어셈블리를 로드합니다. 응용 프로그램 매니페스트는 응용 프로그램 실행 파일과 같은 폴더에 설치된 외부 .manifest 파일 형태로서 재배포용으로 포함되거나, 리소스 형태로 된 실행 파일에 포함될 수 있습니다.
 /////////////////////////////////////////////////////////////////////////////
 
 기타 참고:

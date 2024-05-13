@@ -30,13 +30,13 @@
     <ClInclude Include="MainFrm.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ChildView.h">
+    <ClInclude Include="GvisRTR_PunchDoc.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GvisRTR_PunchView.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Resource.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SingleInstance.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,10 +50,10 @@
     <ClCompile Include="MainFrm.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="ChildView.cpp">
+    <ClCompile Include="GvisRTR_PunchDoc.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="SingleInstance.cpp">
+    <ClCompile Include="GvisRTR_PunchView.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,7 +68,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\GvisRTR_PunchDoc.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
     <Image Include="res\GvisRTR_Punch.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\GigaVis-1280.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>
