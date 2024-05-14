@@ -9,6 +9,8 @@
 
 #include "resource.h"       // 주 기호입니다.
 
+#include "SingleInstance.h"
+
 
 // CGvisRTR_PunchApp:
 // 이 클래스의 구현에 대해서는 GvisRTR_Punch.cpp을 참조하십시오.
@@ -16,13 +18,28 @@
 
 class CGvisRTR_PunchApp : public CWinApp
 {
+	CString m_strHostAddress, m_strHostPort;
+
+	void wsaStartup();
+	void wsaEndup();
+
 public:
 	CGvisRTR_PunchApp();
+	~CGvisRTR_PunchApp();
+
+	CSingleInstance m_singleInstance;
+	DWORD KillProcess(CString strProcName);
+
+	CString GetHostAddress();
+	CString GetHostPort();
+	void SetHostAddress(CString sAddr);
+	void SetHostPort(CString sPort);
 
 
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();
+	virtual int ExitInstance();
 
 // 구현입니다.
 	afx_msg void OnAppAbout();

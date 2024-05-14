@@ -11,6 +11,8 @@
 #include "GvisRTR_PunchDoc.h"
 #include "GvisRTR_PunchView.h"
 
+#include <tlhelp32.h>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -26,6 +28,55 @@ BEGIN_MESSAGE_MAP(CGvisRTR_PunchApp, CWinApp)
 END_MESSAGE_MAP()
 
 
+void CGvisRTR_PunchApp::wsaStartup()
+{
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	char name[255];
+	CString IP;
+	PHOSTENT hostinfo;
+	wVersionRequested = MAKEWORD(2, 0);
+
+	if (WSAStartup(wVersionRequested, &wsaData) == 0)
+	{
+		if (gethostname(name, sizeof(name)) == 0)
+		{
+			if ((hostinfo = gethostbyname(name)) != NULL)
+			{
+				IP = inet_ntoa(*(struct in_addr*)* hostinfo->h_addr_list);
+			}
+		}
+	}
+
+	m_strHostAddress = IP;
+}
+
+void CGvisRTR_PunchApp::wsaEndup()
+{
+	WSACleanup();
+}
+
+CString CGvisRTR_PunchApp::GetHostAddress()
+{
+	return m_strHostAddress;
+}
+
+void CGvisRTR_PunchApp::SetHostAddress(CString sAddr)
+{
+	m_strHostAddress = sAddr;
+}
+
+CString CGvisRTR_PunchApp::GetHostPort()
+{
+	return m_strHostPort;
+}
+
+void CGvisRTR_PunchApp::SetHostPort(CString sPort)
+{
+	m_strHostPort = sPort;
+}
+
+
 // CGvisRTR_PunchApp 생성
 
 CGvisRTR_PunchApp::CGvisRTR_PunchApp()
@@ -38,6 +89,15 @@ CGvisRTR_PunchApp::CGvisRTR_PunchApp()
 	// InitInstance에 모든 중요한 초기화 작업을 배치합니다.
 }
 
+CGvisRTR_PunchApp::~CGvisRTR_PunchApp()
+{
+	wsaEndup();
+	Sleep(300);
+
+	//_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);	// 메모리 누수 감지 기능 - 출력 창으로 다시 리디렉션
+	//_CrtDumpMemoryLeaks();								// 메모리 누수 감지 기능
+}
+
 // 유일한 CGvisRTR_PunchApp 개체입니다.
 
 CGvisRTR_PunchApp theApp;
@@ -47,6 +107,14 @@ CGvisRTR_PunchApp theApp;
 
 BOOL CGvisRTR_PunchApp::InitInstance()
 {
+	if (!m_singleInstance.Create(IDR_MAINFRAME))
+	{
+		AfxMessageBox(_T("GvisR2R is already running!!"));
+		return FALSE;
+	}
+
+	wsaStartup();
+
 	// 응용 프로그램 매니페스트가 ComCtl32.dll 버전 6 이상을 사용하여 비주얼 스타일을
 	// 사용하도록 지정하는 경우, Windows XP 상에서 반드시 InitCommonControlsEx()가 필요합니다. 
 	// InitCommonControlsEx()를 사용하지 않으면 창을 만들 수 없습니다.
@@ -101,12 +169,112 @@ BOOL CGvisRTR_PunchApp::InitInstance()
 		return FALSE;
 
 	// 창 하나만 초기화되었으므로 이를 표시하고 업데이트합니다.
-	m_pMainWnd->ShowWindow(SW_SHOW);
+	m_pMainWnd->ShowWindow(SW_SHOWMAXIMIZED);
 	m_pMainWnd->UpdateWindow();
 	return TRUE;
 }
 
+int CGvisRTR_PunchApp::ExitInstance()
+{
+
+	//TODO: 추가한 추가 리소스를 처리합니다.
+	AfxOleTerm(FALSE); // MFC 내부 클래스 메모리 부분 문제 해결
+
+	return CWinApp::ExitInstance();
+}
+
 // CGvisRTR_PunchApp 메시지 처리기
+DWORD CGvisRTR_PunchApp::KillProcess(CString strProcName)
+{
+	HANDLE         hProcessSnap = NULL;
+	DWORD          Return = FALSE;
+	PROCESSENTRY32 pe32 = { 0 };
+	CString strMsg;
+	DWORD nCurPID = GetCurrentProcessId();
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+		return (DWORD)INVALID_HANDLE_VALUE;
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	if (Process32First(hProcessSnap, &pe32))
+	{
+		DWORD Code = 0;
+		DWORD dwPriorityClass;
+		do
+		{
+			CString name = CString(pe32.szExeFile);
+
+			if (name.CompareNoCase(_T("V3UI.exe")) == 0)
+				continue;
+
+			if (name.CompareNoCase(_T("V3APRule.exe")) == 0)
+				continue;
+
+			HANDLE hProcess;
+			// Get the actual priority class. 
+			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+			dwPriorityClass = GetPriorityClass(hProcess);
+
+			if (nCurPID == pe32.th32ProcessID)
+			{
+				CloseHandle(hProcess);
+				continue;
+			}
+
+			CString Temp = pe32.szExeFile;
+			Temp.MakeLower();
+			strProcName.MakeLower();
+			if (Temp == strProcName)
+			{
+				int checkval = 0;
+#ifndef _WIN64
+				DWORD ret;
+#else
+				DWORD_PTR ret;
+#endif
+				checkval = SendMessageTimeout((HWND)hProcess, WM_NULL, 0,//널 메세지를 보내본다
+					0, SMTO_ABORTIFHUNG | SMTO_BLOCK, 500, &ret);
+				if (checkval == 0)
+				{
+					//타임 아웃이나 기타 문제가 발생시
+					int kk = GetLastError();
+					strMsg = "Delete ";
+					strMsg += strProcName;
+					strMsg += " Process";
+					//	AfxMessageBox(strMsg);
+					if (TerminateProcess(hProcess, 0))
+						GetExitCodeProcess(hProcess, &Code);
+					else
+						return Return;
+				}
+				else
+				{
+					CString str;
+					str.Format(_T("On running %s Process "), Temp);
+					//AfxMessageBox(str);
+					OutputDebugString(str);
+					if (TerminateProcess(hProcess, 0))
+						GetExitCodeProcess(hProcess, &Code);
+					else
+						return Return;
+				}
+			}
+			if (!Temp.Compare(_T("vcspawn.exe")))
+			{	// 이것은 콘솔 창으로 무조건 죽인다
+				if (TerminateProcess(hProcess, 0))
+					GetExitCodeProcess(hProcess, &Code);
+				else
+					return GetLastError();
+			}
+			CloseHandle(hProcess);
+		} while (Process32Next(hProcessSnap, &pe32));
+		Return = TRUE;
+	}
+	else
+		Return = FALSE; // could not walk the list of processes 
+
+	CloseHandle(hProcessSnap); // Do not forget to clean up the snapshot object. 
+	return Return;
+}
 
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
