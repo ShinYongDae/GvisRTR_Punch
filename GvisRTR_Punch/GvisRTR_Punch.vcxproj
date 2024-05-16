@@ -108,7 +108,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -155,7 +155,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -181,20 +181,53 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Dialog\DlgMsgBox.h" />
+    <ClInclude Include="Dialog\DlgMyMsg.h" />
+    <ClInclude Include="Dialog\DlgMyMsgSub00.h" />
+    <ClInclude Include="Dialog\DlgMyMsgSub01.h" />
+    <ClInclude Include="Dialog\DlgMyMsgSub02.h" />
+    <ClInclude Include="Dialog\Label.h" />
+    <ClInclude Include="Dialog\MyBtn.h" />
+    <ClInclude Include="Dialog\MyEdit.h" />
+    <ClInclude Include="Dialog\MyLabel.h" />
+    <ClInclude Include="Dialog\MyPic.h" />
+    <ClInclude Include="Dialog\MyStatic.h" />
+    <ClInclude Include="Global\GlobalDefine.h" />
     <ClInclude Include="GvisRTR_Punch.h" />
     <ClInclude Include="GvisRTR_PunchDoc.h" />
     <ClInclude Include="GvisRTR_PunchView.h" />
     <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="ManagerProcedure.h" />
+    <ClInclude Include="ManagerPunch.h" />
+    <ClInclude Include="ManagerReelmap.h" />
+    <ClInclude Include="ManagerThread.h" />
+    <ClInclude Include="Process\ThreadTask.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SingleInstance.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Dialog\DlgMsgBox.cpp" />
+    <ClCompile Include="Dialog\DlgMyMsg.cpp" />
+    <ClCompile Include="Dialog\DlgMyMsgSub00.cpp" />
+    <ClCompile Include="Dialog\DlgMyMsgSub01.cpp" />
+    <ClCompile Include="Dialog\DlgMyMsgSub02.cpp" />
+    <ClCompile Include="Dialog\Label.cpp" />
+    <ClCompile Include="Dialog\MyBtn.cpp" />
+    <ClCompile Include="Dialog\MyEdit.cpp" />
+    <ClCompile Include="Dialog\MyLabel.cpp" />
+    <ClCompile Include="Dialog\MyPic.cpp" />
+    <ClCompile Include="Dialog\MyStatic.cpp" />
     <ClCompile Include="GvisRTR_Punch.cpp" />
     <ClCompile Include="GvisRTR_PunchDoc.cpp" />
     <ClCompile Include="GvisRTR_PunchView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="ManagerProcedure.cpp" />
+    <ClCompile Include="ManagerPunch.cpp" />
+    <ClCompile Include="ManagerReelmap.cpp" />
+    <ClCompile Include="ManagerThread.cpp" />
+    <ClCompile Include="Process\ThreadTask.cpp" />
     <ClCompile Include="SingleInstance.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -217,4 +250,9 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="GvisRTR_Punch.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

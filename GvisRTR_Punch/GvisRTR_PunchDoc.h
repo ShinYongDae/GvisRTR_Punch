@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Global/GlobalDefine.h"
 
 class CGvisRTR_PunchDoc : public CDocument
 {
