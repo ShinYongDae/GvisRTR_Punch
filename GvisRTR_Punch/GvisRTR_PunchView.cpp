@@ -9,6 +9,10 @@
 #include "GvisRTR_Punch.h"
 #endif
 
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#endif
+
 #include "MainFrm.h"
 #include "GvisRTR_PunchDoc.h"
 #include "GvisRTR_PunchView.h"
@@ -17,10 +21,6 @@ extern CMainFrame* pFrm;
 extern CGvisRTR_PunchDoc* pDoc;
 CGvisRTR_PunchView* pView;
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CGvisRTR_PunchView
 
@@ -28,6 +28,7 @@ IMPLEMENT_DYNCREATE(CGvisRTR_PunchView, CFormView)
 
 BEGIN_MESSAGE_MAP(CGvisRTR_PunchView, CFormView)
 	ON_WM_TIMER()
+	ON_MESSAGE(WM_DLG_INFO, OnDlgInfo)
 END_MESSAGE_MAP()
 
 // CGvisRTR_PunchView 생성/소멸
@@ -39,18 +40,42 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	pView = this;
 	m_bTIM_INIT_VIEW = FALSE;
 
+	InitMgr();	
+	InitDispMsg();
+	InitDlg();
+
+
 }
 
 CGvisRTR_PunchView::~CGvisRTR_PunchView()
 {
 	m_bTIM_INIT_VIEW = FALSE;
 
-	InitDispMsg();
+	CloseMgr();
+	CloseDispMsg();
 }
 
 void CGvisRTR_PunchView::DoDataExchange(CDataExchange* pDX)
 {
 	CFormView::DoDataExchange(pDX);
+}
+
+void CGvisRTR_PunchView::DestroyView()
+{
+	DelAllDlg();
+
+	//CString sData;
+
+	//if (!m_bDestroyedView)
+	//{
+	//	m_bDestroyedView = TRUE;
+
+	//	sData.Format(_T("%d"), m_mgrProcedure->m_nMkStAuto);
+	//	::WritePrivateProfileString(_T("Last Job"), _T("MkStAuto"), sData, PATH_WORKING_INFO);
+
+	//	DelAllDlg();
+	//	Sleep(100);
+	//}
 }
 
 BOOL CGvisRTR_PunchView::PreCreateWindow(CREATESTRUCT& cs)
@@ -100,13 +125,23 @@ CGvisRTR_PunchDoc* CGvisRTR_PunchView::GetDocument() const // 디버그되지 않은 버
 // CGvisRTR_PunchView 메시지 처리기
 void CGvisRTR_PunchView::InitMgr()
 {
-	InitMgrProcedure();
-	InitMgrPunch();			//HwInit();	
-	InitMgrReelmap();
-	InitMgrThread();
+	m_mgrFeeding = FALSE;
+	m_mgrPunch = FALSE;
+	m_mgrReelmap = FALSE;
+	m_mgrThread = FALSE;
+	m_mgrProcedure = FALSE;
 }
 
-void CGvisRTR_PunchView::InitMgrPunch()
+void CGvisRTR_PunchView::CreateMgr()
+{
+	CreateMgrFeeding();
+	CreateMgrPunch();
+	CreateMgrReelmap();
+	CreateMgrThread();
+	CreateMgrProcedure();
+}
+
+void CGvisRTR_PunchView::CreateMgrPunch()
 {
 	if (m_mgrPunch)
 	{
@@ -117,7 +152,7 @@ void CGvisRTR_PunchView::InitMgrPunch()
 	//m_mgrPunch->Init();
 }
 
-void CGvisRTR_PunchView::InitMgrProcedure()
+void CGvisRTR_PunchView::CreateMgrProcedure()
 {
 	if (m_mgrProcedure)
 	{
@@ -128,7 +163,7 @@ void CGvisRTR_PunchView::InitMgrProcedure()
 	//m_mgrProcedure->Init();
 }
 
-void CGvisRTR_PunchView::InitMgrReelmap()
+void CGvisRTR_PunchView::CreateMgrReelmap()
 {
 	if (m_mgrReelmap)
 	{
@@ -139,7 +174,7 @@ void CGvisRTR_PunchView::InitMgrReelmap()
 	//m_mgrReelmap->Init();
 }
 
-void CGvisRTR_PunchView::InitMgrThread()
+void CGvisRTR_PunchView::CreateMgrThread()
 {
 	if (m_mgrThread)
 	{
@@ -150,10 +185,101 @@ void CGvisRTR_PunchView::InitMgrThread()
 	//m_mgrThread->Init();
 }
 
+void CGvisRTR_PunchView::CreateMgrFeeding()
+{
+	if (m_mgrFeeding)
+	{
+		delete m_mgrFeeding;
+		m_mgrFeeding = NULL;
+	}
+	m_mgrFeeding = new CManagerFeeding(this);
+}
+
+void CGvisRTR_PunchView::CloseMgr()
+{
+	CloseMgrFeeding();
+	CloseMgrPunch();
+	CloseMgrReelmap();
+	CloseMgrThread();
+	CloseMgrProcedure();
+}
+
+void CGvisRTR_PunchView::CloseMgrPunch()
+{
+	if (m_mgrPunch)
+	{
+		delete m_mgrPunch;
+		m_mgrPunch = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMgrProcedure()
+{
+	if (m_mgrProcedure)
+	{
+		delete m_mgrProcedure;
+		m_mgrProcedure = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMgrReelmap()
+{
+	if (m_mgrReelmap)
+	{
+		delete m_mgrReelmap;
+		m_mgrReelmap = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMgrThread()
+{
+	if (m_mgrThread)
+	{
+		delete m_mgrThread;
+		m_mgrThread = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMgrFeeding()
+{
+	if (m_mgrFeeding)
+	{
+		delete m_mgrFeeding;
+		m_mgrFeeding = NULL;
+	}
+}
+
 void CGvisRTR_PunchView::InitDispMsg()
 {
+	m_bDispMsg = FALSE;
 	m_pDlgMyMsg = NULL;
 	m_pDlgMsgBox = NULL;
+}
+
+void CGvisRTR_PunchView::CloseDispMsg()
+{
+	CloseMyMsg();
+	CloseMsgBox();
+}
+
+void CGvisRTR_PunchView::CloseMyMsg()
+{
+	if (m_pDlgMyMsg)
+	{
+		delete m_pDlgMyMsg;
+		m_pDlgMyMsg = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMsgBox()
+{
+	if (m_pDlgMsgBox != NULL)
+	{
+		if (m_pDlgMsgBox->GetSafeHwnd())
+			m_pDlgMsgBox->DestroyWindow();
+		delete m_pDlgMsgBox;
+		m_pDlgMsgBox = NULL;
+	}
 }
 
 LONG CGvisRTR_PunchView::OnQuitDispMsg(UINT wParam, LONG lParam)
@@ -209,6 +335,260 @@ void CGvisRTR_PunchView::DoDispMsg(CString strMsg, CString strTitle, COLORREF co
 	}
 }
 
+void CGvisRTR_PunchView::GetDispMsg(CString &strMsg, CString &strTitle)
+{
+	if (m_pDlgMsgBox)
+		m_pDlgMsgBox->GetDispMsg(strMsg, strTitle);
+}
+
+void CGvisRTR_PunchView::DispMsg(CString strMsg, CString strTitle, COLORREF color, DWORD dwDispTime, BOOL bOverWrite)
+{
+	//if (!m_mgrProcedure)
+	//	return;
+
+	if (m_bDispMsg)
+		return;
+
+	//if (m_mgrPunch->m_bAuto)
+	//{
+	//	return;
+	//}
+
+	m_bDispMsg = TRUE;
+	DoDispMsg(strMsg, strTitle, color, dwDispTime, bOverWrite);
+	m_bDispMsg = FALSE;
+}
+
+void CGvisRTR_PunchView::InitDlg()
+{
+	m_pDlgInfo = NULL;
+	m_pDlgFrameHigh = NULL;
+	m_pDlgMenu01 = NULL;
+	m_pDlgMenu02 = NULL;
+	m_pDlgMenu03 = NULL;
+	m_pDlgMenu04 = NULL;
+	m_pDlgMenu05 = NULL;
+	m_pDlgMenu06 = NULL;
+	//m_pDlgMenu07 = NULL;
+	//m_pDlgOption01 = NULL;
+
+}
+
+void CGvisRTR_PunchView::ShowDlg(int nID)
+{
+	HideAllDlg();
+
+	switch (nID)
+	{
+	case IDD_DLG_FRAME_HIGH:
+		if (!m_pDlgFrameHigh)
+		{
+			m_pDlgFrameHigh = new CDlgFrameHigh(this);
+			if (m_pDlgFrameHigh->GetSafeHwnd() == 0)
+			{
+				m_pDlgFrameHigh->Create();
+				m_pDlgFrameHigh->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgFrameHigh->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_01:
+		if (!m_pDlgMenu01)
+		{
+			m_pDlgMenu01 = new CDlgMenu01(this);
+			if (m_pDlgMenu01->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu01->Create();
+				m_pDlgMenu01->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu01->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_02:
+		if (!m_pDlgMenu02)
+		{
+			m_pDlgMenu02 = new CDlgMenu02(this);
+			if (m_pDlgMenu02->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu02->Create();
+				m_pDlgMenu02->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu02->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_03:
+		if (!m_pDlgMenu03)
+		{
+			m_pDlgMenu03 = new CDlgMenu03(this);
+			if (m_pDlgMenu03->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu03->Create();
+				m_pDlgMenu03->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu03->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_04:
+		if (!m_pDlgMenu04)
+		{
+			m_pDlgMenu04 = new CDlgMenu04(this);
+			if (m_pDlgMenu04->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu04->Create();
+				m_pDlgMenu04->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu04->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_05:
+		if (!m_pDlgMenu05)
+		{
+			m_pDlgMenu05 = new CDlgMenu05(this);
+			if (m_pDlgMenu05->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu05->Create();
+				m_pDlgMenu05->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu05->ShowWindow(SW_SHOW);
+		}
+		break;
+
+	case IDD_DLG_MENU_06:
+		if (!m_pDlgMenu06)
+		{
+			m_pDlgMenu06 = new CDlgMenu06(this);
+			if (m_pDlgMenu06->GetSafeHwnd() == 0)
+			{
+				m_pDlgMenu06->Create();
+				m_pDlgMenu06->ShowWindow(SW_SHOW);
+			}
+		}
+		else
+		{
+			m_pDlgMenu06->ShowWindow(SW_SHOW);
+		}
+		break;
+	}
+}
+
+void CGvisRTR_PunchView::HideAllDlg()
+{
+	if (m_pDlgMenu01 && m_pDlgMenu01->GetSafeHwnd())
+	{
+		if (m_pDlgMenu01->IsWindowVisible())
+			m_pDlgMenu01->ShowWindow(SW_HIDE);
+	}
+	if (m_pDlgMenu02 && m_pDlgMenu02->GetSafeHwnd())
+	{
+		if (m_pDlgMenu02->IsWindowVisible())
+			m_pDlgMenu02->ShowWindow(SW_HIDE);
+	}
+	if (m_pDlgMenu03 && m_pDlgMenu03->GetSafeHwnd())
+	{
+		if (m_pDlgMenu03->IsWindowVisible())
+			m_pDlgMenu03->ShowWindow(SW_HIDE);
+	}
+	if (m_pDlgMenu04 && m_pDlgMenu04->GetSafeHwnd())
+	{
+		if (m_pDlgMenu04->IsWindowVisible())
+			m_pDlgMenu04->ShowWindow(SW_HIDE);
+	}
+	if (m_pDlgMenu05 && m_pDlgMenu05->GetSafeHwnd())
+	{
+		if (m_pDlgMenu05->IsWindowVisible())
+			m_pDlgMenu05->ShowWindow(SW_HIDE);
+	}
+	if (m_pDlgMenu06 && m_pDlgMenu06->GetSafeHwnd())
+	{
+		if (m_pDlgMenu06->IsWindowVisible())
+			m_pDlgMenu06->ShowWindow(SW_HIDE);
+	}
+}
+
+void CGvisRTR_PunchView::DelAllDlg()
+{
+	if (m_pDlgMenu06 != NULL)
+	{
+		delete m_pDlgMenu06;
+		m_pDlgMenu06 = NULL;
+	}
+	if (m_pDlgMenu05 != NULL)
+	{
+		delete m_pDlgMenu05;
+		m_pDlgMenu05 = NULL;
+	}
+	if (m_pDlgMenu04 != NULL)
+	{
+		delete m_pDlgMenu04;
+		m_pDlgMenu04 = NULL;
+	}
+	if (m_pDlgMenu03 != NULL)
+	{
+		delete m_pDlgMenu03;
+		m_pDlgMenu03 = NULL;
+	}
+	if (m_pDlgMenu02 != NULL)
+	{
+		delete m_pDlgMenu02;
+		m_pDlgMenu02 = NULL;
+	}
+	if (m_pDlgMenu01 != NULL)
+	{
+		delete m_pDlgMenu01;
+		m_pDlgMenu01 = NULL;
+	}
+	if (m_pDlgFrameHigh != NULL)
+	{
+		delete m_pDlgFrameHigh;
+		m_pDlgFrameHigh = NULL;
+	}
+
+	if (m_pDlgMsgBox != NULL)
+	{
+		if (m_pDlgMsgBox->GetSafeHwnd())
+			m_pDlgMsgBox->DestroyWindow();
+		delete m_pDlgMsgBox;
+		m_pDlgMsgBox = NULL;
+	}
+}
+
+LRESULT CGvisRTR_PunchView::OnDlgInfo(WPARAM wParam, LPARAM lParam)
+{
+	ClrDispMsg();
+	CDlgInfo Dlg;
+	m_pDlgInfo = &Dlg;
+	Dlg.DoModal();
+	m_pDlgInfo = NULL;
+
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->ChkUserInfo(FALSE);
+
+	return 0L;
+}
+
 void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
@@ -219,14 +599,89 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 		switch (m_nStepInitView)
 		{
 		case 0:
+			DoDispMsg(_T("프로그램을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
 			m_nStepInitView++;
 			break;
 		case 1:
 			m_nStepInitView++;
-			DoDispMsg(_T("프로그램을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			InitMgr();
+			DispMsg(_T("화면구성을 생성합니다.- 1"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_02);
+			break;
+		case 2:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.-2"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_01);
+			//if (bDualTest)
+			//	m_pDlgMenu01->SelMap(ALL);
+			//else
+			//	m_pDlgMenu01->SelMap(UP);
+			//break;
+		case 3:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 3"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			//ShowDlg(IDD_DLG_MENU_02);
+			break;
+		case 4:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 4"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_03);
+			break;
+		case 5:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 5"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_04);
+			break;
+		case 6:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 6"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_05);
+			break;
+		case 7:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 7"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_06);
+			break;
+		case 8:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_FRAME_HIGH);
+			if (m_pDlgFrameHigh)
+				m_pDlgFrameHigh->ChkMenu01();
+			//SetDualTest(pDoc->WorkingInfo.LastJob.bDualTest);
+
+			//if (pDoc->GetCurrentInfoEng())
+			//{
+			//	if (m_mgrReelmap->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+			//	{
+			//		//if (pDoc->GetTestMode() == MODE_OUTER)
+			//		if (m_mgrReelmap->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
+			//		{
+			//			if (m_pDlgMenu06)
+			//				m_pDlgMenu06->RedrawWindow();
+			//		}
+			//	}
+			//}
+			Sleep(300);
+
+		case 9:
+			m_nStepInitView++;
+			DispMsg(_T("Manager를 생성합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			CreateMgr();
+			break;
+			break;
+
+		case 10:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			//if(m_mgrPunch)
+			//	m_mgrPunch->InitMotion();
+			Sleep(300);
+			m_bTIM_INIT_VIEW = FALSE;
 			break;
 		}
+
+		if (m_bTIM_INIT_VIEW)
+			SetTimer(TIM_INIT_VIEW, 100, NULL);
 	}
 
 	CFormView::OnTimer(nIDEvent);

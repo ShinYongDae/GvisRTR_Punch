@@ -18,6 +18,7 @@ public:
 
 // 작업입니다.
 public:
+	void DestroyDoc();
 
 // 재정의입니다.
 public:

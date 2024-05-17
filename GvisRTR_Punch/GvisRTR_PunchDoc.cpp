@@ -13,9 +13,12 @@
 
 #include <propkey.h>
 
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+CGvisRTR_PunchDoc* pDoc;
 
 // CGvisRTR_PunchDoc
 
@@ -30,6 +33,7 @@ END_MESSAGE_MAP()
 CGvisRTR_PunchDoc::CGvisRTR_PunchDoc()
 {
 	// TODO: 여기에 일회성 생성 코드를 추가합니다.
+	pDoc = this;
 
 }
 
@@ -52,6 +56,16 @@ BOOL CGvisRTR_PunchDoc::OnNewDocument()
 
 
 // CGvisRTR_PunchDoc serialization
+void CGvisRTR_PunchDoc::DestroyDoc()
+{
+	//if (m_pFile)
+	//{
+	//	delete m_pFile;
+	//	m_pFile = NULL;
+	//}
+}
+
+
 
 void CGvisRTR_PunchDoc::Serialize(CArchive& ar)
 {

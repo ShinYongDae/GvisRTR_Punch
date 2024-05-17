@@ -11,6 +11,14 @@
 #define new DEBUG_NEW
 #endif
 
+#include "GvisRTR_PunchDoc.h"
+#include "GvisRTR_PunchView.h"
+
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
+
+CMainFrame* pFrm;
+
 // CMainFrame
 
 IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
@@ -83,3 +91,13 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 // CMainFrame 메시지 처리기
 
+
+
+BOOL CMainFrame::DestroyWindow()
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	pDoc->DestroyDoc();
+	pView->DestroyView();
+
+	return CFrameWnd::DestroyWindow();
+}

@@ -1,20 +1,20 @@
 #pragma once
 #include "afxwin.h"
 
-#define TIM_INIT_THREAD			0
+#define TIM_INIT_FEEDING			0
 
-class CManagerThread : public CWnd
+class CManagerFeeding : public CWnd
 {
 	CWnd* m_pParent;
 
-	BOOL m_bTIM_INIT_THREAD;
-	int m_nStepInitThread;
+	BOOL m_bTIM_INIT_FEEDING;
+	int m_nStepInitFeeding;
 
 	BOOL Create();
 
 public:
-	CManagerThread(CWnd* pParent = NULL);
-	~CManagerThread();
+	CManagerFeeding(CWnd* pParent = NULL);
+	~CManagerFeeding();
 
 	// 특성입니다.
 public:
@@ -26,10 +26,8 @@ public:
 
 	// 생성된 메시지 맵 함수
 protected:
-
-public:
-
 	DECLARE_MESSAGE_MAP()
+public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
