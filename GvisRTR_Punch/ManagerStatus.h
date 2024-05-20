@@ -86,7 +86,6 @@ class CManagerStatus
 	BOOL m_bTIM_INIT_STATUS;
 	int m_nStepInitStatus;
 
-	BOOL Create();
 
 public:
 	CManagerStatus();

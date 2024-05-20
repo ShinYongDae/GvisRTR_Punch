@@ -141,6 +141,69 @@
     <ClInclude Include="ManagerStatus.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Device\Motion.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\MotionParam.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\NMC_Motion.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\NMC_RTR.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\NmcAxis.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\NmcDevice.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\MyFileErrMap.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\safelock.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\BufferControl.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\FileOperation.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\type_def.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\HardwareInfoEx.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\HardwareInfoDefine.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Light.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Rs232.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Global\GlobalFunc.h">
+      <Filter>Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Global\MyData.h">
+      <Filter>Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Global\SafeLock.h">
+      <Filter>Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Smac.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Vision.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Global\MsgBoxTimeout.h">
+      <Filter>Global</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">
@@ -244,6 +307,48 @@
     </ClCompile>
     <ClCompile Include="ManagerStatus.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Motion.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\NmcAxis.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\NmcDevice.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\MyFileErrMap.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\BufferControl.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\FileOperation.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\HardwareInfoEx.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Light.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Rs232.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Global\GlobalFunc.cpp">
+      <Filter>Global</Filter>
+    </ClCompile>
+    <ClCompile Include="Global\MyData.cpp">
+      <Filter>Global</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Smac.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Vision.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Global\MsgBoxTimeout.cpp">
+      <Filter>Global</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

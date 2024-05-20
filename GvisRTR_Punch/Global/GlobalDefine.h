@@ -10,7 +10,7 @@
 #endif // _MSC_VER > 1000
 
 
-//#define TEST_MODE		1
+#define TEST_MODE		1
 
 #ifndef MAX_STRIP
 	#ifdef TEST_MODE

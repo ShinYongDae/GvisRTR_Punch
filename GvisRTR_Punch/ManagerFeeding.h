@@ -22,7 +22,9 @@ public:
 
 	// 작업입니다.
 public:
-
+	BOOL InitAct();
+	void SetBufInitPos(double dPos);
+	void SetBufHomeParam(double dVel, double dAcc);
 
 	// 생성된 메시지 맵 함수
 protected:

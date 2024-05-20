@@ -6,7 +6,6 @@
 #include "DlgMenu01.h"
 #include "afxdialogex.h"
 
-
 #include "../MainFrm.h"
 #include "../GvisRTR_PunchDoc.h"
 #include "../GvisRTR_PunchView.h"

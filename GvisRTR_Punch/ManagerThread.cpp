@@ -1,6 +1,14 @@
 #include "stdafx.h"
 #include "ManagerThread.h"
 
+#include "MainFrm.h"
+#include "GvisRTR_PunchDoc.h"
+#include "GvisRTR_PunchView.h"
+
+extern CMainFrame* pFrm;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
+
 
 CManagerThread::CManagerThread(CWnd* pParent)
 {
@@ -34,4 +42,9 @@ void CManagerThread::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnTimer(nIDEvent);
+}
+
+BOOL CManagerThread::InitAct()
+{
+	return TRUE;
 }

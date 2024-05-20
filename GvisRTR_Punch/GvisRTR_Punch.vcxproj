@@ -181,6 +181,23 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Device\BufferControl.h" />
+    <ClInclude Include="Device\FileOperation.h" />
+    <ClInclude Include="Device\HardwareInfoDefine.h" />
+    <ClInclude Include="Device\HardwareInfoEx.h" />
+    <ClInclude Include="Device\Light.h" />
+    <ClInclude Include="Device\Motion.h" />
+    <ClInclude Include="Device\MotionParam.h" />
+    <ClInclude Include="Device\MyFileErrMap.h" />
+    <ClInclude Include="Device\NmcAxis.h" />
+    <ClInclude Include="Device\NmcDevice.h" />
+    <ClInclude Include="Device\NMC_Motion.h" />
+    <ClInclude Include="Device\NMC_RTR.h" />
+    <ClInclude Include="Device\Rs232.h" />
+    <ClInclude Include="Device\safelock.h" />
+    <ClInclude Include="Device\Smac.h" />
+    <ClInclude Include="Device\type_def.h" />
+    <ClInclude Include="Device\Vision.h" />
     <ClInclude Include="Dialog\DlgFrameHigh.h" />
     <ClInclude Include="Dialog\DlgInfo.h" />
     <ClInclude Include="Dialog\DlgMenu01.h" />
@@ -203,6 +220,10 @@
     <ClInclude Include="Dialog\MyPic.h" />
     <ClInclude Include="Dialog\MyStatic.h" />
     <ClInclude Include="Global\GlobalDefine.h" />
+    <ClInclude Include="Global\GlobalFunc.h" />
+    <ClInclude Include="Global\MsgBoxTimeout.h" />
+    <ClInclude Include="Global\MyData.h" />
+    <ClInclude Include="Global\SafeLock.h" />
     <ClInclude Include="GvisRTR_Punch.h" />
     <ClInclude Include="GvisRTR_PunchDoc.h" />
     <ClInclude Include="GvisRTR_PunchView.h" />
@@ -220,6 +241,17 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Device\BufferControl.cpp" />
+    <ClCompile Include="Device\FileOperation.cpp" />
+    <ClCompile Include="Device\HardwareInfoEx.cpp" />
+    <ClCompile Include="Device\Light.cpp" />
+    <ClCompile Include="Device\Motion.cpp" />
+    <ClCompile Include="Device\MyFileErrMap.cpp" />
+    <ClCompile Include="Device\NmcAxis.cpp" />
+    <ClCompile Include="Device\NmcDevice.cpp" />
+    <ClCompile Include="Device\Rs232.cpp" />
+    <ClCompile Include="Device\Smac.cpp" />
+    <ClCompile Include="Device\Vision.cpp" />
     <ClCompile Include="Dialog\DlgFrameHigh.cpp" />
     <ClCompile Include="Dialog\DlgInfo.cpp" />
     <ClCompile Include="Dialog\DlgMenu01.cpp" />
@@ -241,6 +273,9 @@
     <ClCompile Include="Dialog\MyLabel.cpp" />
     <ClCompile Include="Dialog\MyPic.cpp" />
     <ClCompile Include="Dialog\MyStatic.cpp" />
+    <ClCompile Include="Global\GlobalFunc.cpp" />
+    <ClCompile Include="Global\MsgBoxTimeout.cpp" />
+    <ClCompile Include="Global\MyData.cpp" />
     <ClCompile Include="GvisRTR_Punch.cpp" />
     <ClCompile Include="GvisRTR_PunchDoc.cpp" />
     <ClCompile Include="GvisRTR_PunchView.cpp" />

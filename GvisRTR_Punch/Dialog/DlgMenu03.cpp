@@ -6,6 +6,13 @@
 #include "DlgMenu03.h"
 #include "afxdialogex.h"
 
+#include "../MainFrm.h"
+#include "../GvisRTR_PunchDoc.h"
+#include "../GvisRTR_PunchView.h"
+
+extern CMainFrame* pFrm;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
 
 // CDlgMenu03 대화 상자입니다.
 

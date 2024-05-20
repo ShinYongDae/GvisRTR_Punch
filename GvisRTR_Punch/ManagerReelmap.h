@@ -22,6 +22,7 @@ public:
 
 	// 작업입니다.
 public:
+	BOOL InitAct();
 
 
 	// 생성된 메시지 맵 함수

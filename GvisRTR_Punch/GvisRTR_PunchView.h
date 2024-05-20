@@ -100,6 +100,9 @@ public:
 	void HideAllDlg();
 	void DelAllDlg();
 
+	// 보조작업입니다.
+	int MsgBox(CString sMsg, int nThreadIdx = 0, int nType = MB_OK, int nTimOut = DEFAULT_TIME_OUT, BOOL bEngave = TRUE);		// SyncMsgBox
+
 // 재정의입니다.
 public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);

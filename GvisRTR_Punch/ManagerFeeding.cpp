@@ -1,6 +1,14 @@
 #include "stdafx.h"
 #include "ManagerFeeding.h"
 
+#include "MainFrm.h"
+#include "GvisRTR_PunchDoc.h"
+#include "GvisRTR_PunchView.h"
+
+extern CMainFrame* pFrm;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
+
 
 CManagerFeeding::CManagerFeeding(CWnd* pParent)
 {
@@ -40,3 +48,36 @@ void CManagerFeeding::OnTimer(UINT_PTR nIDEvent)
 
 	CWnd::OnTimer(nIDEvent);
 }
+
+BOOL CManagerFeeding::InitAct()
+{
+	double dPos = _tstof(pDoc->WorkingInfo.Motion.sStBufPos);
+	SetBufInitPos(dPos);
+	double dVel = _tstof(pDoc->WorkingInfo.Motion.sBufHomeSpd);
+	double dAcc = _tstof(pDoc->WorkingInfo.Motion.sBufHomeAcc);
+	//SetBufHomeParam(dVel, dAcc);
+
+	return TRUE;
+}
+
+void CManagerFeeding::SetBufInitPos(double dPos)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+	sData.Format(_T("%.3f"), dPos);
+	pDoc->WorkingInfo.Motion.sStBufPos = sData;
+	::WritePrivateProfileString(_T("Motion"), _T("START_BUFFER_POSITION"), sData, sPath);
+#ifdef USE_MPE
+	long lData = (long)(dPos * 1000.0);
+	pView->MpeWrite(_T("ML45016"), lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
+#endif
+}
+
+void CManagerFeeding::SetBufHomeParam(double dVel, double dAcc)
+{
+	long lVel = long(dVel*1000.0);
+	long lAcc = long(dAcc*1000.0);
+	//	MpeWrite(_T("ML00000"), lVel); // 마킹부 버퍼 홈 속도
+	//	MpeWrite(_T("ML00000"), lAcc); // 마킹부 버퍼 홈 가속도
+	//	pDoc->SetBufInitPos(dVel, dAcc);
+}
+

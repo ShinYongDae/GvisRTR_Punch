@@ -343,20 +343,35 @@ void CGvisRTR_PunchView::GetDispMsg(CString &strMsg, CString &strTitle)
 
 void CGvisRTR_PunchView::DispMsg(CString strMsg, CString strTitle, COLORREF color, DWORD dwDispTime, BOOL bOverWrite)
 {
-	//if (!m_mgrProcedure)
-	//	return;
-
 	if (m_bDispMsg)
 		return;
-
-	//if (m_mgrPunch->m_bAuto)
-	//{
-	//	return;
-	//}
 
 	m_bDispMsg = TRUE;
 	DoDispMsg(strMsg, strTitle, color, dwDispTime, bOverWrite);
 	m_bDispMsg = FALSE;
+}
+
+int CGvisRTR_PunchView::MsgBox(CString sMsg, int nThreadIdx, int nType, int nTimOut, BOOL bEngave)
+{
+	int nRtnVal = -1; // Reply(-1) is None.
+
+	//if (bEngave)
+	//{
+	//	if (m_pEngrave)
+	//	{
+	//		pDoc->m_sMsgBox = sMsg;
+	//		if (pDoc->m_sIsMsgBox != pDoc->m_sMsgBox)
+	//		{
+	//			if (m_pEngrave)
+	//				m_pEngrave->SetMsgBox(pDoc->m_sMsgBox, nType);
+	//		}
+	//	}
+	//}
+
+	if (m_pDlgMyMsg)
+		nRtnVal = m_pDlgMyMsg->SyncMsgBox(sMsg, nThreadIdx, nType, nTimOut);
+
+	return nRtnVal;
 }
 
 void CGvisRTR_PunchView::InitDlg()
@@ -644,6 +659,11 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 		case 8:
 			m_nStepInitView++;
 			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_07);
+			break;
+		case 9:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 9"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
 			ShowDlg(IDD_DLG_FRAME_HIGH);
 			if (m_pDlgFrameHigh)
 				m_pDlgFrameHigh->ChkMenu01();
@@ -663,19 +683,30 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 			//}
 			Sleep(300);
 
-		case 9:
+		case 10:
 			m_nStepInitView++;
 			DispMsg(_T("Manager를 생성합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
 			CreateMgr();
 			break;
 			break;
 
-		case 10:
+		case 11:
 			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			//if(m_mgrPunch)
-			//	m_mgrPunch->InitMotion();
+			DispMsg(_T("Motion을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			if (m_mgrPunch)
+				m_mgrPunch->ResetMotion();
 			Sleep(300);
+			break;
+		case 15:
+			m_nStepInitView++;
+			//m_bLoadMstInfo = TRUE;
+			DispMsg(_T("H/W를 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			m_mgrPunch->InitAct();
+			m_mgrReelmap->InitAct();
+			m_mgrFeeding->InitAct();
+			//m_mgrProcedure->m_bStopFeeding = TRUE;
+			//MpeWrite(_T("MB440115"), 1); // 마킹부Feeding금지
+			//Sleep(300);
 			m_bTIM_INIT_VIEW = FALSE;
 			break;
 		}

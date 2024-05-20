@@ -12,6 +12,13 @@ public:
 	virtual ~CDlgMenu07();
 	BOOL Create();
 
+	// 특성입니다.
+public:
+
+
+	// 작업입니다.
+public:
+
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_DLG_MENU_07 };

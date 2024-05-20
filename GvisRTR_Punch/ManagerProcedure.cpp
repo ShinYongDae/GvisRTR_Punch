@@ -1,6 +1,14 @@
 #include "stdafx.h"
 #include "ManagerProcedure.h"
 
+#include "MainFrm.h"
+#include "GvisRTR_PunchDoc.h"
+#include "GvisRTR_PunchView.h"
+
+extern CMainFrame* pFrm;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
+
 
 CManagerProcedure::CManagerProcedure(CWnd* pParent)
 {
@@ -52,3 +60,7 @@ void CManagerProcedure::OnTimer(UINT_PTR nIDEvent)
 	CWnd::OnTimer(nIDEvent);
 }
 
+BOOL CManagerProcedure::InitAct()
+{
+	return TRUE;
+}
