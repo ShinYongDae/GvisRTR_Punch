@@ -229,8 +229,8 @@ BOOL CMyFileErrMap::LoadX(int nRow, int nIdx, CString sPath)
 
 			nIdx++;
 		}
-
-		AfxMessageBox(_T("Error - Open FileErrMap X!!!"));
+		//pView->ClrDispMsg();
+		//AfxMessageBox(_T("Error - Open FileErrMap X!!!"));
 
 		return FALSE;
 	}
@@ -287,8 +287,8 @@ BOOL CMyFileErrMap::LoadY(int nRow, int nIdx, CString sPath)
 
 			nIdx++;
 		}
-
-		AfxMessageBox(_T("Error - Open FileErrMap Y!!!"));
+		//pView->ClrDispMsg();
+		//AfxMessageBox(_T("Error - Open FileErrMap Y!!!"));
 
 		return FALSE;
 	}

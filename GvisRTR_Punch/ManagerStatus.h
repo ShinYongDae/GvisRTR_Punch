@@ -1,5 +1,7 @@
 #pragma once
 
+#define BUF_SZ						50
+
 struct stGeneral
 {
 	BOOL bLotEnd, bLastProc, bMkSt, bCam, bLastProcFromUp;
@@ -78,6 +80,55 @@ struct stEngrave
 	}
 };
 
+struct stListBuf
+{
+	int nTot;
+	int nSerial[BUF_SZ];
+
+	stListBuf()
+	{
+		nTot = 0;
+		for (int i = 0; i < BUF_SZ; i++)
+			nSerial[BUF_SZ] = 0;
+	}
+
+	BOOL stListBuf::Push(int nS)
+	{
+		if (nS < 1 || (nTot + 1) > BUF_SZ)
+			return FALSE;
+		nSerial[nTot] = nS;
+		nTot++;
+		return TRUE;
+	}
+
+	int stListBuf::Pop()
+	{
+		if (nSerial[0] < 1 || (nTot - 1) < 0)
+			return 0;
+
+		int nS = nSerial[0];
+		for (int i = 0; i < (nTot - 1); i++)
+			nSerial[i] = nSerial[i + 1];
+		nTot--;
+		return nS;
+	}
+
+	int stListBuf::GetLast()
+	{
+		if (nSerial[0] < 1 || (nTot - 1) < 0)
+			return 0;
+		return nSerial[nTot - 1];
+	}
+
+	void stListBuf::Clear()
+	{
+		nTot = 0;
+		for (int i = 0; i < BUF_SZ; i++)
+			nSerial[i] = 0;
+	}
+
+};
+
 
 class CManagerStatus
 {
@@ -86,6 +137,8 @@ class CManagerStatus
 	BOOL m_bTIM_INIT_STATUS;
 	int m_nStepInitStatus;
 
+	void Init();
+	BOOL Create();
 
 public:
 	CManagerStatus();
@@ -96,6 +149,7 @@ public:
 	stGeneral General;
 	stThread Thread;
 	stEngrave Engrave;
+	stListBuf ListBuf[2]; // [0]:AOI-Up , [1]:AOI-Dn
 
 	// 작업입니다.
 public:

@@ -360,7 +360,8 @@ DWORD GetDiskSpace()
         info += name;
         i += 4;            
     }
-    AfxMessageBox(info);
+	//pView->ClrDispMsg(); 
+	//AfxMessageBox(info);
 	delete []driveList;
 	return TRUE;
 }

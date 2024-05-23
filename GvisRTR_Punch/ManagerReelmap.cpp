@@ -13,6 +13,12 @@ extern CGvisRTR_PunchView* pView;
 CManagerReelmap::CManagerReelmap(CWnd* pParent)
 {
 	m_pParent = pParent;
+	Init();
+
+	if (Create())
+	{
+		pView->ClrDispMsg();
+	}
 }
 
 
@@ -44,7 +50,17 @@ void CManagerReelmap::OnTimer(UINT_PTR nIDEvent)
 	CWnd::OnTimer(nIDEvent);
 }
 
+void CManagerReelmap::Init()
+{
+	LoadConfig();
+}
+
 BOOL CManagerReelmap::InitAct()
 {
+
 	return TRUE;
+}
+
+void CManagerReelmap::LoadConfig()
+{
 }

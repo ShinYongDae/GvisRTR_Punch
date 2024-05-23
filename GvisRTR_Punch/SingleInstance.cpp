@@ -77,7 +77,8 @@ BOOL CSingleInstance::Create( UINT nID )
 	wndcls.lpszMenuName = NULL;//You may need to fix this
 	wndcls.lpszClassName = m_strClassName; // my class name
 	// Register name, exit if it fails
-	if(!AfxRegisterClass(&wndcls)) {
+	if(!AfxRegisterClass(&wndcls)) 
+	{
 		AfxMessageBox( _T("Failed to register window class!"), MB_ICONSTOP | MB_OK );
 		return FALSE;
 	}

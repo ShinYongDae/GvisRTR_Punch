@@ -92,15 +92,6 @@ LRESULT CLight::OnReceiveRs232(WPARAM wP, LPARAM lP)
 	return 0L;
 }
 
-CString CLight::Rcv()
-{
-	CString sRcv = m_sRcvRs232;
-	m_Rs232.ClearReceive();
-	m_sRcvRs232 = _T("");
-
-	return sRcv;
-}
-
 BOOL CLight::Send(CString str)
 {
 	int nLen = str.GetLength();

@@ -36,7 +36,6 @@ public:
 // Operations
 public:
 	afx_msg LRESULT OnReceiveRs232(WPARAM wP, LPARAM lP);
-	CString Rcv();
 
 	void Init();
 	BOOL Set(int nCh, int nVal=-1);

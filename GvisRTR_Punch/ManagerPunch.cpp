@@ -14,7 +14,15 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 {
 	m_pParent = pParent;
 	m_bCreated = FALSE;
+
+	Init();
 	InitDevices();
+
+	if (Create())
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("CManagerPunch::Create() Failed!!!"));
+	}
 }
 
 
@@ -97,8 +105,7 @@ BOOL CManagerPunch::CreateDevices()
 	}
 
 	m_pVoiceCoil[0] = new CSmac(this);
-	m_pVoiceCoil[0]->SetCh(VOICE_COIL_FIRST_CAM);
-	m_pVoiceCoil[0]->Init();
+	m_pVoiceCoil[0]->Init(VOICE_COIL_FIRST_CAM);
 
 	if (m_pVoiceCoil[1])
 	{
@@ -107,8 +114,7 @@ BOOL CManagerPunch::CreateDevices()
 	}
 
 	m_pVoiceCoil[1] = new CSmac(this);
-	m_pVoiceCoil[1]->SetCh(VOICE_COIL_SECOND_CAM);
-	m_pVoiceCoil[1]->Init();
+	m_pVoiceCoil[1]->Init(VOICE_COIL_SECOND_CAM);
 
 	if (m_pLight)
 	{
@@ -134,6 +140,10 @@ void CManagerPunch::ResetMotion()
 			Sleep(30);
 		}
 	}
+}
+
+void CManagerPunch::Init()
+{
 }
 
 BOOL CManagerPunch::InitAct()
@@ -171,9 +181,9 @@ BOOL CManagerPunch::InitAct()
 
 	// Homming
 	if (m_pVoiceCoil[0])
-		m_pVoiceCoil[0]->SearchHomeSmac(0);
+		m_pVoiceCoil[0]->SearchHomeSmac();
 	if (m_pVoiceCoil[1])
-		m_pVoiceCoil[1]->SearchHomeSmac(1);
+		m_pVoiceCoil[1]->SearchHomeSmac();
 
 	return TRUE;
 }

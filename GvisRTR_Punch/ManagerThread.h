@@ -10,6 +10,7 @@ class CManagerThread : public CWnd
 	BOOL m_bTIM_INIT_THREAD;
 	int m_nStepInitThread;
 
+	void Init();
 	BOOL Create();
 
 public:

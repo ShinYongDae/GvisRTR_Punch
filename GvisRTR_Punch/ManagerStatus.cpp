@@ -12,9 +12,25 @@ extern CGvisRTR_PunchView* pView;
 
 CManagerStatus::CManagerStatus()
 {
+	Init();
+
+	if (Create())
+	{
+		pView->ClrDispMsg();
+	}
 }
 
 
 CManagerStatus::~CManagerStatus()
 {
+}
+
+void CManagerStatus::Init()
+{
+
+}
+
+BOOL CManagerStatus::Create()
+{
+	return TRUE;
 }

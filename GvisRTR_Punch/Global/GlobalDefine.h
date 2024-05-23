@@ -14,17 +14,9 @@
 
 #ifndef MAX_STRIP
 	#ifdef TEST_MODE
-		#define MAX_STRIP				6
+		#define MAX_STRIP				4
 	#else
 		#define MAX_STRIP				6
-	#endif
-#endif
-
-#ifndef MAX_STRIP_NUM
-	#ifdef TEST_MODE
-		#define MAX_STRIP_NUM			6
-	#else
-		#define MAX_STRIP_NUM			6
 	#endif
 #endif
 
@@ -511,34 +503,20 @@ typedef enum {KOREAN=0, ENGLISH=1, JAPANESE=2} LANG;
 #define DEF_WIDE					24	    // User Define 3
 #define DEF_LIGHT					25	
 
-enum SAPP3_CODE{	SAPP3_OPEN = 0,
-//					SAPP3_SHORT_USHORT = 1,
-					SAPP3_SHORT = 1,
-					SAPP3_NICK = 2,
-					SAPP3_SPACE_EXTRA_PROTRUSION = 3,
-//					SAPP3_PINHOLE_PAD = 4,
-					SAPP3_PINHOLE = 4,
-					SAPP3_HOPEN = 5,
-					SAPP3_HMISS_HPOS_HBAD = 6,
-					SAPP3_USHORT = 7,
-					SAPP3_PAD = 8
-				}	;
-/*
-enum SliceDI_0{	DI_ESTOP=0, DI_START=1, DI_FOOT=2, DI_READY=3, DI_VACUUM=4, 
-				DI_FDOOR=7, DI_LDOOR=8, DI_RDOOR=9, DI_BDOOR=10 };
+enum SAPP3_CODE
+{	
+	SAPP3_OPEN = 0,
+	SAPP3_SHORT = 1,
+	SAPP3_NICK = 2,
+	SAPP3_SPACE_EXTRA_PROTRUSION = 3,
+	SAPP3_PINHOLE = 4,
+	SAPP3_HOPEN = 5,
+	SAPP3_HMISS_HPOS_HBAD = 6,
+	SAPP3_USHORT = 7,
+	SAPP3_PAD = 8,
+	SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF = 9
+};
 
-enum SliceDI_1{	DI_COVER1F=16, DI_COVER1B=17, DI_COVER2F=18, DI_COVER2B=19, DI_PD_ERROR=23, DI_LDI0=28, 
-				DI_LDI1=29, DI_LDI2=30, DI_LDI3=31 };
-
-enum SliceDO_2{	DO_STARTFLY=0, DO_STOPFLY=1, DO_LAMP1=2, DO_LAMP2=3, DO_LAMP3=4,
-				DO_LAMP4=5, DO_LAMP5=6, DO_LAMP6=7, DO_STARTLAMP=8, DO_READYLAMP=9,
-				DO_SOLSMOG=10, DO_SOL3=11, DO_SOLCOVER1=12, DO_SOLCOVER2=13 };
-
-enum SliceDO_3{ DO_MC=16, DO_RINGBLOWER=17, DO_SOLPANEL=19, DO_TOWERR=20, DO_TOWERY=21, DO_TOWERG=22, 
-				DO_DSP_PWR=25, DO_BUZZER=26, DO_LASER_OFF=27, DO_LDO0=28, DO_LDO1=29, DO_LDO2=30, DO_LDO3=31 };
-
-enum SliceDO_4{ DO_INK_MK=0 };
-*/
 #define DLY_INK_MK			300
 
 #define  MAX_PROCNODENUM			60    // Max ProcNodeNum : 600mm/2.5um = 48 
@@ -628,7 +606,6 @@ typedef struct {
 #define RMAP_PCS_SCALE				0.85
 #define TOT_M_IO					30
 
-#define BUF_SZ						50
 
 #define PNL_TOT						2500
 #define PNLBUF_Y					50
@@ -686,6 +663,9 @@ struct stSystem
 	BOOL bSaveMkImg, bSaveGrabImg;
 	BOOL bStripPcsRgnBin;
 	BOOL bUseDTS, bUseITS;
+
+	int m_nSapp3Code[10];	// Sapp3 code
+
 
 	stSystem()
 	{
@@ -1109,7 +1089,7 @@ struct stYield
 {
 	int nTot, nGood, nDef;
 	int nTotSriptOut;
-	int nDefStrip[MAX_STRIP_NUM], nDefA[MAX_DEF], nDefPerStrip[MAX_STRIP_NUM][MAX_DEF], nStripOut[MAX_STRIP_NUM];
+	int nDefStrip[MAX_STRIP], nDefA[MAX_DEF], nDefPerStrip[MAX_STRIP][MAX_DEF], nStripOut[MAX_STRIP];
 
 	stYield()
 	{
@@ -1122,7 +1102,7 @@ struct stYield
 		{
 			nDefA[k] = 0;
 
-			for (int i = 0; i < MAX_STRIP_NUM; i++)
+			for (int i = 0; i < MAX_STRIP; i++)
 			{
 				nDefPerStrip[i][k] = 0;
 			}
@@ -1994,55 +1974,6 @@ struct stModelInfo
 		sLot = _T("");
 		sItsCode = _T("");
 	}
-};
-
-struct stListBuf
-{
-	int nTot;
-	int nSerial[BUF_SZ];
-
-	stListBuf()
-	{
-		nTot = 0;
-		for (int i = 0; i < BUF_SZ; i++)
-			nSerial[BUF_SZ] = 0;
-	}
-
-	BOOL stListBuf::Push(int nS)
-	{
-		if (nS < 1 || (nTot + 1) > BUF_SZ)
-			return FALSE;
-		nSerial[nTot] = nS;
-		nTot++;
-		return TRUE;
-	}
-
-	int stListBuf::Pop()
-	{
-		if (nSerial[0] < 1 || (nTot - 1) < 0)
-			return 0;
-
-		int nS = nSerial[0];
-		for (int i = 0; i < (nTot - 1); i++)
-			nSerial[i] = nSerial[i + 1];
-		nTot--;
-		return nS;
-	}
-
-	int stListBuf::GetLast()
-	{
-		if (nSerial[0] < 1 || (nTot - 1) < 0)
-			return 0;
-		return nSerial[nTot - 1];
-	}
-
-	void stListBuf::Clear()
-	{
-		nTot = 0;
-		for (int i = 0; i < BUF_SZ; i++)
-			nSerial[i] = 0;
-	}
-
 };
 
 

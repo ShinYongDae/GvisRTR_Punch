@@ -10,6 +10,7 @@ class CManagerFeeding : public CWnd
 	BOOL m_bTIM_INIT_FEEDING;
 	int m_nStepInitFeeding;
 
+	void Init();
 	BOOL Create();
 
 public:

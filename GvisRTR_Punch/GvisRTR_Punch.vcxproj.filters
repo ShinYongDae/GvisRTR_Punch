@@ -204,6 +204,42 @@
     <ClInclude Include="Global\MsgBoxTimeout.h">
       <Filter>Global</Filter>
     </ClInclude>
+    <ClInclude Include="Dialog\MyGL.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Dialog\MyGroup.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Dialog\GVGL.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\ReelMap.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\DataFile.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\IniFile.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\MyFile.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\CamMaster.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\CamMasterDefine.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\PcsRgn.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\DataMarking.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Dialog\freeimage.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">
@@ -349,6 +385,36 @@
     </ClCompile>
     <ClCompile Include="Global\MsgBoxTimeout.cpp">
       <Filter>Global</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialog\MyGL.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialog\MyGroup.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialog\GVGL.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\ReelMap.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\DataFile.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\IniFile.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\MyFile.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\CamMaster.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\PcsRgn.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\DataMarking.cpp">
+      <Filter>Process</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

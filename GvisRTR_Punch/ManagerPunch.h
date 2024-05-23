@@ -24,6 +24,7 @@ class CManagerPunch : public CWnd
 	CVision* m_pVisionInner[2];	// [0] : LeftCam , [1] : RightCam
 	CLight* m_pLight;
 
+	void Init();
 	BOOL Create();
 	void InitDevices();
 	BOOL CreateDevices();

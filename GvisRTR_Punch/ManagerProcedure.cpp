@@ -15,8 +15,13 @@ CManagerProcedure::CManagerProcedure(CWnd* pParent)
 	m_pParent = pParent;
 	m_bTIM_INIT_PROCEDURE = FALSE;
 
+	Init();
+
 	if (Create())
+	{
+		pView->ClrDispMsg();
 		AfxMessageBox(_T("CManagerProcedure::Create() Failed!!!"));
+	}
 }
 
 
@@ -36,7 +41,7 @@ BOOL CManagerProcedure::Create()
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5000;
+	UINT nID = 5001;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
@@ -58,6 +63,10 @@ void CManagerProcedure::OnTimer(UINT_PTR nIDEvent)
 	}
 
 	CWnd::OnTimer(nIDEvent);
+}
+
+void CManagerProcedure::Init()
+{
 }
 
 BOOL CManagerProcedure::InitAct()

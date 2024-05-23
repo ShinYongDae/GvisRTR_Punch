@@ -11,6 +11,7 @@ class CManagerProcedure : public CWnd
 	BOOL m_bTIM_INIT_PROCEDURE;
 	int m_nStepInitProcedure;
 
+	void Init();
 	BOOL Create();
 
 public:

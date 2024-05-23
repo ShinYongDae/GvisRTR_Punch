@@ -10,7 +10,9 @@ class CManagerReelmap : public CWnd
 	BOOL m_bTIM_INIT_REELMAP;
 	int m_nStepInitReelmap;
 
+	void Init();
 	BOOL Create();
+	void LoadConfig();
 
 public:
 	CManagerReelmap(CWnd* pParent = NULL);

@@ -8,12 +8,8 @@
 //
 #include "Rs232.h"
 
-#define TIMER_FIRST_SMAC_GET_POS			100
-#define TIMER_SECOND_SMAC_GET_POS			101
-#define TIMER_FIRST_SMAC_CHECK_END_CMD		110
-#define TIMER_SECOND_SMAC_CHECK_END_CMD		111
-#define TIMER_FIRST_SMAC_CHECK_ERROR_CODE	120
-#define TIMER_SECOND_SMAC_CHECK_ERROR_CODE	121
+#define TIMER_CHECK_END_CMD		110
+#define TIMER_CHECK_ERROR_CODE	120
 
 /////////////////////////////////////////////////////////////////////////////
 // CSmac window
@@ -21,11 +17,19 @@
 class CSmac : public CWnd
 {
 // Construction
-	CWnd*			m_pParent;
+	CWnd* m_pParent;
 	CCriticalSection m_cs;
-	BOOL m_bCh[MAX_VOICE_COIL];
+
+	CRs232 m_Rs232;
+	BOOL m_bRs232Run;
 	int m_nCh;
+
+	CString m_strReceiveVoiceCoil;
+	CString m_strSmacEndCmd;
+	BOOL m_bTimerStop, m_bFeedingRollerUp;
 	CString m_sRcvRs232;
+	BOOL m_bReturnCmdEnd, m_bRunTimerCheckEnd;
+
 	BOOL Send(CString str);
 	char* StringToChar(CString str); // char* returned must be deleted... 
 
@@ -34,68 +38,34 @@ public:
 
 // Attributes
 public:
-	CRs232 m_Rs232;
-	BOOL m_bRs232Run;
-
-	CString m_strReceiveVoiceCoilFirstCam, m_strReceiveVoiceCoilSecondCam;
-
-	BOOL m_bReturnFirstSmacCmdEnd, m_bReturnSecondSmacCmdEnd, m_bRunTimerCheckFirstSmacEnd, m_bRunTimerCheckSecondSmacEnd;
-
-	CString m_strFirstSmacEndCmd, m_strSecondSmacEndCmd;
-	BOOL m_bTimerStop, m_bFeedingRollerUp;
 
 // Operations
 public:
 	afx_msg LRESULT OnReceiveRs232(WPARAM wP, LPARAM lP);
-	CString Rcv();
 
-	void Init();
-	void SetCh(int nCh);
-	void Reset(int nCh);
+	void Init(int nCh);
 	void Close();
 
-	double GetSmacMeasureOfSurface(int nCamNum);
-	void SendStringToFirstCamVoiceCoil(CString strSend);
-	void SendStringToSecondCamVoiceCoil(CString strSend);
-	BOOL WaitSmacCmdEnd(int nCamNum, CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
-	BOOL SetWaitSmacCmdEnd0(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
-	BOOL SetWaitSmacCmdEnd1(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
-	BOOL WaitSmacCmdEnd0(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
-	BOOL WaitSmacCmdEnd1(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
-	double GetSmacPosition(int nCamNum);
-	void SearchHomeSmac(int nCamNum);
-	void SearchHomeSmac0();
-	void SearchHomeSmac1();
-	BOOL IsDoneSearchHomeSmac0();
-	BOOL IsDoneSearchHomeSmac1();
-	int CheckSmacErrorCode(int nCamNum);
+	double GetSmacMeasureOfSurface();
+	void SendStringToVoiceCoil(CString strSend);
+	//BOOL SetWaitSmacCmdEnd(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
+	BOOL WaitSmacCmdEnd(CString strEndCmd); // Return Value is TRUE (OK), FALSE (NG)
+	double GetSmacPosition();
+	void SearchHomeSmac();
+	int CheckSmacErrorCode();
 	CString DisplaySmacErrorList(int nErrCode);
 	void Wait(int imSecond);
-	void CalcAveSmacHeight(int nCamNum);
-	void ResetSmac(int nCamNum);
-	CString GetSmacStatus(int nCamNum);
-	void MoveSmacFinalPos(int nCamNum);
-	void MoveSmacShiftPos(int nCamNum);
-	void MoveSmacShiftPos0();
-	void MoveSmacShiftPos1();
-	BOOL IsDoneMoveSmacShiftPos0();
-	BOOL IsDoneMoveSmacShiftPos1();
-	void MoveSmacMeasPos(int nCamNum);
+	void CalcAveSmacHeight();
+	void ResetSmac();
+	CString GetSmacStatus();
+	void MoveSmacFinalPos();
+	void MoveSmacShiftPos();
 
-	void SetMarking(int nCamNum);
-	void SetMarkShiftData(int nCamNum);
-	void SetMarkFinalData(int nCamNum);
-	void SetMark(int nCamNum);
-	BOOL IsDoneMark(int nCamNum);
-	
-	void SetProbing(int nCamNum);
-	void SetProbShiftData(int nCamNum);
-	void SetProbFinalData(int nCamNum);
-	void SetProb(int nCamNum);
-	BOOL IsDoneProb(int nCamNum);
-	void MoveProbFinalPos(int nCamNum);
+	void SetMarkShiftData();
+	void SetMarkFinalData();
+	void SetMark();
+	BOOL IsDoneMark();
 
-	BOOL SetCmdEndChk(int nCamNum, CString strEndCmd);
 	void ClearReceive();
 
 
