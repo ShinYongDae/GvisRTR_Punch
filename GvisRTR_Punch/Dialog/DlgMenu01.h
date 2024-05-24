@@ -21,10 +21,19 @@ class CDlgMenu01 : public CDialog
 	CMyStatic myStcData[MAX_MENU01_STC_DATA];
 	CMyBtn myBtn[MAX_MENU01_BTN];
 
+	CRect m_RectTitle[2];
+	CRect m_RectCAD[12];
+	CRect m_RectDef[12];
+	CRect m_RectInfo[12];
+
+	BOOL Create();
+	void LoadImg();
+	void DelImg();
+	void InitGui();
+
 public:
 	CDlgMenu01(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgMenu01();
-	BOOL Create();
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -43,4 +52,6 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
 
 	DECLARE_MESSAGE_MAP()
+public:
+	virtual BOOL OnInitDialog();
 };

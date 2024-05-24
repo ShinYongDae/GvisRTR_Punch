@@ -1,5 +1,12 @@
 #pragma once
 
+#include "MyBtn.h"
+#include "MyPic.h"
+#include "MyLabel.h"
+#include "MyStatic.h"
+
+#define MAX_FRMHIGH_LABEL	5
+#define MAX_FRMHIGH_STC		11
 
 // CDlgFrameHigh 대화 상자입니다.
 
@@ -7,11 +14,20 @@ class CDlgFrameHigh : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgFrameHigh)
 
+	CMyPic myPic;
+	CMyLabel myLabel[MAX_FRMHIGH_LABEL];
+	CMyBtn myChkMenu01, myChkMenu02, myChkMenu03, myChkMenu04, myChkMenu05, myChkMenu06;
+	CMyStatic myStc[MAX_FRMHIGH_STC];
+
+
+	void LoadImg();
+	void DelImg();
+	BOOL Create();
+	void InitGui();
 
 public:
 	CDlgFrameHigh(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgFrameHigh();
-	BOOL Create();
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -37,4 +53,5 @@ public:
 	afx_msg void OnBnClickedChkMenu04();
 	afx_msg void OnBnClickedChkMenu05();
 	afx_msg void OnBnClickedChkMenu06();
+	virtual BOOL OnInitDialog();
 };

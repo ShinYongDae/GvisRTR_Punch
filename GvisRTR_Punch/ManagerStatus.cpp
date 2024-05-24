@@ -16,7 +16,6 @@ CManagerStatus::CManagerStatus()
 
 	if (Create())
 	{
-		pView->ClrDispMsg();
 	}
 }
 

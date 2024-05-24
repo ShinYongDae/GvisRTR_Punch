@@ -1,5 +1,18 @@
 #pragma once
 
+#include "MyBtn.h"
+#include "MyLabel.h"
+#include "MyStatic.h"
+#include "MyGL.h"
+#include "afxcmn.h"
+
+#define MAX_MENU02_STC				23
+#define MAX_MENU02_STC_DATA			17
+#define MAX_MENU02_BTN				35
+
+#define MAX_MENU02_STC_DUO			15
+#define MAX_MENU02_STC_DATA_DUO		17
+#define MAX_MENU02_BTN_DUO			29
 
 // CDlgMenu02 대화 상자입니다.
 
@@ -7,10 +20,34 @@ class CDlgMenu02 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu02)
 
+	CMyStatic myStcPcsImg;//, myStcPinImg;
+
+	CMyBtn myBtn[MAX_MENU02_BTN];
+	CMyLabel myStcTitle[MAX_MENU02_STC];
+	CMyStatic myStcData[MAX_MENU02_STC_DATA];
+
+	CMyBtn myBtn2[MAX_MENU02_BTN_DUO];
+	CMyLabel myStcTitle2[MAX_MENU02_STC_DUO];
+	CMyStatic myStcData2[MAX_MENU02_STC_DATA_DUO];
+
+
+	BOOL Create();
+	void LoadImg();
+	void DelImg();
+	void InitGui();
+	void InitSlider();
+	void InitStatic();
+	void InitStcTitle();
+	void InitStcData();
+	void InitBtn();
+	void InitStaticDuo();
+	void InitStcTitleDuo();
+	void InitStcDataDuo();
+	void InitBtnDuo();
+
 public:
 	CDlgMenu02(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgMenu02();
-	BOOL Create();
 
 	// 특성입니다.
 public:
@@ -34,4 +71,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	virtual BOOL OnInitDialog();
+	CSliderCtrl m_LightSlider, m_LightSlider2;
 };

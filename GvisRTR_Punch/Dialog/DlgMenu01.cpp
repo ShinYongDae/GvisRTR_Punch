@@ -21,11 +21,12 @@ IMPLEMENT_DYNAMIC(CDlgMenu01, CDialog)
 CDlgMenu01::CDlgMenu01(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DLG_MENU_01, pParent)
 {
-
+	Create();
 }
 
 CDlgMenu01::~CDlgMenu01()
 {
+	DelImg();
 }
 
 void CDlgMenu01::DoDataExchange(CDataExchange* pDX)
@@ -45,6 +46,57 @@ BOOL CDlgMenu01::Create()
 	return CDialog::Create(CDlgMenu01::IDD);
 }
 
+void CDlgMenu01::LoadImg()
+{
+	int i;
+	for (i = 0; i < MAX_MENU01_BTN; i++)
+	{
+		if (i == 7 || i == 8 || i == 9 || i == 10 || i == 11)
+		{
+			myBtn[i].LoadBkImage(NI_BTN_UP_DlgMenu01, BTN_IMG_UP);
+			myBtn[i].LoadBkImage(NI_BTN_DN_DlgMenu01, BTN_IMG_DN);
+		}
+		else if (i == 15 || i == 20)
+		{
+			myBtn[i].LoadBkImage(IMG_BTN_UP_PURPLE_S, BTN_IMG_UP);
+			myBtn[i].LoadBkImage(IMG_BTN_DN_PURPLE_S, BTN_IMG_DN);
+		}
+		else if (i == 16 || i == 17 || i == 18 || i == 19)
+		{
+			myBtn[i].LoadBkImage(IMG_BTN_UP_GRAY_S, BTN_IMG_UP);
+			myBtn[i].LoadBkImage(IMG_BTN_DN_BLUE_S, BTN_IMG_DN);
+		}
+		else
+		{
+			myBtn[i].LoadBkImage(IMG_BTN_UP_DlgMenu01, BTN_IMG_UP);
+			myBtn[i].LoadBkImage(IMG_BTN_DN_DlgMenu01, BTN_IMG_DN);
+		}
+	}
+}
+
+void CDlgMenu01::DelImg()
+{
+	int i;
+	for (i = 0; i < MAX_MENU01_BTN; i++)
+		myBtn[i].DelImgList();
+}
+
+void CDlgMenu01::InitGui()
+{
+	LoadImg();
+}
+
+BOOL CDlgMenu01::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+	InitGui();
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+}
+
 
 void CDlgMenu01::ChkUserInfo(BOOL bOn)
 {
@@ -59,3 +111,4 @@ void CDlgMenu01::ChkUserInfo(BOOL bOn)
 
 	//myBtn[1].SetCheck(bOn);
 }
+
