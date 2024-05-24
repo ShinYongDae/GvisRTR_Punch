@@ -18,6 +18,7 @@
 #include "PcsRgn.h"
 #include "DataMarking.h"
 #include "ThreadTask.h"
+#include "ReelYield.h"
 
 #define FIX_PCS_SHOT_MAX	500
 #define FIX_PCS_COL_MAX		100
@@ -29,52 +30,52 @@
 
 
 
-struct stResult
-{
-	CString sMachin, sOpName, sProcessNum;
-	CString sModel, sLot, sLayerUp, sLayerDn;
-	CString strLotStartTime, strLotEndTime, strLotWorkingTime;
-	int nEntirePieceNum, nEntireStripNum;
-	int nEntireStripDef[MAX_STRIP];
-	int nGoodPieceNum, nDefectPieceNum;
-	int nDefStrip[MAX_STRIP], nDefPerStrip[MAX_STRIP][MAX_DEF];
-	int nEntireAddedDefect[MAX_DEF];
-	int nSerialSt, nSerialEd;
-	int nStripOut[MAX_STRIP], nTotStOut;
-	double dEntireSpeed;
-
-	stResult()
-	{
-		sMachin = _T(""); sOpName = _T(""); sProcessNum = _T("");
-		sModel = _T(""); sLot = _T(""); sLayerUp = _T(""); sLayerDn = _T("");
-		strLotStartTime = _T(""); strLotEndTime = _T(""); strLotWorkingTime = _T("");
-		nEntirePieceNum = 0; nEntireStripNum = 0;
-		nGoodPieceNum = 0; nDefectPieceNum = 0;
-		nSerialSt = 0; nSerialEd = 0;
-		nTotStOut = 0;
-		dEntireSpeed = 0.0;
-
-		for (int nStrip = 0; nStrip < MAX_STRIP; nStrip++)
-		{
-			nEntireStripDef[nStrip] = 0;
-			nDefStrip[nStrip] = 0;
-			nStripOut[nStrip] = 0;
-
-			for (int nDef = 0; nDef < MAX_DEF; nDef++)
-			{
-				nDefPerStrip[nStrip][nDef] = 0;
-				if(!nStrip)
-					nEntireAddedDefect[nDef] = 0;
-			}
-		}
-	}
-};
+//struct stResult
+//{
+//	CString sMachin, sOpName, sProcessNum;
+//	CString sModel, sLot, sLayerUp, sLayerDn;
+//	CString strLotStartTime, strLotEndTime, strLotWorkingTime;
+//	int nEntirePieceNum, nEntireStripNum;
+//	int nEntireStripDef[MAX_STRIP];
+//	int nGoodPieceNum, nDefectPieceNum;
+//	int nDefStrip[MAX_STRIP], nDefPerStrip[MAX_STRIP][MAX_DEF];
+//	int nEntireAddedDefect[MAX_DEF];
+//	int nSerialSt, nSerialEd;
+//	int nStripOut[MAX_STRIP], nTotStOut;
+//	double dEntireSpeed;
+//
+//	stResult()
+//	{
+//		sMachin = _T(""); sOpName = _T(""); sProcessNum = _T("");
+//		sModel = _T(""); sLot = _T(""); sLayerUp = _T(""); sLayerDn = _T("");
+//		strLotStartTime = _T(""); strLotEndTime = _T(""); strLotWorkingTime = _T("");
+//		nEntirePieceNum = 0; nEntireStripNum = 0;
+//		nGoodPieceNum = 0; nDefectPieceNum = 0;
+//		nSerialSt = 0; nSerialEd = 0;
+//		nTotStOut = 0;
+//		dEntireSpeed = 0.0;
+//
+//		for (int nStrip = 0; nStrip < MAX_STRIP; nStrip++)
+//		{
+//			nEntireStripDef[nStrip] = 0;
+//			nDefStrip[nStrip] = 0;
+//			nStripOut[nStrip] = 0;
+//
+//			for (int nDef = 0; nDef < MAX_DEF; nDef++)
+//			{
+//				nDefPerStrip[nStrip][nDef] = 0;
+//				if(!nStrip)
+//					nEntireAddedDefect[nDef] = 0;
+//			}
+//		}
+//	}
+//};
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CReelMap window
 
-class CReelMap : public CWnd
+class CReelMap : public CReelYield //public CWnd
 {
 	BOOL m_FixPcs[FIX_PCS_SHOT_MAX][FIX_PCS_COL_MAX][FIX_PCS_ROW_MAX]; // [Col][Row]
 	int m_FixPcsPrev[FIX_PCS_COL_MAX][FIX_PCS_ROW_MAX]; // [Col][Row]
@@ -82,12 +83,11 @@ class CReelMap : public CWnd
 	int m_FixPcsRpt[FIX_PCS_COL_MAX][FIX_PCS_ROW_MAX]; // [Col][Row]
 	int m_nPrevSerial[2]; // [0] : -- , [1] : ++
 	int m_nPnlBuf;															// 메모리에 할당된 총 Shot수
-	short ***m_pPnlBuf;	// DefCode 3D Array : [nSerial-1][nRow][nCol] on File -> [nSerial-1][NodeX][NodeY] : Rotated Cw 90 
 	int m_nTotPcs, m_nGoodPcs, m_nBadPcs, m_nDef[MAX_DEF];	// [DefCode] : Total Num.
 	int m_nDefStrip[MAX_STRIP], m_nDefPerStrip[MAX_STRIP][MAX_DEF];
 	int m_nStripOut[MAX_STRIP], m_nTotStOut;
 	CString m_sPathShare, m_sPathBuf, m_sIpPath;
-	CString m_sPathYield;
+	//CString m_sPathYield;
 	//double m_dAdjRatio; // Master Image의 Pixel 해상도에 따른 Reelmap에서의 식별용 간격 비율.
 	int m_nIdxDefInfo;	// MAX_DEFINFO에 들어가는 정보의 Index.
 	BOOL m_bContFixDef;
@@ -97,6 +97,7 @@ class CReelMap : public CWnd
 	CDataMarking* m_pPcr[MAX_PCR][MAX_PCR_PNL];	//릴맵화면표시를 위한 데이터	// [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	stMasterInfo MasterInfo;
 	DWORD m_dwLotSt, m_dwLotEd;
+	//int m_nStartSerial;
 
 	int MirrorLR(int nPcsId); // 좌우 미러링
 	int MirrorUD(int nPcsId); // 상하 미러링
@@ -111,13 +112,13 @@ class CReelMap : public CWnd
 	char* StrToChar(CString str);
 	void StrToChar(CString str, char* pCh);
 	
-	BOOL ReadYield(int nSerial, CString sPath);
-	BOOL WriteYield(int nSerial, CString sPath);
+	//BOOL ReadYield(int nSerial, CString sPath);
+	//BOOL WriteYield(int nSerial, CString sPath);
 	
 	BOOL LoadDefectTableIni();
 	//BOOL LoadDefectTableDB();
 
-	BOOL MakeDirYield(CString sPath);
+	//BOOL MakeDirYield(CString sPath);
 
 	int GetPcrIdx(int nSerial);
 
@@ -128,16 +129,17 @@ public:
 // Attributes
 public:
 	CCriticalSection m_cs;
+	//CReelYield* Yield;
 
 	double m_dAdjRatio; // Master Image의 Pixel 해상도에 따른 Reelmap에서의 식별용 간격 비율.
-	int m_nLayer;
 	CString m_sMc, m_sUser;
 // 	CString m_sModel, m_sLayer, m_sLot;
 	int m_nSerial; // On marking Serial.
 
-	int nTotPnl;
-	int nTotPcs;
-	int nDir;
+	//int m_nLayer;
+	//int nTotPnl;
+	//int nTotPcs;
+	//int nDir;
 
 	int *m_pPnlNum, *m_pPnlDefNum;
 	CRect *pFrmRgn;
@@ -158,8 +160,6 @@ public:
 	int m_nLastShot, m_nCompletedShot;
 	double m_dProgressRatio;
 
-	stYield m_stYield;
-	int m_nStartSerial;
 
 // Operations
 public:
@@ -187,10 +187,10 @@ public:
 	BOOL InitRst();
 	void CloseRst();
 	void ClrRst();
-	int GetDefNum(int nDefCode);
-	int GetDefStrip(int nStrip);
-	int GetDefStrip(int nStrip, int nDefCode);
-	void GetPcsNum(int &nGood, int &nBad);
+	//int GetDefNum(int nDefCode);
+	//int GetDefStrip(int nStrip);
+	//int GetDefStrip(int nStrip, int nDefCode);
+	//void GetPcsNum(int &nGood, int &nBad);
 	void ClrPnlNum();
 	void Clear();
 	int GetLastSerial();
@@ -207,14 +207,13 @@ public:
 	//BOOL Write(int nSerial, int nLayer, CString sPath);
 	void SetPathAtBuf();
 	CString GetRmapPath(int nRmap);
-	CString GetYieldPath(int nRmap);
 
 	void SetPnlDefNum(int *pPnlDefNum);
 	void ClrPnlDefNum();
 	void AddPnlDefNum(int nDef);
-	void UpdateTotVel(CString sVel, int nLayer);
+	//void UpdateTotVel(CString sVel, int nLayer);
 	void UpdateProcessNum(CString sProcessNum, int nLayer);
-	int GetStripOut(int nStrip);
+	//int GetStripOut(int nStrip);
 	void SetFixPcs(int nSerial);
 
 	BOOL m_bThreadAliveRemakeReelmap, m_bRtnThreadRemakeReelmap;
@@ -238,8 +237,6 @@ public:
 	static BOOL ThreadProcReloadReelmap(LPVOID lpContext);
 	void StopThreadReloadReelmap();
 
-	BOOL UpdateYield(int nSerial);
-	BOOL UpdateReelmapYield();
 	BOOL MakeHeader(CString sPath);
 
 	BOOL GetNodeXYonRmap(int &nNodeX, int &nNodeY, CString sPath);
@@ -260,16 +257,15 @@ public:
 	CString GetItsFileData(int nSerial, int nLayer);	// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
 	BOOL MakeDirIts();
 
-	stResult m_stResult;
+	//stResult m_stResult;
 	void ResetReelmapPath();
-	BOOL GetResult(); // TRUE: Make Result, FALSE: Load Result or Failed.
-	CString GetResultTxt();
-	CString GetSapp3Txt();
-	CString GetSapp3TxtReverse();
+	//BOOL GetResult(); // TRUE: Make Result, FALSE: Load Result or Failed.
+	//CString GetResultTxt();
+	//CString GetSapp3Txt();
+	//CString GetSapp3TxtReverse();
 	CString GetPath();
 	CString GetIpPath();
 
-	void ResetYield();
 
 	void SetLastSerialOnOffline(int nSerial);
 	CString GetRmapPathOnOffline(int nRmap);
@@ -286,12 +282,14 @@ public:
 // Implementation
 public:
 	virtual ~CReelMap();
+	short ***m_pPnlBuf;	// DefCode 3D Array : [nSerial-1][nRow][nCol] on File -> [nSerial-1][NodeX][NodeY] : Rotated Cw 90 
 
 	// Generated message map functions
 protected:
 	//{{AFX_MSG(CReelMap)
 		// NOTE - the ClassWizard will add and remove member functions here.
 	//}}AFX_MSG
+
 	DECLARE_MESSAGE_MAP()
 };
 

@@ -240,6 +240,9 @@
     <ClInclude Include="Dialog\freeimage.h">
       <Filter>Dialog</Filter>
     </ClInclude>
+    <ClInclude Include="Process\ReelYield.h">
+      <Filter>Process</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">
@@ -414,6 +417,9 @@
       <Filter>Process</Filter>
     </ClCompile>
     <ClCompile Include="Process\DataMarking.cpp">
+      <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process\ReelYield.cpp">
       <Filter>Process</Filter>
     </ClCompile>
   </ItemGroup>

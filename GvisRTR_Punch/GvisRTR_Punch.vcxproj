@@ -246,6 +246,7 @@
     <ClInclude Include="Process\MyFile.h" />
     <ClInclude Include="Process\PcsRgn.h" />
     <ClInclude Include="Process\ReelMap.h" />
+    <ClInclude Include="Process\ReelYield.h" />
     <ClInclude Include="Process\ThreadTask.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SingleInstance.h" />
@@ -308,6 +309,7 @@
     <ClCompile Include="Process\MyFile.cpp" />
     <ClCompile Include="Process\PcsRgn.cpp" />
     <ClCompile Include="Process\ReelMap.cpp" />
+    <ClCompile Include="Process\ReelYield.cpp" />
     <ClCompile Include="Process\ThreadTask.cpp" />
     <ClCompile Include="SingleInstance.cpp" />
     <ClCompile Include="stdafx.cpp">
