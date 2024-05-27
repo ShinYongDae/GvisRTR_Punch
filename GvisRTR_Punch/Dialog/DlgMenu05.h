@@ -1,8 +1,8 @@
 #pragma once
 
 #include "MyStatic.h"
-//#include "DlgUtil01.h"
 #include "MyLabel.h"
+//#include "DlgUtil01.h"
 
 #define MAX_MENU05_LABEL			2
 
@@ -12,12 +12,20 @@ class CDlgMenu05 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu05)
 
+	CRect* m_pRect;
+
 	CMyLabel myLabel[MAX_MENU05_LABEL];
+	CMyStatic myStcLot, myStcSerialSt, myStcSerialEd, myStcFromTo, myStcProc, myStcIts;
 
 	BOOL Create();
 	void LoadImg();
 	void DelImg();
 	void InitGui();
+	void InitStc();
+	void InitLabel();
+
+	void AtDlgShow();
+	void AtDlgHide();
 
 public:
 	CDlgMenu05(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -41,4 +49,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

@@ -397,114 +397,51 @@ void CGvisRTR_PunchView::ShowDlg(int nID)
 	{
 	case IDD_DLG_FRAME_HIGH:
 		if (!m_pDlgFrameHigh)
-		{
 			m_pDlgFrameHigh = new CDlgFrameHigh(this);
-			if (m_pDlgFrameHigh->GetSafeHwnd() == 0)
-			{
-				m_pDlgFrameHigh->Create();
-				m_pDlgFrameHigh->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgFrameHigh->GetSafeHwnd())
 			m_pDlgFrameHigh->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_01:
 		if (!m_pDlgMenu01)
-		{
 			m_pDlgMenu01 = new CDlgMenu01(this);
-			if (m_pDlgMenu01->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu01->Create();
-				m_pDlgMenu01->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu01->GetSafeHwnd())
 			m_pDlgMenu01->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_02:
 		if (!m_pDlgMenu02)
-		{
 			m_pDlgMenu02 = new CDlgMenu02(this);
-			if (m_pDlgMenu02->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu02->Create();
-				m_pDlgMenu02->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu02->GetSafeHwnd())
 			m_pDlgMenu02->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_03:
 		if (!m_pDlgMenu03)
-		{
 			m_pDlgMenu03 = new CDlgMenu03(this);
-			if (m_pDlgMenu03->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu03->Create();
-				m_pDlgMenu03->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu03->GetSafeHwnd())
 			m_pDlgMenu03->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_04:
 		if (!m_pDlgMenu04)
-		{
 			m_pDlgMenu04 = new CDlgMenu04(this);
-			if (m_pDlgMenu04->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu04->Create();
-				m_pDlgMenu04->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu04->GetSafeHwnd())
 			m_pDlgMenu04->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_05:
 		if (!m_pDlgMenu05)
-		{
 			m_pDlgMenu05 = new CDlgMenu05(this);
-			if (m_pDlgMenu05->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu05->Create();
-				m_pDlgMenu05->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu05->GetSafeHwnd())
 			m_pDlgMenu05->ShowWindow(SW_SHOW);
-		}
 		break;
 
 	case IDD_DLG_MENU_06:
 		if (!m_pDlgMenu06)
-		{
 			m_pDlgMenu06 = new CDlgMenu06(this);
-			if (m_pDlgMenu06->GetSafeHwnd() == 0)
-			{
-				m_pDlgMenu06->Create();
-				m_pDlgMenu06->ShowWindow(SW_SHOW);
-			}
-		}
-		else
-		{
+		if (m_pDlgMenu06->GetSafeHwnd())
 			m_pDlgMenu06->ShowWindow(SW_SHOW);
-		}
 		break;
 	}
 }
@@ -697,7 +634,7 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 				m_mgrPunch->ResetMotion();
 			Sleep(300);
 			break;
-		case 15:
+		case 12:
 			m_nStepInitView++;
 			//m_bLoadMstInfo = TRUE;
 			DispMsg(_T("H/W를 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);

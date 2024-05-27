@@ -15,6 +15,8 @@ class CDlgMenu03 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu03)
 
+	CRect* m_pRect;
+
 	CMyBtn myBtn[MAX_MENU03_BTN];
 	CMyLabel myStcTitle[MAX_MENU03_STC];
 	CMyGroup myGrp[MAX_MENU03_GRP];
@@ -24,6 +26,13 @@ class CDlgMenu03 : public CDialog
 	void LoadImg();
 	void DelImg();
 	void InitGui();
+	void InitStatic();
+	void InitBtn();
+	void InitGroup();
+	void InitLabel();
+
+	void AtDlgShow();
+	void AtDlgHide();
 
 public:
 	CDlgMenu03(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -47,4 +56,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

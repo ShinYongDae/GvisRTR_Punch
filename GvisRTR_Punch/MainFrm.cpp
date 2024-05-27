@@ -68,8 +68,14 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서
 	//  Window 클래스 또는 스타일을 수정합니다.
 
-	cs.style = WS_OVERLAPPED | WS_CAPTION | FWS_ADDTOTITLE
-		 | WS_SYSMENU;
+	//cs.style = WS_OVERLAPPED | WS_CAPTION | FWS_ADDTOTITLE
+	//	 | WS_SYSMENU;
+
+	CGvisRTR_PunchApp *app = (CGvisRTR_PunchApp *)AfxGetApp();
+	cs.lpszClass = app->m_singleInstance.GetClassName();
+
+	cs.style = WS_VISIBLE | WS_POPUP;
+
 
 	return TRUE;
 }

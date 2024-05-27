@@ -14,6 +14,8 @@ class CDlgFrameHigh : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgFrameHigh)
 
+	CRect* m_pRect;
+
 	CMyPic myPic;
 	CMyLabel myLabel[MAX_FRMHIGH_LABEL];
 	CMyBtn myChkMenu01, myChkMenu02, myChkMenu03, myChkMenu04, myChkMenu05, myChkMenu06;
@@ -24,6 +26,13 @@ class CDlgFrameHigh : public CDialog
 	void DelImg();
 	BOOL Create();
 	void InitGui();
+	void InitStatic();
+	void InitPic();
+	void InitLabel();
+	void InitBtn();
+
+	void AtDlgShow();
+	void AtDlgHide();
 
 public:
 	CDlgFrameHigh(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -54,4 +63,5 @@ public:
 	afx_msg void OnBnClickedChkMenu05();
 	afx_msg void OnBnClickedChkMenu06();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

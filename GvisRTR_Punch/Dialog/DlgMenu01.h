@@ -7,13 +7,15 @@
 #define MAX_MENU01_STC_DEFINFO		12
 #define MAX_MENU01_STC_TITLE		75
 #define MAX_MENU01_STC_DATA			91
-#define MAX_MENU01_BTN				23
+#define MAX_MENU01_BTN				21
 
 // CDlgMenu01 대화 상자입니다.
 
 class CDlgMenu01 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu01)
+
+	CRect* m_pRect;
 
 	CMyStatic myStcReelmap;
 	CMyStatic myStcDefInfo[MAX_MENU01_STC_DEFINFO];
@@ -30,6 +32,17 @@ class CDlgMenu01 : public CDialog
 	void LoadImg();
 	void DelImg();
 	void InitGui();
+	void InitBtn();
+	void InitStatic();
+	void InitStcDefInf();
+	void InitStcTitle();
+	void InitStcData();
+
+	void AtDlgShow();
+	void AtDlgHide();
+
+	//void SetRgbStcDef();
+	//void SetTitleStcDef();
 
 public:
 	CDlgMenu01(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -54,4 +67,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

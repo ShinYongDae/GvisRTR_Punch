@@ -21,6 +21,7 @@ IMPLEMENT_DYNAMIC(CDlgMenu02, CDialog)
 CDlgMenu02::CDlgMenu02(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DLG_MENU_02, pParent)
 {
+	m_pRect = NULL;
 	Create();
 }
 
@@ -39,6 +40,7 @@ void CDlgMenu02::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CDlgMenu02, CDialog)
 	ON_WM_TIMER()
+	ON_WM_SHOWWINDOW()
 END_MESSAGE_MAP()
 
 
@@ -54,6 +56,9 @@ void CDlgMenu02::LoadImg()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
+		if (i == 6)
+			continue;
+
 		if (i == 1)
 		{
 			myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
@@ -137,6 +142,9 @@ void CDlgMenu02::DelImg()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
+		if (i == 6)
+			continue;
+
 		if (i != 6 && i != 18 && i != 19 && i != 24 && i != 25)
 			myBtn[i].DelImgList();
 	}
@@ -432,6 +440,9 @@ void CDlgMenu02::InitBtn()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
+		if (i == 6)
+			continue;
+
 		if (i != 19 && i != 24 && i != 25 && i != 26 && i != 27 && i != 28)
 		{
 			myBtn[i].SetFont(_T("굴림체"), 16, TRUE);
@@ -547,6 +558,75 @@ BOOL CDlgMenu02::OnInitDialog()
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }
 
+void CDlgMenu02::OnShowWindow(BOOL bShow, UINT nStatus)
+{
+	CDialog::OnShowWindow(bShow, nStatus);
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	if (!m_pRect)
+	{
+		m_pRect = new CRect;
+
+		this->GetClientRect(m_pRect);
+		m_pRect->top = 75 + 2;
+		m_pRect->bottom += 75 + 2;
+		m_pRect->left = 3;
+		m_pRect->right += 3;
+		this->MoveWindow(m_pRect, TRUE);
+	}
+
+	if (bShow)
+	{
+		AtDlgShow();
+	}
+	else
+	{
+		AtDlgHide();
+	}
+}
+
+void CDlgMenu02::AtDlgShow()
+{
+	//CString str;
+	//myStcData[5].SetText(pDoc->WorkingInfo.Vision[0].sMkOffsetX);
+	//myStcData[6].SetText(pDoc->WorkingInfo.Vision[0].sMkOffsetY);
+
+	//myStcData[12].SetText(pDoc->WorkingInfo.Vision[0].sStdScr);
+
+	//myStcData2[5].SetText(pDoc->WorkingInfo.Vision[1].sMkOffsetX);
+	//myStcData2[6].SetText(pDoc->WorkingInfo.Vision[1].sMkOffsetY);
+
+	//myStcData2[12].SetText(pDoc->WorkingInfo.Vision[1].sStdScr);
+
+	//if (myBtn2[16].GetCheck())
+	//{
+	//	m_lChk = 1;
+	//	SetTimer(TIM_SHOW_MK_TEST, 50, NULL);
+	//}
+	//if (myBtn[16].GetCheck())
+	//{
+	//	m_lChk = 2;
+	//	SetTimer(TIM_SHOW_ELEC_TEST, 50, NULL);
+	//}
+
+	//SetJogSpd();
+	//SetJogSpd2();
+
+	//m_nMoveAlign[0] = 0;
+	//m_nMoveAlign[1] = 0;
+}
+
+void CDlgMenu02::AtDlgHide()
+{
+	//if (m_pDlgUtil03)
+	//{
+	//	if (m_pDlgUtil03->IsWindowVisible())
+	//	{
+	//		m_pDlgUtil03->ShowWindow(SW_HIDE);
+	//	}
+	//}
+}
+
 void CDlgMenu02::SetLight(int nVal)
 {
 	if (pView->m_mgrPunch)
@@ -620,4 +700,6 @@ void CDlgMenu02::ResetLight2()
 	//	pView->m_mgrPunch->m_pLight->Reset(_tstoi(pDoc->WorkingInfo.Light.sCh[1]));
 	//}
 }
+
+
 

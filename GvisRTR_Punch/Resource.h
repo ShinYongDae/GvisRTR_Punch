@@ -108,6 +108,7 @@
 #define IDC_CHECK_SR1000W               1000
 #define IDC_STC_REELMAP_IMG             1000
 #define IDC_STATUS                      1000
+#define IDC_STC_REELMAP_MIDDLE          1000
 #define IDC_STATIC_PATH                 1001
 #define IDC_CHECK_ENGRAVE               1001
 #define IDC_PIC_CAD_001                 1001
@@ -1054,7 +1055,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        337
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
 #endif

@@ -20,6 +20,8 @@ class CDlgMenu02 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu02)
 
+	CRect* m_pRect;
+
 	CMyStatic myStcPcsImg;//, myStcPinImg;
 
 	CMyBtn myBtn[MAX_MENU02_BTN];
@@ -44,6 +46,9 @@ class CDlgMenu02 : public CDialog
 	void InitStcTitleDuo();
 	void InitStcDataDuo();
 	void InitBtnDuo();
+
+	void AtDlgShow();
+	void AtDlgHide();
 
 public:
 	CDlgMenu02(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -73,4 +78,5 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	virtual BOOL OnInitDialog();
 	CSliderCtrl m_LightSlider, m_LightSlider2;
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

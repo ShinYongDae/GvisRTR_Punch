@@ -15,6 +15,8 @@ class CDlgMenu07 : public CDialog
 {
 	DECLARE_DYNAMIC(CDlgMenu07)
 
+	CRect* m_pRect;
+
 	CMyStatic myStcReelmap;
 	CMyStatic myStcDefInfo[MAX_MENU07_STC_DEFINFO];
 	CMyStatic myStcTitle[MAX_MENU07_STC_TITLE];
@@ -31,6 +33,14 @@ class CDlgMenu07 : public CDialog
 	void LoadImg();
 	void DelImg();
 	void InitGui();
+	void InitStatic();
+	void InitStcDefInf();
+	void InitStcTitle();
+	void InitStcData();
+	void InitBtn();
+
+	void AtDlgShow();
+	void AtDlgHide();
 
 public:
 	CDlgMenu07(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -54,4 +64,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };
