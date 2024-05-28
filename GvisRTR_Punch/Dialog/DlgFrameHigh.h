@@ -34,6 +34,8 @@ class CDlgFrameHigh : public CDialog
 	void AtDlgShow();
 	void AtDlgHide();
 
+	void SetChk(int nID);
+
 public:
 	CDlgFrameHigh(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgFrameHigh();
@@ -50,6 +52,11 @@ public:
 	// 작업입니다.
 public:
 	void ChkMenu01();
+	void ChkMenu02();
+	void ChkMenu03();
+	void ChkMenu04();
+	void ChkMenu05();
+	void ChkMenu06();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.

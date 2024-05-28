@@ -209,6 +209,7 @@
 #define IDC_CHK_MENU_02                 1086
 #define IDC_STC_DEF_SHORT               1086
 #define IDC_BTN_JOG_UP6                 1086
+#define IDC_BTN_JOG_UP                  1086
 #define IDC_CHK_MENU_03                 1087
 #define IDC_STC_DEF_USH                 1087
 #define IDC_BTN_JOG_DN                  1087

@@ -106,6 +106,7 @@ public:
 
 	// 보조작업입니다.
 	int MsgBox(CString sMsg, int nThreadIdx = 0, int nType = MB_OK, int nTimOut = DEFAULT_TIME_OUT, BOOL bEngave = TRUE);		// SyncMsgBox
+	int MyPassword(CString strMsg, int nCtrlId = 0);
 
 // 재정의입니다.
 public:

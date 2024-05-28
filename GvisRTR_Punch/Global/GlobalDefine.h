@@ -251,8 +251,8 @@ typedef enum {KOREAN=0, ENGLISH=1, JAPANESE=2} LANG;
 #define RGB_LLTGREEN    RGB(128,255,128)
 #define RGB_LT_ORANGE   RGB(255,128,64)
 #define RGB_DARKFINGER	RGB(128,0,128)
-#define RGB_DLG_FRM		RGB(212,208,200)
-#define RGB_DLG_FRM2	RGB(240,240,240)
+#define RGB_DLG_FRM		RGB(240,240,240)
+#define RGB_DLG_FRM2	RGB(212,208,200)
 #define RGB_DARKBROWN	RGB(64,0,0)
 #define RGB_DIALOG		RGB(200,200,192)
 #define RGB_POSTIT		RGB(240,233,134)
@@ -629,7 +629,7 @@ enum WORK_MODE { MODE_NONE = 0, MODE_INNER = 1, MODE_OUTER = 2 };
 
 struct stSystem
 {
-	CString sMcName;
+	CString sMcName, sPassword;
 	CString sPathCamSpecDir;
 
 	CString sPathAoiUp, sPathAoiUpDts, sPathAoiUpCurrInfo, sPathAoiUpVrsData, sPathAoiUpOffset, sPathAoiUpDefImg;
@@ -669,7 +669,7 @@ struct stSystem
 
 	stSystem()
 	{
-		sMcName = _T("");
+		sMcName = _T(""); sPassword = _T("GVIS");
 		sPathCamSpecDir = _T("");
 
 		sPathAoiUp = _T(""); sPathAoiUpDts = _T(""); sPathAoiUpCurrInfo = _T(""); sPathAoiUpDefImg = _T("");

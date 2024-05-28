@@ -243,6 +243,9 @@
     <ClInclude Include="Process\ReelYield.h">
       <Filter>Process</Filter>
     </ClInclude>
+    <ClInclude Include="Dialog\DlgMyPassword.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">
@@ -421,6 +424,9 @@
     </ClCompile>
     <ClCompile Include="Process\ReelYield.cpp">
       <Filter>Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialog\DlgMyPassword.cpp">
+      <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

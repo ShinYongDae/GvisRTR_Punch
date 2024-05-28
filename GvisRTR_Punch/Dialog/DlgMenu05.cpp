@@ -108,7 +108,7 @@ void CDlgMenu05::InitStc()
 	myStcFromTo.SetFontSize(26);
 	myStcFromTo.SetFontBold(TRUE);
 	myStcFromTo.SetTextColor(RGB_BLACK);
-	myStcFromTo.SetBkColor(RGB_DLG_FRM2);
+	myStcFromTo.SetBkColor(RGB_DLG_FRM);
 
 	myStcProc.SubclassDlgItem(IDC_STC_PROC, this);
 	myStcProc.SetFontName(_T("Arial"));
@@ -147,6 +147,7 @@ BOOL CDlgMenu05::OnInitDialog()
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 	InitGui();
 
+	GetDlgItem(IDC_BTN_MES)->ShowWindow(SW_HIDE);
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }

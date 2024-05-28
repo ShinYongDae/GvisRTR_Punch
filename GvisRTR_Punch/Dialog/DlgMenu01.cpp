@@ -59,7 +59,7 @@ void CDlgMenu01::LoadImg()
 	int i;
 	for (i = 0; i < MAX_MENU01_BTN; i++)
 	{
-		if (i == 4)
+		if (i == 4 || i == 15 || i == 16 || i == 17 || i == 18 || i == 19 || i == 20)
 			continue;
 
 		if (i == 7 || i == 8 || i == 9 || i == 10 || i == 11)
@@ -90,7 +90,7 @@ void CDlgMenu01::DelImg()
 	int i;
 	for (i = 0; i < MAX_MENU01_BTN; i++)
 	{
-		if (i == 4)
+		if (i == 4 || i == 15 || i == 16 || i == 17 || i == 18 || i == 19 || i == 20)
 			continue;
 
 		myBtn[i].DelImgList();
@@ -168,38 +168,28 @@ void CDlgMenu01::InitBtn()
 	myBtn[14].SetHwnd(this->GetSafeHwnd(), IDC_CHK_DEF_ALL);
 	myBtn[14].SetBtnType(BTN_TYPE_CHECK);
 
-	myBtn[15].SubclassDlgItem(IDC_BTN_ST, this);
-	myBtn[15].SetHwnd(this->GetSafeHwnd(), IDC_BTN_ST);
+	//myBtn[15].SubclassDlgItem(IDC_BTN_ST, this);
+	//myBtn[15].SetHwnd(this->GetSafeHwnd(), IDC_BTN_ST);
 
-	myBtn[16].SubclassDlgItem(IDC_BTN_GD_RA_1, this);
-	myBtn[16].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_1);
+	//myBtn[16].SubclassDlgItem(IDC_BTN_GD_RA_1, this);
+	//myBtn[16].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_1);
 
-	myBtn[17].SubclassDlgItem(IDC_BTN_GD_RA_2, this);
-	myBtn[17].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_2);
+	//myBtn[17].SubclassDlgItem(IDC_BTN_GD_RA_2, this);
+	//myBtn[17].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_2);
 
-	myBtn[18].SubclassDlgItem(IDC_BTN_GD_RA_3, this);
-	myBtn[18].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_3);
+	//myBtn[18].SubclassDlgItem(IDC_BTN_GD_RA_3, this);
+	//myBtn[18].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_3);
 
-	myBtn[19].SubclassDlgItem(IDC_BTN_GD_RA_4, this);
-	myBtn[19].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_4);
+	//myBtn[19].SubclassDlgItem(IDC_BTN_GD_RA_4, this);
+	//myBtn[19].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_4);
 
-	myBtn[20].SubclassDlgItem(IDC_BTN_GD_RA_ALL, this);
-	myBtn[20].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_ALL);
-
-	//myBtn[21].SubclassDlgItem(IDC_CHK_ELEC, this);
-	//myBtn[21].SetHwnd(this->GetSafeHwnd(), IDC_CHK_ELEC);
-	//myBtn[21].SetBtnType(BTN_TYPE_CHECK);
-	//myBtn[21].ShowWindow(SW_HIDE);
-
-	//myBtn[22].SubclassDlgItem(IDC_CHK_ELEC_STOP, this);
-	//myBtn[22].SetHwnd(this->GetSafeHwnd(), IDC_CHK_ELEC_STOP);
-	//myBtn[22].SetBtnType(BTN_TYPE_CHECK);
-	//myBtn[22].ShowWindow(SW_HIDE);
+	//myBtn[20].SubclassDlgItem(IDC_BTN_GD_RA_ALL, this);
+	//myBtn[20].SetHwnd(this->GetSafeHwnd(), IDC_BTN_GD_RA_ALL);
 
 	int i;
 	for (i = 0; i < MAX_MENU01_BTN; i++)
 	{
-		if (i == 4)
+		if (i == 4 || i == 15 || i == 16 || i == 17 || i == 18 || i == 19 || i == 20)
 			continue;
 
 		if (i == 1 || i == 2)

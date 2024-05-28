@@ -13,6 +13,8 @@
 #define new DEBUG_NEW
 #endif
 
+#include "Dialog/DlgMyPassword.h"
+
 #include "MainFrm.h"
 #include "GvisRTR_PunchDoc.h"
 #include "GvisRTR_PunchView.h"
@@ -678,4 +680,13 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 	}
 
 	CFormView::OnTimer(nIDEvent);
+}
+
+int CGvisRTR_PunchView::MyPassword(CString strMsg, int nCtrlId)
+{
+	CDlgMyPassword dlg1(this);
+	dlg1.SetMsg(strMsg, nCtrlId);
+	dlg1.DoModal();
+	return (dlg1.m_nRtnVal);
+
 }

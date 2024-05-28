@@ -304,48 +304,174 @@ void CDlgFrameHigh::AtDlgHide()
 void CDlgFrameHigh::ChkMenu01()
 {
 	// TODO: Add your control notification handler code here
-	//SetChk(IDC_CHK_MENU_01);
+	SetChk(IDC_CHK_MENU_01);
 	pView->ShowDlg(IDD_DLG_MENU_01);
 }
 
 void CDlgFrameHigh::OnBnClickedChkMenu01()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	//if (myChkMenu01.GetCheck())
-	//{
-	//	SetChk(IDC_CHK_MENU_01);
-	//	return;
-	//}
+	if (myChkMenu01.GetCheck())
+	{
+		SetChk(IDC_CHK_MENU_01);
+		return;
+	}
 	ChkMenu01();
 }
 
+void CDlgFrameHigh::ChkMenu02()
+{
+	// TODO: Add your control notification handler code here
+	SetChk(IDC_CHK_MENU_02);
+	pView->ShowDlg(IDD_DLG_MENU_02);
+}
 
 void CDlgFrameHigh::OnBnClickedChkMenu02()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	if (myChkMenu02.GetCheck())
+	{
+		SetChk(IDC_CHK_MENU_02);
+		return;
+	}
+	ChkMenu02();
 }
 
+void CDlgFrameHigh::ChkMenu03()
+{
+	// TODO: Add your control notification handler code here
+	SetChk(IDC_CHK_MENU_03);
+	pView->ShowDlg(IDD_DLG_MENU_03);
+}
 
 void CDlgFrameHigh::OnBnClickedChkMenu03()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	if (myChkMenu03.GetCheck())
+	{
+		SetChk(IDC_CHK_MENU_03);
+		return;
+	}
+	ChkMenu03();
 }
 
+void CDlgFrameHigh::ChkMenu04()
+{
+	// TODO: Add your control notification handler code here
+	SetChk(IDC_CHK_MENU_04);
+	pView->ShowDlg(IDD_DLG_MENU_04);
+}
 
 void CDlgFrameHigh::OnBnClickedChkMenu04()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	int nRtn = pView->MyPassword(_T("\r\n         비밀번호를 입력하세요..."));
+	if (nRtn)
+	{
+		if (myChkMenu04.GetCheck())
+		{
+			SetChk(IDC_CHK_MENU_04);
+			return;
+		}
+		ChkMenu04();
+	}
+	else
+		myChkMenu04.SetCheck(FALSE);
 }
 
+
+void CDlgFrameHigh::ChkMenu05()
+{
+	// TODO: Add your control notification handler code here
+	SetChk(IDC_CHK_MENU_05);
+	pView->ShowDlg(IDD_DLG_MENU_05);
+}
 
 void CDlgFrameHigh::OnBnClickedChkMenu05()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	if (myChkMenu05.GetCheck())
+	{
+		SetChk(IDC_CHK_MENU_05);
+		return;
+	}
+	ChkMenu05();
 }
 
+
+void CDlgFrameHigh::ChkMenu06()
+{
+	// TODO: Add your control notification handler code here
+	SetChk(IDC_CHK_MENU_06);
+	pView->ShowDlg(IDD_DLG_MENU_06);
+}
 
 void CDlgFrameHigh::OnBnClickedChkMenu06()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	if (myChkMenu06.GetCheck())
+	{
+		SetChk(IDC_CHK_MENU_06);
+		return;
+	}
+	ChkMenu06();
+}
+
+void CDlgFrameHigh::SetChk(int nID)
+{
+	myChkMenu01.SetCheck(FALSE);
+	myChkMenu02.SetCheck(FALSE);
+	myChkMenu03.SetCheck(FALSE);
+	myChkMenu04.SetCheck(FALSE);
+	myChkMenu05.SetCheck(FALSE);
+	myChkMenu06.SetCheck(FALSE);
+
+	myChkMenu01.SetImage(BTN_IMG_UP);
+	myChkMenu02.SetImage(BTN_IMG_UP);
+	myChkMenu03.SetImage(BTN_IMG_UP);
+	myChkMenu04.SetImage(BTN_IMG_UP);
+	myChkMenu05.SetImage(BTN_IMG_UP);
+	myChkMenu06.SetImage(BTN_IMG_UP);
+
+	myChkMenu01.SetTextColor(RGB_BLACK);
+	myChkMenu02.SetTextColor(RGB_BLACK);
+	myChkMenu03.SetTextColor(RGB_BLACK);
+	myChkMenu04.SetTextColor(RGB_BLACK);
+	myChkMenu05.SetTextColor(RGB_BLACK);
+	myChkMenu06.SetTextColor(RGB_BLACK);
+
+	switch (nID)
+	{
+	case IDC_CHK_MENU_01:
+		myChkMenu01.SetImage(BTN_IMG_DN);
+		myChkMenu01.SetCheck(TRUE);
+		myChkMenu01.SetTextColor(RGB_NAVY);
+		break;
+	case IDC_CHK_MENU_02:
+		myChkMenu02.SetImage(BTN_IMG_DN);
+		myChkMenu02.SetCheck(TRUE);
+		myChkMenu02.SetTextColor(RGB_NAVY);
+		break;
+	case IDC_CHK_MENU_03:
+		myChkMenu03.SetImage(BTN_IMG_DN);
+		myChkMenu03.SetCheck(TRUE);
+		myChkMenu03.SetTextColor(RGB_NAVY);
+		break;
+	case IDC_CHK_MENU_04:
+		myChkMenu04.SetImage(BTN_IMG_DN);
+		myChkMenu04.SetCheck(TRUE);
+		myChkMenu04.SetTextColor(RGB_NAVY);
+		break;
+	case IDC_CHK_MENU_05:
+		myChkMenu05.SetImage(BTN_IMG_DN);
+		myChkMenu05.SetCheck(TRUE);
+		myChkMenu05.SetTextColor(RGB_NAVY);
+		break;
+	case IDC_CHK_MENU_06:
+		myChkMenu06.SetImage(BTN_IMG_DN);
+		myChkMenu06.SetCheck(TRUE);
+		myChkMenu06.SetTextColor(RGB_NAVY);
+		break;
+	}
 }
 

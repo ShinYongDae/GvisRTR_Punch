@@ -220,6 +220,7 @@
     <ClInclude Include="Dialog\DlgMyMsgSub00.h" />
     <ClInclude Include="Dialog\DlgMyMsgSub01.h" />
     <ClInclude Include="Dialog\DlgMyMsgSub02.h" />
+    <ClInclude Include="Dialog\DlgMyPassword.h" />
     <ClInclude Include="Dialog\DlgOption01.h" />
     <ClInclude Include="Dialog\freeimage.h" />
     <ClInclude Include="Dialog\GVGL.h" />
@@ -287,6 +288,7 @@
     <ClCompile Include="Dialog\DlgMyMsgSub00.cpp" />
     <ClCompile Include="Dialog\DlgMyMsgSub01.cpp" />
     <ClCompile Include="Dialog\DlgMyMsgSub02.cpp" />
+    <ClCompile Include="Dialog\DlgMyPassword.cpp" />
     <ClCompile Include="Dialog\DlgOption01.cpp" />
     <ClCompile Include="Dialog\GVGL.cpp" />
     <ClCompile Include="Dialog\Label.cpp" />

@@ -62,9 +62,6 @@ void CDlgMenu02::LoadImg()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
-		if (i == 6)
-			continue;
-
 		if (i == 1)
 		{
 			myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
@@ -77,8 +74,8 @@ void CDlgMenu02::LoadImg()
 		}
 		else if (i == 6)
 		{
-		//	myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
-		//	myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_DN);
+			myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
+			myBtn[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_DN);
 		}
 		else if (i == 7)
 		{
@@ -116,8 +113,8 @@ void CDlgMenu02::LoadImg()
 		}
 		else if (i == 6)
 		{
-			//myBtn2[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
-			//myBtn2[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_DN);
+			myBtn2[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_UP);
+			myBtn2[i].LoadBkImage(IMG_JOG_UP_DlgMenu02, BTN_IMG_DN);
 		}
 		else if (i == 7)
 		{
@@ -148,10 +145,7 @@ void CDlgMenu02::DelImg()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
-		if (i == 6)
-			continue;
-
-		if (i != 6 && i != 18 && i != 19 && i != 24 && i != 25)
+		if (i != 18 && i != 19 && i != 24 && i != 25)
 			myBtn[i].DelImgList();
 	}
 	for (i = 0; i < MAX_MENU02_BTN_DUO; i++)
@@ -357,9 +351,9 @@ void CDlgMenu02::InitBtn()
 	myBtn[5].SubclassDlgItem(IDC_BTN_HOME_MOVE, this);
 	myBtn[5].SetHwnd(this->GetSafeHwnd(), IDC_BTN_HOME_MOVE);
 
-	//myBtn[6].SubclassDlgItem(IDC_BTN_JOG_UP, this);
-	//myBtn[6].SetHwnd(this->GetSafeHwnd(), IDC_BTN_JOG_UP);
-	//myBtn[6].SetBoarder(FALSE);
+	myBtn[6].SubclassDlgItem(IDC_BTN_JOG_UP, this);
+	myBtn[6].SetHwnd(this->GetSafeHwnd(), IDC_BTN_JOG_UP);
+	myBtn[6].SetBoarder(FALSE);
 
 	myBtn[7].SubclassDlgItem(IDC_BTN_JOG_DN, this);
 	myBtn[7].SetHwnd(this->GetSafeHwnd(), IDC_BTN_JOG_DN);
@@ -446,9 +440,6 @@ void CDlgMenu02::InitBtn()
 	int i;
 	for (i = 0; i < MAX_MENU02_BTN; i++)
 	{
-		if (i == 6)
-			continue;
-
 		if (i != 19 && i != 24 && i != 25 && i != 26 && i != 27 && i != 28)
 		{
 			myBtn[i].SetFont(_T("±¼¸²Ã¼"), 16, TRUE);
