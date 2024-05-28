@@ -10,12 +10,15 @@ extern CGvisRTR_PunchDoc* pDoc;
 extern CGvisRTR_PunchView* pView;
 
 
-CManagerStatus::CManagerStatus()
+CManagerStatus::CManagerStatus(CWnd* pParent)
 {
+	m_pParent = pParent;
 	Init();
 
-	if (Create())
+	if (!Create())
 	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("CManagerStatus::Create() Failed!!!"));
 	}
 }
 
@@ -24,6 +27,10 @@ CManagerStatus::~CManagerStatus()
 {
 }
 
+BEGIN_MESSAGE_MAP(CManagerStatus, CWnd)
+END_MESSAGE_MAP()
+
+
 void CManagerStatus::Init()
 {
 
@@ -31,5 +38,13 @@ void CManagerStatus::Init()
 
 BOOL CManagerStatus::Create()
 {
-	return TRUE;
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
+	DWORD dwStyle = WS_CHILD;
+	const RECT& rect = CRect(0, 0, 0, 0);
+	CWnd* pParentWnd = m_pParent;
+	UINT nID = (UINT)this;
+	CCreateContext* pContext = NULL;
+
+	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }

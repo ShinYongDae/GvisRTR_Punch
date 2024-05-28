@@ -80,32 +80,23 @@ IDR_GvisRTR_PunchTYPE   ICON                    "res\\GvisRTR_PunchDoc.ico"
 
 IDR_MAINFRAME MENU
 BEGIN
-    POPUP "파일(&F)"
-    BEGIN
-        MENUITEM "새로 만들기(&N)\tCtrl+N",          ID_FILE_NEW
-        MENUITEM "열기(&O)...\tCtrl+O",           ID_FILE_OPEN
-        MENUITEM "저장(&S)\tCtrl+S",              ID_FILE_SAVE
-        MENUITEM "다른 이름으로 저장(&A)...",           ID_FILE_SAVE_AS
-        MENUITEM SEPARATOR
-        MENUITEM "최근에 사용한 파일",                  ID_FILE_MRU_FILE1, GRAYED
-        MENUITEM SEPARATOR
-        MENUITEM "끝내기(&X)",                     ID_APP_EXIT
-    END
-    POPUP "편집(&E)"
-    BEGIN
-        MENUITEM "실행 취소(&U)\tCtrl+Z",           ID_EDIT_UNDO
-        MENUITEM SEPARATOR
-        MENUITEM "잘라내기(&T)\tCtrl+X",            ID_EDIT_CUT
-        MENUITEM "복사(&C)\tCtrl+C",              ID_EDIT_COPY
-        MENUITEM "붙여넣기(&P)\tCtrl+V",            ID_EDIT_PASTE
-    END
-    POPUP "보기(&V)"
-    BEGIN
-        MENUITEM "상태 표시줄(&S)",                  ID_VIEW_STATUS_BAR
-    END
     POPUP "도움말(&H)"
     BEGIN
         MENUITEM "GvisRTR_Punch 정보(&A)...",     ID_APP_ABOUT
+    END
+    MENUITEM "최소화(&Minimize)",              32771
+    POPUP "시스템 종료(&Finish)"
+    BEGIN
+        MENUITEM "종료(&X)",                      ID_APP_EXIT
+    END
+    MENUITEM "Test IO List",                32772
+    MENUITEM "Database Connection",         32773
+    MENUITEM "Option 01",                   32774
+    POPUP "CamMasterInfo"
+    BEGIN
+        MENUITEM ".MST 파일",                     32775
+        MENUITEM ".PCH 파일",                     32776
+        MENUITEM "strpcs.bin 파일",               32777
     END
 END
 
@@ -165,7 +156,7 @@ BEGIN
     EDITTEXT        IDC_EDIT1,6,31,603,281,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
 END
 
-IDD_DLG_MENU_02 DIALOGEX 0, 0, 862, 560
+IDD_DLG_MENU_02 DIALOGEX 0, 0, 854, 560
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -308,7 +299,7 @@ BEGIN
     CONTROL         "",IDC_STATIC_MK_TEST,"Static",SS_BLACKFRAME,167,302,520,252
 END
 
-IDD_DLG_MENU_03 DIALOGEX 0, 0, 856, 573
+IDD_DLG_MENU_03 DIALOGEX 0, 0, 854, 573
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -514,7 +505,7 @@ BEGIN
     CTEXT           "",IDC_STC_SIG5,580,542,17,16,0,WS_EX_CLIENTEDGE
 END
 
-IDD_DLG_MENU_04 DIALOGEX 0, 0, 856, 575
+IDD_DLG_MENU_04 DIALOGEX 0, 0, 854, 575
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -718,7 +709,7 @@ BEGIN
     CTEXT           "",IDC_STC_144,741,506,45,30,SS_NOTIFY | SS_CENTERIMAGE | WS_BORDER
 END
 
-IDD_DLG_MENU_05 DIALOGEX 0, 0, 858, 576
+IDD_DLG_MENU_05 DIALOGEX 0, 0, 854, 576
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -1234,8 +1225,8 @@ BEGIN
     CONTROL         "GvisR2R-Engrave",IDC_CHECK_ENGRAVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,224,92,11
 END
 
-IDD_DLG_DISPMSG DIALOGEX 0, 0, 323, 159
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_DLG_DISPMSG DIALOGEX 0, 0, 323, 158
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "Exit",IDOK,100,108,212,22
@@ -1245,7 +1236,7 @@ BEGIN
     CTEXT           "GigaVis Co.,LTD.    www.gigavis.com",IDS_LOGO,3,133,309,14,SS_CENTERIMAGE | WS_BORDER
 END
 
-IDD_DLG_FRAME_HIGH DIALOGEX 0, 0, 854, 37
+IDD_DLG_FRAME_HIGH DIALOGEX 0, 0, 854, 34
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -1454,7 +1445,7 @@ BEGIN
     CTEXT           "Last Shot을 입력하세요.",IDC_STC_MSG,7,5,159,55,SS_CENTERIMAGE | WS_BORDER
 END
 
-IDD_DLG_MENU_01 DIALOGEX 0, 0, 855, 573
+IDD_DLG_MENU_01 DIALOGEX 0, 0, 854, 573
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -1877,7 +1868,7 @@ BEGIN
 
     IDD_DLG_MENU_02, DIALOG
     BEGIN
-        RIGHTMARGIN, 861
+        RIGHTMARGIN, 853
     END
 
     IDD_DLG_MENU_03, DIALOG
@@ -2234,6 +2225,7 @@ STRINGTABLE
 BEGIN
     AFX_IDS_SCRESTORE       "창을 보통 크기로 복원합니다."
     AFX_IDS_SCTASKLIST      "작업 목록을 활성화합니다."
+    ID_INDICATOR_PROGRESS_PANE "ID_INDICATOR_PROGRESS_PANE"
 END
 
 #endif    // 한국어(대한민국) resources

@@ -125,11 +125,12 @@ CGvisRTR_PunchDoc* CGvisRTR_PunchView::GetDocument() const // 디버그되지 않은 버
 // CGvisRTR_PunchView 메시지 처리기
 void CGvisRTR_PunchView::InitMgr()
 {
-	m_mgrFeeding = FALSE;
-	m_mgrPunch = FALSE;
-	m_mgrReelmap = FALSE;
-	m_mgrThread = FALSE;
-	m_mgrProcedure = FALSE;
+	m_mgrFeeding = NULL;
+	m_mgrPunch = NULL;
+	m_mgrReelmap = NULL;
+	m_mgrThread = NULL;
+	m_mgrProcedure = NULL;
+	m_mgrStatus = NULL;
 }
 
 void CGvisRTR_PunchView::CreateMgr()
@@ -139,6 +140,7 @@ void CGvisRTR_PunchView::CreateMgr()
 	CreateMgrReelmap();
 	CreateMgrThread();
 	CreateMgrProcedure();
+	CreateMgrStatus();
 }
 
 void CGvisRTR_PunchView::CreateMgrPunch()
@@ -171,7 +173,6 @@ void CGvisRTR_PunchView::CreateMgrReelmap()
 		m_mgrReelmap = NULL;
 	}
 	m_mgrReelmap = new CManagerReelmap(this);
-	//m_mgrReelmap->Init();
 }
 
 void CGvisRTR_PunchView::CreateMgrThread()
@@ -182,7 +183,6 @@ void CGvisRTR_PunchView::CreateMgrThread()
 		m_mgrThread = NULL;
 	}
 	m_mgrThread = new CManagerThread(this);
-	//m_mgrThread->Init();
 }
 
 void CGvisRTR_PunchView::CreateMgrFeeding()
@@ -195,6 +195,16 @@ void CGvisRTR_PunchView::CreateMgrFeeding()
 	m_mgrFeeding = new CManagerFeeding(this);
 }
 
+void CGvisRTR_PunchView::CreateMgrStatus()
+{
+	if (m_mgrStatus)
+	{
+		delete m_mgrStatus;
+		m_mgrStatus = NULL;
+	}
+	m_mgrStatus = new CManagerStatus(this);
+}
+
 void CGvisRTR_PunchView::CloseMgr()
 {
 	CloseMgrFeeding();
@@ -202,6 +212,7 @@ void CGvisRTR_PunchView::CloseMgr()
 	CloseMgrReelmap();
 	CloseMgrThread();
 	CloseMgrProcedure();
+	CloseMgrStatus();
 }
 
 void CGvisRTR_PunchView::CloseMgrPunch()
@@ -246,6 +257,15 @@ void CGvisRTR_PunchView::CloseMgrFeeding()
 	{
 		delete m_mgrFeeding;
 		m_mgrFeeding = NULL;
+	}
+}
+
+void CGvisRTR_PunchView::CloseMgrStatus()
+{
+	if (m_mgrStatus)
+	{
+		delete m_mgrStatus;
+		m_mgrStatus = NULL;
 	}
 }
 
@@ -482,6 +502,11 @@ void CGvisRTR_PunchView::HideAllDlg()
 
 void CGvisRTR_PunchView::DelAllDlg()
 {
+	//if (m_pDlgMenu07 != NULL)
+	//{
+	//	delete m_pDlgMenu07;
+	//	m_pDlgMenu07 = NULL;
+	//}
 	if (m_pDlgMenu06 != NULL)
 	{
 		delete m_pDlgMenu06;

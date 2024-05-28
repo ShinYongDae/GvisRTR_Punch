@@ -1048,13 +1048,21 @@
 #define IDC_STATIC_RECV_MSG_FROM_SERVER 2559
 #define IDC_STATIC_SVR_IP_ADDR          2560
 #define IDC_STATIC_CLIENT_CONNECTION_INFORMATION 2682
+#define ID_APP_MINIMIZE                 32771
+#define ID_TEST_IO                      32772
+#define ID_DATABASE_CONNECTION          32773
+#define ID_OPTION01                     32774
+#define ID_CAMMASTERINFO_MST            32775
+#define ID_CAMMASTERINFO_PCH            32776
+#define ID_CAMMASTERINFO_STRPCS         32777
+#define ID_INDICATOR_PROGRESS_PANE      61204
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        337
-#define _APS_NEXT_COMMAND_VALUE         32771
+#define _APS_NEXT_COMMAND_VALUE         32778
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

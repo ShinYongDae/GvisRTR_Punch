@@ -28,6 +28,12 @@ CDlgMenu07::CDlgMenu07(CWnd* pParent /*=NULL*/)
 CDlgMenu07::~CDlgMenu07()
 {
 	DelImg();
+
+	if (m_pRect)
+	{
+		delete m_pRect;
+		m_pRect = NULL;
+	}
 }
 
 void CDlgMenu07::DoDataExchange(CDataExchange* pDX)

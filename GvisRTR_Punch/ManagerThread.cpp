@@ -28,12 +28,12 @@ END_MESSAGE_MAP()
 
 BOOL CManagerThread::Create()
 {
-	LPCTSTR lpszClassName = _T("ManagerThread");
-	LPCTSTR lpszWindowName = _T("ManagerThread");
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5005;
+	UINT nID = (UINT)this;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);

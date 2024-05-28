@@ -17,7 +17,6 @@
 #define new DEBUG_NEW
 #endif
 
-
 // CGvisRTR_PunchApp
 
 BEGIN_MESSAGE_MAP(CGvisRTR_PunchApp, CWinApp)
@@ -317,6 +316,8 @@ void CGvisRTR_PunchApp::OnAppAbout()
 }
 
 // CGvisRTR_PunchApp 메시지 처리기
+
+
 
 
 

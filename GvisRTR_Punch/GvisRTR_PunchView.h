@@ -9,6 +9,7 @@
 #include "ManagerPunch.h"
 #include "ManagerThread.h"
 #include "ManagerFeeding.h"
+#include "ManagerStatus.h"
 
 #include "GvisRTR_PunchDoc.h"
 
@@ -40,12 +41,14 @@ class CGvisRTR_PunchView : public CFormView
 	void CreateMgrPunch();
 	void CreateMgrThread();
 	void CreateMgrFeeding();
+	void CreateMgrStatus();
 	void CloseMgr();
 	void CloseMgrProcedure();
 	void CloseMgrReelmap();
 	void CloseMgrPunch();
 	void CloseMgrThread();
 	void CloseMgrFeeding();
+	void CloseMgrStatus();
 
 	void InitDlg();
 
@@ -74,6 +77,7 @@ public:
 	CManagerPunch *m_mgrPunch;
 	CManagerThread *m_mgrThread;
 	CManagerFeeding *m_mgrFeeding;
+	CManagerStatus* m_mgrStatus;
 
 // 작업입니다.
 public:

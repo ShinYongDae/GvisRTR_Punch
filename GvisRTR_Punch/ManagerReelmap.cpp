@@ -15,7 +15,7 @@ CManagerReelmap::CManagerReelmap(CWnd* pParent)
 	m_pParent = pParent;
 	Init();
 
-	if (Create())
+	if (!Create())
 	{
 		pView->ClrDispMsg();
 	}
@@ -32,12 +32,12 @@ END_MESSAGE_MAP()
 
 BOOL CManagerReelmap::Create()
 {
-	LPCTSTR lpszClassName = _T("ManagerReelmap");
-	LPCTSTR lpszWindowName = _T("ManagerReelmap");
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5003;
+	UINT nID = (UINT)this;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);

@@ -30,6 +30,12 @@ CDlgFrameHigh::CDlgFrameHigh(CWnd* pParent /*=NULL*/)
 CDlgFrameHigh::~CDlgFrameHigh()
 {
 	DelImg();
+
+	if (m_pRect)
+	{
+		delete m_pRect;
+		m_pRect = NULL;
+	}
 }
 
 BOOL CDlgFrameHigh::Create()

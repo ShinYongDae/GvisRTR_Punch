@@ -6,7 +6,6 @@
 #pragma once
 
 #include "Global/GlobalDefine.h"
-#include "ManagerStatus.h"
 
 
 class CGvisRTR_PunchDoc : public CDocument
@@ -18,7 +17,6 @@ protected: // serialization에서만 만들어집니다.
 // 특성입니다.
 public:
 	stWorkingInfo WorkingInfo;
-	CManagerStatus m_mgrStatus;
 
 // 작업입니다.
 public:

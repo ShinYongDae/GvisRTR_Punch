@@ -39,6 +39,9 @@ protected:
 
 public:
 	virtual BOOL DestroyWindow();
+	afx_msg void OnAppMinimize();
+	afx_msg void OnClose();
+	afx_msg void OnDestroy();
 };
 
 

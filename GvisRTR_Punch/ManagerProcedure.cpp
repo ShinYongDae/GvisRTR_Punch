@@ -17,7 +17,7 @@ CManagerProcedure::CManagerProcedure(CWnd* pParent)
 
 	Init();
 
-	if (Create())
+	if (!Create())
 	{
 		pView->ClrDispMsg();
 		AfxMessageBox(_T("CManagerProcedure::Create() Failed!!!"));
@@ -36,12 +36,12 @@ END_MESSAGE_MAP()
 
 BOOL CManagerProcedure::Create()
 {
-	LPCTSTR lpszClassName = _T("ManagerProcedure");
-	LPCTSTR lpszWindowName = _T("ManagerProcedure");
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5001;
+	UINT nID = (UINT)this;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);

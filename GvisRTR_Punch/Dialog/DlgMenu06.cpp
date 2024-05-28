@@ -28,6 +28,12 @@ CDlgMenu06::CDlgMenu06(CWnd* pParent /*=NULL*/)
 CDlgMenu06::~CDlgMenu06()
 {
 	DelImg();
+
+	if (m_pRect)
+	{
+		delete m_pRect;
+		m_pRect = NULL;
+	}
 }
 
 void CDlgMenu06::DoDataExchange(CDataExchange* pDX)
@@ -594,7 +600,6 @@ void CDlgMenu06::OnShowWindow(BOOL bShow, UINT nStatus)
 
 	if (bShow)
 	{
-		//this->MoveWindow(m_pRect, TRUE);
 		AtDlgShow();
 	}
 	else

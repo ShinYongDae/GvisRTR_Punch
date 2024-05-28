@@ -25,6 +25,9 @@ IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_CREATE()
+	ON_COMMAND(ID_APP_MINIMIZE, &CMainFrame::OnAppMinimize)
+	ON_WM_CLOSE()
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -106,4 +109,30 @@ BOOL CMainFrame::DestroyWindow()
 	pView->DestroyView();
 
 	return CFrameWnd::DestroyWindow();
+}
+
+
+void CMainFrame::OnAppMinimize()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	WINDOWPLACEMENT wndPlace;
+	GetWindowPlacement(&wndPlace);
+	wndPlace.showCmd |= SW_MINIMIZE;
+	SetWindowPlacement(&wndPlace);
+}
+
+
+void CMainFrame::OnClose()
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CFrameWnd::OnClose();
+}
+
+
+void CMainFrame::OnDestroy()
+{
+	CFrameWnd::OnDestroy();
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 }

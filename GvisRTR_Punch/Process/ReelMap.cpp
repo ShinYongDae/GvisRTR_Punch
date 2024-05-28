@@ -859,7 +859,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 
 		if(pDoc->WorkingInfo.LastJob.bLotSep)
 		{
-			if(nLoadPnl > pDoc->m_mgrStatus.General.nLotEndSerial)
+			if(nLoadPnl > pView->m_mgrStatus->General.nLotEndSerial)
 			{
 				for(int aa=k; aa>=0; aa--)
 				{
@@ -870,9 +870,9 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 			}
 		}
 
-		if (pDoc->m_mgrStatus.General.bSerialDecrese)
+		if (pView->m_mgrStatus->General.bSerialDecrese)
 		{
-			if (nLoadPnl < (pDoc->m_mgrStatus.General.nLotEndSerial) && pDoc->m_mgrStatus.General.nLotEndSerial > 0)
+			if (nLoadPnl < (pView->m_mgrStatus->General.nLotEndSerial) && pView->m_mgrStatus->General.nLotEndSerial > 0)
 			{
 				for (int bb = k; bb >= 0; bb--)
 				{
@@ -881,7 +881,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 				break;
 			}
-			else if (pDoc->m_mgrStatus.General.bLastProc && (nLoadPnl < pDoc->m_mgrStatus.General.nLotEndSerial && pDoc->m_mgrStatus.General.nLotEndSerial > 0))
+			else if (pView->m_mgrStatus->General.bLastProc && (nLoadPnl < pView->m_mgrStatus->General.nLotEndSerial && pView->m_mgrStatus->General.nLotEndSerial > 0))
 			{
 				for (int bb = k; bb >= 0; bb--)
 				{
@@ -890,7 +890,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 				break;
 			}
-			else if (nLoadPnl < pDoc->m_mgrStatus.General.nLotEndSerial && pDoc->m_mgrStatus.General.nLotEndSerial > 0)
+			else if (nLoadPnl < pView->m_mgrStatus->General.nLotEndSerial && pView->m_mgrStatus->General.nLotEndSerial > 0)
 			{
 				for (int cc = k; cc >= 0; cc--)
 				{
@@ -900,7 +900,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 		}
 		else
 		{
-			if (nLoadPnl > pDoc->m_mgrStatus.General.nLotEndSerial && pDoc->m_mgrStatus.General.nLotEndSerial > 0)
+			if (nLoadPnl > pView->m_mgrStatus->General.nLotEndSerial && pView->m_mgrStatus->General.nLotEndSerial > 0)
 			{
 				for (int bb = k; bb >= 0; bb--)
 				{
@@ -909,7 +909,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 				break;
 			}
-			else if (pDoc->m_mgrStatus.General.bLastProc && (nLoadPnl > pDoc->m_mgrStatus.General.nLotEndSerial && pDoc->m_mgrStatus.General.nLotEndSerial > 0))
+			else if (pView->m_mgrStatus->General.bLastProc && (nLoadPnl > pView->m_mgrStatus->General.nLotEndSerial && pView->m_mgrStatus->General.nLotEndSerial > 0))
 			{
 				for (int bb = k; bb >= 0; bb--)
 				{
@@ -918,7 +918,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 				break;
 			}
-			else if (nLoadPnl > pDoc->m_mgrStatus.General.nLotEndSerial && pDoc->m_mgrStatus.General.nLotEndSerial > 0)
+			else if (nLoadPnl > pView->m_mgrStatus->General.nLotEndSerial && pView->m_mgrStatus->General.nLotEndSerial > 0)
 			{
 				for (int cc = k; cc >= 0; cc--)
 				{
@@ -937,15 +937,15 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 		}
 		else
 		{
-			if (pDoc->m_mgrStatus.General.bSerialDecrese)
+			if (pView->m_mgrStatus->General.bSerialDecrese)
 			{
-				if (pDoc->WorkingInfo.LastJob.bLotSep && nLoadPnl < pDoc->m_mgrStatus.General.nLotEndSerial)
+				if (pDoc->WorkingInfo.LastJob.bLotSep && nLoadPnl < pView->m_mgrStatus->General.nLotEndSerial)
 				{
 					m_pPnlNum[k] = 0;
 					m_pPnlDefNum[k] = -1;
 					break;
 				}
-				else if (nLoadPnl < pDoc->m_mgrStatus.ListBuf[0].GetLast()) 
+				else if (nLoadPnl < pView->m_mgrStatus->ListBuf[0].GetLast()) 
 				{
 					m_pPnlNum[k] = 0;
 					m_pPnlDefNum[k] = -1;
@@ -953,7 +953,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 
 				m_pPnlNum[k] = nLoadPnl; // 3 ~ 10
-				if (nLoadPnl >= pDoc->m_mgrStatus.General.nLotEndSerial || pDoc->m_mgrStatus.General.nLotEndSerial == 0)
+				if (nLoadPnl >= pView->m_mgrStatus->General.nLotEndSerial || pView->m_mgrStatus->General.nLotEndSerial == 0)
 				{
 					if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 					{
@@ -971,13 +971,13 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 			}
 			else
 			{
-				if (pDoc->WorkingInfo.LastJob.bLotSep && nLoadPnl > pDoc->m_mgrStatus.General.nLotEndSerial)
+				if (pDoc->WorkingInfo.LastJob.bLotSep && nLoadPnl > pView->m_mgrStatus->General.nLotEndSerial)
 				{
 					m_pPnlNum[k] = 0;
 					m_pPnlDefNum[k] = -1;
 					break;
 				}
-				else if (nLoadPnl > pDoc->m_mgrStatus.ListBuf[0].GetLast())
+				else if (nLoadPnl > pView->m_mgrStatus->ListBuf[0].GetLast())
 				{
 					m_pPnlNum[k] = 0;
 					m_pPnlDefNum[k] = -1;
@@ -985,7 +985,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				}
 
 				m_pPnlNum[k] = nLoadPnl; // 3 ~ 10
-				if (nLoadPnl <= pDoc->m_mgrStatus.General.nLotEndSerial || pDoc->m_mgrStatus.General.nLotEndSerial == 0)
+				if (nLoadPnl <= pView->m_mgrStatus->General.nLotEndSerial || pView->m_mgrStatus->General.nLotEndSerial == 0)
 				{
 					if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 					{
@@ -1119,7 +1119,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 					{
 						if (!bDumy)
 						{
-							if (!pDoc->m_mgrStatus.General.bLastProc && !pDoc->WorkingInfo.LastJob.bSampleTest)
+							if (!pView->m_mgrStatus->General.bLastProc && !pDoc->WorkingInfo.LastJob.bSampleTest)
 							{
 								{
 									m_pPnlNum[k] = -1;

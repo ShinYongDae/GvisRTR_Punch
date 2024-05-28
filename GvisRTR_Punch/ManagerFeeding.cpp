@@ -17,7 +17,7 @@ CManagerFeeding::CManagerFeeding(CWnd* pParent)
 
 	Init();
 
-	if (Create())
+	if (!Create())
 	{
 		pView->ClrDispMsg(); 
 		AfxMessageBox(_T("CManagerFeeding::Create() Failed!!!"));
@@ -35,12 +35,12 @@ END_MESSAGE_MAP()
 
 BOOL CManagerFeeding::Create()
 {
-	LPCTSTR lpszClassName = _T("ManagerFeeding");
-	LPCTSTR lpszWindowName = _T("ManagerFeeding");
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5000;
+	UINT nID = (UINT)this;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);

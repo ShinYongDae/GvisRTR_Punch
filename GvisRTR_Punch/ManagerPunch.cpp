@@ -18,7 +18,7 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 	Init();
 	InitDevices();
 
-	if (Create())
+	if (!Create())
 	{
 		pView->ClrDispMsg();
 		AfxMessageBox(_T("CManagerPunch::Create() Failed!!!"));
@@ -32,12 +32,12 @@ CManagerPunch::~CManagerPunch()
 
 BOOL CManagerPunch::Create()
 {
-	LPCTSTR lpszClassName = _T("ManagerPunch");
-	LPCTSTR lpszWindowName = _T("ManagerPunch");
+	LPCTSTR lpszClassName = NULL;
+	LPCTSTR lpszWindowName = _T("None");
 	DWORD dwStyle = WS_CHILD;
 	const RECT& rect = CRect(0, 0, 0, 0);
 	CWnd* pParentWnd = m_pParent;
-	UINT nID = 5002;
+	UINT nID = (UINT)this;
 	CCreateContext* pContext = NULL;
 
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);

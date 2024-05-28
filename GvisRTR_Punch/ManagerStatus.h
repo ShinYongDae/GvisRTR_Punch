@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 #define BUF_SZ						50
 
@@ -83,13 +84,18 @@ struct stEngrave
 struct stListBuf
 {
 	int nTot;
-	int nSerial[BUF_SZ];
+	int* nSerial;
 
 	stListBuf()
 	{
 		nTot = 0;
+		nSerial = new int[BUF_SZ];
 		for (int i = 0; i < BUF_SZ; i++)
-			nSerial[BUF_SZ] = 0;
+			nSerial[i] = 0;
+	}
+	~stListBuf()
+	{
+		delete[] nSerial;
 	}
 
 	BOOL stListBuf::Push(int nS)
@@ -130,7 +136,7 @@ struct stListBuf
 };
 
 
-class CManagerStatus
+class CManagerStatus : public CWnd
 {
 	CWnd* m_pParent;
 
@@ -141,7 +147,7 @@ class CManagerStatus
 	BOOL Create();
 
 public:
-	CManagerStatus();
+	CManagerStatus(CWnd* pParent = NULL);
 	~CManagerStatus();
 
 	// 특성입니다.
@@ -153,6 +159,10 @@ public:
 
 	// 작업입니다.
 public:
+
+	// 생성된 메시지 맵 함수
+protected:
+	DECLARE_MESSAGE_MAP()
 
 };
 
