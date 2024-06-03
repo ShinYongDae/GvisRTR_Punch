@@ -34,11 +34,13 @@ CGvisRTR_PunchDoc::CGvisRTR_PunchDoc()
 {
 	// TODO: 여기에 일회성 생성 코드를 추가합니다.
 	pDoc = this;
+	m_pFile = new CMyFile();
 
 }
 
 CGvisRTR_PunchDoc::~CGvisRTR_PunchDoc()
 {
+	DestroyDoc();
 }
 
 BOOL CGvisRTR_PunchDoc::OnNewDocument()
@@ -58,11 +60,11 @@ BOOL CGvisRTR_PunchDoc::OnNewDocument()
 // CGvisRTR_PunchDoc serialization
 void CGvisRTR_PunchDoc::DestroyDoc()
 {
-	//if (m_pFile)
-	//{
-	//	delete m_pFile;
-	//	m_pFile = NULL;
-	//}
+	if (m_pFile)
+	{
+		delete m_pFile;
+		m_pFile = NULL;
+	}
 }
 
 
@@ -149,3 +151,167 @@ void CGvisRTR_PunchDoc::Dump(CDumpContext& dc) const
 
 
 // CGvisRTR_PunchDoc 명령
+
+int CGvisRTR_PunchDoc::GetTestMode()
+{
+	return WorkingInfo.LastJob.nTestMode;
+}
+
+void CGvisRTR_PunchDoc::SetTestMode(int nMode)
+{
+	WorkingInfo.LastJob.nTestMode = nMode; // MODE_NONE = 0, MODE_INNER = 1, MODE_OUTER = 2 .
+
+	CString sData;
+	sData.Format(_T("%d"), nMode);
+	::WritePrivateProfileString(_T("Last Job"), _T("Test Mode"), sData, PATH_WORKING_INFO);
+
+	CString sPath = WorkingInfo.System.sPathMkCurrInfo;
+
+	if (sPath.IsEmpty())
+		return;
+
+	::WritePrivateProfileString(_T("Infomation"), _T("Test Mode"), sData, sPath);
+
+	::WritePrivateProfileString(_T("Infomation"), _T("Lot End"), _T("0"), sPath);
+	::WritePrivateProfileString(_T("Infomation"), _T("Last Shot"), _T("10000"), WorkingInfo.System.sPathMkCurrInfo);
+}
+
+void CGvisRTR_PunchDoc::SetMkInfo(CString sMenu, CString sItem, BOOL bOn)
+{
+	CString sPath = WorkingInfo.System.sPathMkInfo;
+	CString sData = _T("");
+
+	if (sPath.IsEmpty())
+		return;
+
+	sData.Format(_T("%d"), bOn > 0 ? 1 : 0);
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
+}
+
+void CGvisRTR_PunchDoc::SetMkInfo(CString sMenu, CString sItem, CString sData)
+{
+	CString sPath = WorkingInfo.System.sPathMkInfo;
+
+	if (sPath.IsEmpty())
+		return;
+
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
+}
+
+void CGvisRTR_PunchDoc::SetMonDispMain(CString sDisp)
+{
+	CString sPath = WorkingInfo.System.sPathMonDispMain;
+	if (sPath.IsEmpty())
+		return;
+
+	::WritePrivateProfileString(_T("Info"), _T("Disp"), sDisp, sPath);
+}
+
+// Write Log for Auto
+void CGvisRTR_PunchDoc::LogAuto(CString strMsg, int nType)
+{
+	if (m_bOffLogAuto)
+		return;
+
+	CSafeLockDoc lock(&g_LogLockAuto);
+
+	TCHAR szFile[MAX_PATH] = { 0, };
+	TCHAR szPath[MAX_PATH] = { 0, };
+	TCHAR* pszPos = NULL;
+
+	_stprintf(szPath, PATH_LOG);
+	if (!DirectoryExists(szPath))
+		CreateDirectory(szPath, NULL);
+
+	_stprintf(szPath, PATH_LOG_AUTO);
+	if (!DirectoryExists(szPath))
+		CreateDirectory(szPath, NULL);
+
+	COleDateTime time = COleDateTime::GetCurrentTime();
+
+	switch (nType)
+	{
+	case 0:
+		_stprintf(szFile, _T("%s\\%s.txt"), szPath, COleDateTime::GetCurrentTime().Format(_T("%Y%m%d")));
+		break;
+	}
+
+	CString strDate;
+	CString strContents;
+	CTime now;
+
+	strDate.Format(_T("%s: "), COleDateTime::GetCurrentTime().Format(_T("%Y/%m/%d %H:%M:%S")));
+	strContents = strDate;
+	strContents += strMsg;
+	strContents += _T("\r\n");
+	strContents += _T("\r\n");
+
+	CFile file;
+
+	if (file.Open(szFile, CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite | CFile::shareDenyNone) == 0)
+		return;
+
+	char cameraKey[1024];
+	StringToChar(strContents, cameraKey);
+
+	file.SeekToEnd();
+	int nLenth = strContents.GetLength();
+	file.Write(cameraKey, nLenth);
+	file.Flush();
+	file.Close();
+}
+
+// Write Log for PLC
+void CGvisRTR_PunchDoc::LogPLC(CString strMsg, int nType)
+{
+	if (m_bOffLogPLC)
+		return;
+
+	CSafeLockDoc lock(&g_LogLockPLC);
+
+	TCHAR szFile[MAX_PATH] = { 0, };
+	TCHAR szPath[MAX_PATH] = { 0, };
+	TCHAR* pszPos = NULL;
+
+	_stprintf(szPath, PATH_LOG);
+	if (!DirectoryExists(szPath))
+		CreateDirectory(szPath, NULL);
+
+	_stprintf(szPath, PATH_LOG_PLC);
+	if (!DirectoryExists(szPath))
+		CreateDirectory(szPath, NULL);
+
+	COleDateTime time = COleDateTime::GetCurrentTime();
+
+	switch (nType)
+	{
+	case 0:
+		_stprintf(szFile, _T("%s\\%s.txt"), szPath, COleDateTime::GetCurrentTime().Format(_T("%Y%m%d")));
+		break;
+	}
+
+	CString strDate;
+	CString strContents;
+	CTime now;
+
+	strDate.Format(_T("%s: "), COleDateTime::GetCurrentTime().Format(_T("%Y/%m/%d %H:%M:%S")));
+	strContents = strDate;
+	strContents += strMsg;
+	strContents += _T("\r\n");
+	strContents += _T("\r\n");
+
+	CFile file;
+
+	if (file.Open(szFile, CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite | CFile::shareDenyNone) == 0)
+		return;
+
+	char cameraKey[1024];
+	StringToChar(strContents, cameraKey);
+
+	file.SeekToEnd();
+	int nLenth = strContents.GetLength();
+	file.Write(cameraKey, nLenth);
+	file.Flush();
+	file.Close();
+}
+

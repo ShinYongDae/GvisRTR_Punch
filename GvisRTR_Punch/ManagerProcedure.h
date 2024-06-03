@@ -1,6 +1,8 @@
 #pragma once
 #include "afxwin.h"
 
+#include "Device/Engrave.h"
+
 #define TIM_INIT_PROCEDURE			0
 
 
@@ -20,6 +22,7 @@ public:
 
 	// 특성입니다.
 public:
+	CEngrave* m_pEngrave;
 
 
 	// 작업입니다.

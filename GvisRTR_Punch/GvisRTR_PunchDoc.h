@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Global/GlobalDefine.h"
+#include "Process/MyFile.h"
 
 
 class CGvisRTR_PunchDoc : public CDocument
@@ -17,10 +18,24 @@ protected: // serialization에서만 만들어집니다.
 // 특성입니다.
 public:
 	stWorkingInfo WorkingInfo;
+	stMkIo MkIo;
+	CMyFile *m_pFile;
+
 
 // 작업입니다.
 public:
 	void DestroyDoc();
+
+	int GetTestMode();
+	void SetTestMode(int nMode);
+
+	// File communication for Engrave
+	void SetMkInfo(CString sMenu, CString sItem, BOOL bOn);
+	void SetMkInfo(CString sMenu, CString sItem, CString sData);
+	void SetMonDispMain(CString sDisp);
+
+	void LogAuto(CString strMsg, int nType = 0);
+	void LogPLC(CString strMsg, int nType = 0);
 
 // 재정의입니다.
 public:

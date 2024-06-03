@@ -43,6 +43,9 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: 여기에 멤버 초기화 코드를 추가합니다.
+
+	for (int i = 0; i < 10; i++)
+		m_sDispStatusBar[i] = _T("");
 }
 
 CMainFrame::~CMainFrame()
@@ -60,6 +63,20 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 만들지 못했습니다.
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
+
+	CRect rect;
+	this->GetWindowRect(&rect);  //get client rect... 	
+	int nScreenWidth = 1230;
+
+	// Panel 크기조절 
+	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 1 / 120);
+	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 32 / 120);
+	m_wndStatusBar.SetPaneInfo(2, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 4 / 120);
+	m_wndStatusBar.SetPaneInfo(3, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 55 / 120);
+	m_wndStatusBar.SetPaneInfo(4, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 4 / 120);
+	m_wndStatusBar.SetPaneInfo(5, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 5 / 120);
+	m_wndStatusBar.SetPaneInfo(6, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 7 / 120);
+	m_wndStatusBar.SetPaneInfo(7, ID_SEPARATOR, SBPS_NORMAL, nScreenWidth * 12 / 120);
 
 	return 0;
 }
@@ -105,8 +122,8 @@ void CMainFrame::Dump(CDumpContext& dc) const
 BOOL CMainFrame::DestroyWindow()
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	pDoc->DestroyDoc();
-	pView->DestroyView();
+	//pDoc->DestroyDoc();
+	//pView->DestroyView();
 
 	return CFrameWnd::DestroyWindow();
 }
@@ -135,4 +152,13 @@ void CMainFrame::OnDestroy()
 	CFrameWnd::OnDestroy();
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+}
+
+void CMainFrame::DispStatusBar(CString strMsg, int nStatusBarID)
+{
+	if (m_sDispStatusBar[nStatusBarID] != strMsg)
+	{
+		m_sDispStatusBar[nStatusBarID] = strMsg;
+		m_wndStatusBar.SetPaneText(nStatusBarID, strMsg);
+	}
 }

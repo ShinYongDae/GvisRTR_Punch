@@ -78,6 +78,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <ExecutablePath>C:\Program Files\HuarayTech\MV Viewer\Application\x64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Program Files\Matrox Imaging\MIL\Include;C:\Program Files\Matrox Imaging\MIL\Include\MILDyn;C:\YeTools\PCAPI\Include;C:\Program Files\HuarayTech\MV Viewer\Development\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Matrox Imaging\MIL\LIB;C:\YeTools\PCAPI\Lib;C:\Program Files\HuarayTech\MV Viewer\Development\Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -119,6 +122,8 @@
       <StackReserveSize>10485760</StackReserveSize>
       <LargeAddressAware>true</LargeAddressAware>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>netapi32.lib;MVSDKmd.lib;VideoRender.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -189,13 +194,18 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Aoi.h" />
     <ClInclude Include="Device\BufferControl.h" />
+    <ClInclude Include="Device\EasyThread.h" />
+    <ClInclude Include="Device\Engrave.h" />
+    <ClInclude Include="Device\EngraveDef.h" />
     <ClInclude Include="Device\FileOperation.h" />
     <ClInclude Include="Device\HardwareInfoDefine.h" />
     <ClInclude Include="Device\HardwareInfoEx.h" />
     <ClInclude Include="Device\Light.h" />
     <ClInclude Include="Device\Motion.h" />
     <ClInclude Include="Device\MotionParam.h" />
+    <ClInclude Include="Device\MpDevice.h" />
     <ClInclude Include="Device\MyFileErrMap.h" />
     <ClInclude Include="Device\NmcAxis.h" />
     <ClInclude Include="Device\NmcDevice.h" />
@@ -204,6 +214,8 @@
     <ClInclude Include="Device\Rs232.h" />
     <ClInclude Include="Device\safelock.h" />
     <ClInclude Include="Device\Smac.h" />
+    <ClInclude Include="Device\SocketComm.h" />
+    <ClInclude Include="Device\TcpIpClient.h" />
     <ClInclude Include="Device\type_def.h" />
     <ClInclude Include="Device\Vision.h" />
     <ClInclude Include="Dialog\DlgFrameHigh.h" />
@@ -261,18 +273,25 @@
     <ClInclude Include="SingleInstance.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="VerifySys.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Aoi.cpp" />
     <ClCompile Include="Device\BufferControl.cpp" />
+    <ClCompile Include="Device\EasyThread.cpp" />
+    <ClCompile Include="Device\Engrave.cpp" />
     <ClCompile Include="Device\FileOperation.cpp" />
     <ClCompile Include="Device\HardwareInfoEx.cpp" />
     <ClCompile Include="Device\Light.cpp" />
     <ClCompile Include="Device\Motion.cpp" />
+    <ClCompile Include="Device\MpDevice.cpp" />
     <ClCompile Include="Device\MyFileErrMap.cpp" />
     <ClCompile Include="Device\NmcAxis.cpp" />
     <ClCompile Include="Device\NmcDevice.cpp" />
     <ClCompile Include="Device\Rs232.cpp" />
     <ClCompile Include="Device\Smac.cpp" />
+    <ClCompile Include="Device\SocketComm.cpp" />
+    <ClCompile Include="Device\TcpIpClient.cpp" />
     <ClCompile Include="Device\Vision.cpp" />
     <ClCompile Include="Dialog\DlgFrameHigh.cpp" />
     <ClCompile Include="Dialog\DlgInfo.cpp" />
@@ -328,6 +347,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="VerifySys.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GvisRTR_Punch.rc" />

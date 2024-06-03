@@ -28,11 +28,42 @@
 #include "Dialog/DlgOption01.h"
 
 #define TIM_INIT_VIEW			0
+#define TIM_DISP_STATUS			14
+
+typedef struct _DispMain
+{
+	CString sMsg;
+	COLORREF rgb;
+
+	_DispMain()
+	{
+		Init();
+	}
+	_DispMain(CString Msg, COLORREF Rgb)
+	{
+		sMsg = Msg;
+		rgb = Rgb;
+	}
+
+	void Init()
+	{
+		sMsg = _T("");
+		rgb = RGB_WHITE;
+	}
+
+}stDispMain;
+
 
 class CGvisRTR_PunchView : public CFormView
 {
-	BOOL m_bTIM_INIT_VIEW;
+	BOOL m_bTIM_INIT_VIEW, m_bTIM_DISP_STATUS;
 	int m_nStepInitView;
+
+	stDispMain m_stDispMain;
+	CString m_sDispMain, m_sDispTime;
+	CString m_sDispStatusBar[10];
+	CString m_sShare[2], m_sBuf[2]; // [0]: AOI-Up , [1]: AOI-Dn
+	int	m_pBufSerial[2][100], m_nBufTot[2]; // [0]: AOI-Up , [1]: AOI-Dn
 
 	void InitMgr();
 	void CreateMgr();
@@ -59,6 +90,26 @@ class CGvisRTR_PunchView : public CFormView
 	void CloseMyMsg();
 	void CloseMsgBox();
 
+	int DoDispMain();
+	void DispStsBar();
+	void DispStsMainMsg(int nIdx = 0);	// 0
+	void DispTime();					// 7
+	void ChkShare();					// 2, 4
+	void ChkBuf();						// 1, 3
+	void SetListBuf();
+	CString GetTime(stLotTime &LotTime);
+	void ChkShareUp();
+	void ChkShareDn();
+	BOOL ChkShare(int &nSerial);
+	BOOL ChkShareUp(int &nSerial);
+	BOOL ChkShareDn(int &nSerial);
+	void ChkBufUp();
+	void ChkBufDn();
+	BOOL ChkBufUp(int* pSerial, int &nTot);
+	BOOL ChkBufDn(int* pSerial, int &nTot);
+	void DelOverLotEndSerialUp(int nSerial);
+	void DelOverLotEndSerialDn(int nSerial);
+
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchView();
 	DECLARE_DYNCREATE(CGvisRTR_PunchView)
@@ -79,6 +130,9 @@ public:
 	CManagerFeeding *m_mgrFeeding;
 	CManagerStatus* m_mgrStatus;
 
+	// from Engrave
+	BOOL m_bRcvSig[_SigInx::_EndIdx];
+
 // 작업입니다.
 public:
 	void DestroyView();
@@ -91,7 +145,10 @@ public:
 	void DoDispMsg(CString strMsg, CString strTitle = _T(""), COLORREF color = RGB(255, 0, 0), DWORD dwDispTime = 0, BOOL bOverWrite = TRUE);
 	void GetDispMsg(CString &strMsg, CString &strTitle);
 	void DispMsg(CString strMsg, CString strTitle = _T(""), COLORREF color = RGB(255, 0, 0), DWORD dwDispTime = 0, BOOL bOverWrite = TRUE);
-	
+	void SetMyMsgYes();
+	void SetMyMsgNo();
+	void SetMyMsgOk();
+
 	CDlgInfo *m_pDlgInfo;
 	CDlgFrameHigh *m_pDlgFrameHigh;
 	CDlgMenu01 *m_pDlgMenu01;
@@ -104,10 +161,35 @@ public:
 	void HideAllDlg();
 	void DelAllDlg();
 
+	void EnableItsMode(BOOL bEnable = TRUE);
+
 	// 보조작업입니다.
 	int MsgBox(CString sMsg, int nThreadIdx = 0, int nType = MB_OK, int nTimOut = DEFAULT_TIME_OUT, BOOL bEngave = TRUE);		// SyncMsgBox
 	int MyPassword(CString strMsg, int nCtrlId = 0);
 
+	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
+	void DispStsBar(CString sMsg, int nIdx = 0);
+
+	void SetDualTest(BOOL bOn);
+	void SetTestMode(int nMode);
+
+	// ManagerFeeding
+	long GetMpeData(int nSection, int nName);
+	BOOL MpeWrite(CString strRegAddr, long lData, BOOL bCheck = FALSE);
+	BOOL IsAuto();
+
+	// ManagerProcedure
+
+	// ManagerPunch
+	void ResetMotion();
+
+	// ManagerReelmap
+
+	// ManagerStatus
+
+	// ManagerThread
+
+	
 // 재정의입니다.
 public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);

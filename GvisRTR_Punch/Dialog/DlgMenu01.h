@@ -60,6 +60,10 @@ public:
 	// 작업입니다.
 public:
 	void ChkUserInfo(BOOL bOn);
+	void EnableItsMode(BOOL bEnable);
+	void DispMain(CString sMsg, COLORREF rgb = RGB_GREEN);
+	CString GetRunTime();
+	void DispRunTime();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
@@ -68,4 +72,5 @@ protected:
 public:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
+	afx_msg void OnBnClickedChkUserInfo();
 };

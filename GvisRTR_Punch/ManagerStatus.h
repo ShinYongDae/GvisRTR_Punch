@@ -15,6 +15,7 @@ struct stGeneral
 
 	int nLotEndAuto, nMkStAuto, nPrevMkStAuto, nLastProcAuto, nTestMode, nLotEndSerial;
 	int nPrevStepAuto, nMkStrip, nSaveMk0Img, nSaveMk1Img;
+	int nTotMk[2], nPrevTotMk[2], nMkPcs[2], nPrevMkPcs[2];
 
 	CString sNewLotUp;
 
@@ -33,8 +34,13 @@ struct stGeneral
 		nLastProcAuto = 0; nTestMode = 0; nLotEndSerial = 0;
 		nPrevStepAuto = 0; nMkStrip = 0;
 		nSaveMk0Img = 0; nSaveMk1Img = 0;
+		nTotMk[0] = 0; nTotMk[1] = 0;
+		nPrevTotMk[0] = 0; nPrevTotMk[1] = 0;
+		nMkPcs[0] = 0; nMkPcs[1] = 0;
+		nPrevMkPcs[0] = 0; nPrevMkPcs[1] = 0;
 
 		sNewLotUp = _T("");
+
 	}
 };
 

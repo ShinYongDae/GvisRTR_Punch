@@ -41,17 +41,27 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	// TODO: 여기에 생성 코드를 추가합니다.
 	pView = this;
 	m_bTIM_INIT_VIEW = FALSE;
+	m_bTIM_DISP_STATUS = FALSE;
+	m_sDispMain = _T("");
+	m_sDispTime = _T("");
+
+	for (int i = 0; i < 10; i++)
+		m_sDispStatusBar[i] = _T("");
+
+	m_sShare[0] = _T("");
+	m_sBuf[0] = _T("");
+	m_sShare[1] = _T("");
+	m_sBuf[1] = _T("");
 
 	InitMgr();	
 	InitDispMsg();
 	InitDlg();
-
-
 }
 
 CGvisRTR_PunchView::~CGvisRTR_PunchView()
 {
 	m_bTIM_INIT_VIEW = FALSE;
+	m_bTIM_DISP_STATUS = FALSE;
 
 	CloseMgr();
 	CloseDispMsg();
@@ -94,6 +104,8 @@ void CGvisRTR_PunchView::OnInitialUpdate()
 	GetParentFrame()->RecalcLayout();
 	ResizeParentToFit();
 
+	pDoc->SetMonDispMain(_T(""));
+
 	if (!m_bTIM_INIT_VIEW)
 	{
 		m_nStepInitView = 0;
@@ -123,6 +135,660 @@ CGvisRTR_PunchDoc* CGvisRTR_PunchView::GetDocument() const // 디버그되지 않은 버
 }
 #endif //_DEBUG
 
+LRESULT CGvisRTR_PunchView::OnDlgInfo(WPARAM wParam, LPARAM lParam)
+{
+	ClrDispMsg();
+	CDlgInfo Dlg;
+	m_pDlgInfo = &Dlg;
+	Dlg.DoModal();
+	m_pDlgInfo = NULL;
+
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->ChkUserInfo(FALSE);
+
+	return 0L;
+}
+
+LONG CGvisRTR_PunchView::OnQuitDispMsg(UINT wParam, LONG lParam)
+{
+	if (m_pDlgMsgBox)
+	{
+		if (m_pDlgMsgBox->GetSafeHwnd())
+			m_pDlgMsgBox->DestroyWindow();
+		delete m_pDlgMsgBox;
+		m_pDlgMsgBox = NULL;
+	}
+
+	return 0L;
+}
+
+void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (nIDEvent == TIM_INIT_VIEW)
+	{
+		KillTimer(TIM_INIT_VIEW);
+
+		switch (m_nStepInitView)
+		{
+		case 0:
+			DoDispMsg(_T("프로그램을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			m_nStepInitView++;
+			break;
+		case 1:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 1"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_02);
+			break;
+		case 2:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.-2"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_01);
+			//if (bDualTest)
+			//	m_pDlgMenu01->SelMap(ALL);
+			//else
+			//	m_pDlgMenu01->SelMap(UP);
+			//break;
+		case 3:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 3"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			//ShowDlg(IDD_DLG_MENU_02);
+			break;
+		case 4:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 4"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_03);
+			break;
+		case 5:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 5"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_04);
+			break;
+		case 6:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 6"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_05);
+			break;
+		case 7:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 7"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_06);
+			break;
+		case 8:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_MENU_07);
+			break;
+		case 9:
+			m_nStepInitView++;
+			DispMsg(_T("화면구성을 생성합니다.- 9"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			ShowDlg(IDD_DLG_FRAME_HIGH);
+			if (m_pDlgFrameHigh)
+				m_pDlgFrameHigh->ChkMenu01();
+			//SetDualTest(pDoc->WorkingInfo.LastJob.bDualTest);
+
+			//if (pDoc->GetCurrentInfoEng())
+			//{
+			//	if (m_mgrReelmap->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+			//	{
+			//		//if (pDoc->GetTestMode() == MODE_OUTER)
+			//		if (m_mgrReelmap->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
+			//		{
+			//			if (m_pDlgMenu06)
+			//				m_pDlgMenu06->RedrawWindow();
+			//		}
+			//	}
+			//}
+			Sleep(300);
+
+		case 10:
+			m_nStepInitView++;
+			DispMsg(_T("Manager를 생성합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			CreateMgr();
+			break;
+			break;
+
+		case 11:
+			m_nStepInitView++;
+			DispMsg(_T("Motion을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			//if (m_mgrPunch)
+			//	m_mgrPunch->ResetMotion();
+			Sleep(300);
+			break;
+		case 12:
+			m_nStepInitView++;
+			//m_bLoadMstInfo = TRUE;
+			DispMsg(_T("H/W를 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+			m_mgrPunch->InitAct();
+			m_mgrReelmap->InitAct();
+			m_mgrFeeding->InitAct();
+			//m_mgrProcedure->m_bStopFeeding = TRUE;
+			//MpeWrite(_T("MB440115"), 1); // 마킹부Feeding금지
+			//Sleep(300);
+			break;
+		case 13:
+			m_nStepInitView++;
+			ClrDispMsg();
+			ChkBuf(); // 1, 3
+			SetListBuf();
+			m_bTIM_DISP_STATUS = TRUE;
+			SetTimer(TIM_DISP_STATUS, 100, NULL);
+			m_bTIM_INIT_VIEW = FALSE;
+			break;
+		}
+
+		if (m_bTIM_INIT_VIEW)
+			SetTimer(TIM_INIT_VIEW, 100, NULL);
+	}
+
+	if (nIDEvent == TIM_DISP_STATUS)
+	{
+		KillTimer(TIM_DISP_STATUS);
+
+		DispStsBar();
+		DoDispMain();
+
+		if (m_bTIM_DISP_STATUS)
+			SetTimer(TIM_DISP_STATUS, 100, NULL);
+	}
+
+	CFormView::OnTimer(nIDEvent);
+}
+
+void CGvisRTR_PunchView::DispStsBar()
+{
+	DispStsMainMsg();	// 0
+	DispTime();			// 7
+	ChkShare();			// 2, 4
+	ChkBuf();			// 1, 3
+	SetListBuf();
+}
+
+void CGvisRTR_PunchView::DispStsBar(CString sMsg, int nIdx)
+{
+	if (m_sDispStatusBar[nIdx] != sMsg)
+		m_sDispStatusBar[nIdx] = sMsg;
+}
+
+void CGvisRTR_PunchView::DispStsMainMsg(int nIdx)
+{
+	CString str;
+	str = m_sDispStatusBar[nIdx];
+	pFrm->DispStatusBar(str, nIdx);
+}
+
+void CGvisRTR_PunchView::DispTime()
+{
+	stLotTime LotTime;
+	CString str;
+	str = GetTime(LotTime);
+	if (m_sDispTime != str)
+	{
+		m_sDispTime = str;
+		pFrm->DispStatusBar(str, 7);
+
+		pDoc->WorkingInfo.Lot.CurTime.nYear = LotTime.nYear;
+		pDoc->WorkingInfo.Lot.CurTime.nMonth = LotTime.nMonth;
+		pDoc->WorkingInfo.Lot.CurTime.nDay = LotTime.nDay;
+		pDoc->WorkingInfo.Lot.CurTime.nHour = LotTime.nHour;
+		pDoc->WorkingInfo.Lot.CurTime.nMin = LotTime.nMin;
+		pDoc->WorkingInfo.Lot.CurTime.nSec = LotTime.nSec;
+
+		if (m_pDlgMenu01)
+			m_pDlgMenu01->DispRunTime();
+	}
+}
+
+CString CGvisRTR_PunchView::GetTime(stLotTime &LotTime)
+{
+	CString strVal;
+	time_t osBinTime;			// C run-time time (defined in <time.h>)
+	time(&osBinTime);		// Get the current time from the 
+							// operating system.
+	CTime Tim(osBinTime);
+
+	LotTime.nYear = Tim.GetYear();
+	LotTime.nMonth = Tim.GetMonth();
+	LotTime.nDay = Tim.GetDay();
+	LotTime.nHour = Tim.GetHour();
+	LotTime.nMin = Tim.GetMinute();
+	LotTime.nSec = Tim.GetSecond();
+
+	strVal.Format(_T("%04d-%02d-%02d,%02d:%02d:%02d"), LotTime.nYear, LotTime.nMonth, LotTime.nDay,
+		LotTime.nHour, LotTime.nMin, LotTime.nSec);
+	return strVal;
+}
+
+void CGvisRTR_PunchView::ChkShare()
+{
+	ChkShareUp();
+	ChkShareDn();
+}
+
+void CGvisRTR_PunchView::ChkShareUp()
+{
+	CString str, str2;
+	int nSerial, nAoiUpAutoSerial;
+
+	if (ChkShareUp(nSerial))
+	{
+		str.Format(_T("US: %d"), nSerial);
+		m_mgrFeeding->Status.PcrShare[0].bExist = TRUE;
+		m_mgrFeeding->Status.PcrShare[0].nSerial = nSerial;
+		str2.Format(_T("PCR파일 Received - US: %d"), nSerial);
+		pDoc->LogAuto(str2);
+		MpeWrite(_T("ML45112"), (long)nSerial);	// 검사한 Panel의 AOI 상 Serial
+		MpeWrite(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+	}
+	else
+	{
+		m_mgrFeeding->Status.PcrShare[0].bExist = FALSE;
+		m_mgrFeeding->Status.PcrShare[0].nSerial = -1;
+		str.Format(_T("US: "));
+	}
+	if (pFrm)
+	{
+		if (m_sShare[0] != str)
+		{
+			m_sShare[0] = str;
+			pFrm->DispStatusBar(str, 4);
+		}
+	}
+}
+
+void CGvisRTR_PunchView::ChkShareDn()
+{
+	CString str, str2;
+	int nSerial, nAoiDnAutoSerial;
+
+	if (ChkShareDn(nSerial))
+	{
+		str.Format(_T("DS: %d"), nSerial);
+		m_mgrFeeding->Status.PcrShare[1].bExist = TRUE;
+		m_mgrFeeding->Status.PcrShare[1].nSerial = nSerial;
+
+		str2.Format(_T("PCR파일 Received - DS: %d"), nSerial);
+		pDoc->LogAuto(str2);
+
+		MpeWrite(_T("ML45114"), (long)nSerial);	// 검사한 Panel의 AOI 하 Serial
+		MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+	}
+	else
+	{
+		m_mgrFeeding->Status.PcrShare[1].bExist = FALSE;
+		m_mgrFeeding->Status.PcrShare[1].nSerial = -1;
+		str.Format(_T("DS: "));
+	}
+	if (pFrm)
+	{
+		if (m_sShare[1] != str)
+		{
+			m_sShare[1] = str;
+			pFrm->DispStatusBar(str, 2);
+		}
+	}
+}
+
+BOOL CGvisRTR_PunchView::ChkShare(int &nSerial)
+{
+	int nS0, nS1;
+	BOOL b0 = ChkShareUp(nS0);
+	BOOL b1 = ChkShareDn(nS1);
+
+	if (!b0 || !b1)
+	{
+		nSerial = -1;
+		return FALSE;
+	}
+	else if (nS0 != nS1)
+	{
+		nSerial = -1;
+		return FALSE;
+	}
+
+	nSerial = nS0;
+	return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::ChkShareUp(int &nSerial)
+{
+	CFileFind cFile;
+	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsShareUp + _T("*.pcr"));
+	if (!bExist)
+		return FALSE; // pcr파일이 존재하지 않음.
+
+	int nPos;
+	CString sFileName, sSerial;
+	while (bExist)
+	{
+		bExist = cFile.FindNextFile();
+		if (cFile.IsDots()) continue;
+		if (!cFile.IsDirectory())
+		{
+			// 파일명을 얻음.
+			sFileName = cFile.GetFileName();
+			nPos = sFileName.ReverseFind('.');
+			if (nPos > 0)
+				sSerial = sFileName.Left(nPos);
+
+			nSerial = _tstoi(sSerial);
+			if (nSerial > 0)
+				return TRUE;
+			else
+			{
+				nSerial = 0;
+				return FALSE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::ChkShareDn(int &nSerial)
+{
+	CFileFind cFile;
+	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsShareDn + _T("*.pcr"));
+	if (!bExist)
+		return FALSE; // pcr파일이 존재하지 않음.
+
+	int nPos;
+	CString sFileName, sSerial;
+	while (bExist)
+	{
+		bExist = cFile.FindNextFile();
+		if (cFile.IsDots()) continue;
+		if (!cFile.IsDirectory())
+		{
+			// 파일명을 얻음.
+			sFileName = cFile.GetFileName();
+			nPos = sFileName.ReverseFind('.');
+			if (nPos > 0)
+				sSerial = sFileName.Left(nPos);
+
+			nSerial = _tstoi(sSerial);
+			if (nSerial > 0)
+				return TRUE;
+			else
+			{
+				nSerial = 0;
+				return FALSE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+void CGvisRTR_PunchView::ChkBuf()
+{
+	ChkBufUp();
+	ChkBufDn();
+}
+
+void CGvisRTR_PunchView::ChkBufUp()
+{
+	CString str, sTemp;
+
+	str = _T("UB: ");
+	if (ChkBufUp(m_pBufSerial[0], m_nBufTot[0]))
+	{
+		for (int i = 0; i < m_nBufTot[0]; i++)
+		{
+			DelOverLotEndSerialUp(m_pBufSerial[0][i]);
+
+			if (i == m_nBufTot[0] - 1)
+				sTemp.Format(_T("%d"), m_pBufSerial[0][i]);
+			else
+				sTemp.Format(_T("%d,"), m_pBufSerial[0][i]);
+			str += sTemp;
+		}
+	}
+	else
+	{
+		m_nBufTot[0] = 0;
+	}
+
+	if (pFrm)
+	{
+		if (m_sBuf[0] != str)
+		{
+			m_sBuf[0] = str;
+			pFrm->DispStatusBar(str, 3);
+
+			pDoc->SetCurrentInfoBufUpTot(m_nBufTot[0]);
+			for (int k = 0; k < m_nBufTot[0]; k++)
+				pDoc->SetCurrentInfoBufUp(k, m_pBufSerial[0][k]);
+
+			if (m_nBufTot[0] == 1)
+			{
+				pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+			}
+		}
+	}
+}
+
+void CGvisRTR_PunchView::ChkBufDn()
+{
+	CString str, sTemp;
+
+	str = _T("DB: ");
+	if (ChkBufDn(m_pBufSerial[1], m_nBufTot[1]))
+	{
+		for (int i = 0; i < m_nBufTot[1]; i++)
+		{
+			if (m_bShift2Mk)
+				return;
+
+			DelOverLotEndSerialDn(m_pBufSerial[1][i]);
+
+			if (i == m_nBufTot[1] - 1)
+				sTemp.Format(_T("%d"), m_pBufSerial[1][i]);
+			else
+				sTemp.Format(_T("%d,"), m_pBufSerial[1][i]);
+			str += sTemp;
+		}
+	}
+	else
+	{
+		m_nBufTot[1] = 0;
+	}
+
+	if (pFrm)
+	{
+		if (m_sBuf[1] != str)
+		{
+			m_sBuf[1] = str;
+			pFrm->DispStatusBar(str, 1);
+
+			pDoc->SetCurrentInfoBufDnTot(m_nBufTot[1]);
+			for (int k = 0; k < m_nBufTot[1]; k++)
+				pDoc->SetCurrentInfoBufDn(k, m_pBufSerial[1][k]);
+
+			if (m_nBufTot[1] == 1)
+			{
+				pDoc->m_nAoiCamInfoStrPcs[1] = GetAoiDnCamMstInfo();
+			}
+		}
+	}
+}
+
+BOOL CGvisRTR_PunchView::ChkBufUp(int* pSerial, int &nTot)
+{
+	CFileFind cFile;
+	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsBufUp + _T("*.pcr"));
+	if (!bExist)
+	{
+		pDoc->m_bBufEmpty[0] = TRUE;
+		if (!pDoc->m_bBufEmptyF[0])
+			pDoc->m_bBufEmptyF[0] = TRUE;		// 최초 한번 버퍼가 비어있으면(초기화를 하고 난 이후) TRUE.
+
+		return FALSE; // pcr파일이 존재하지 않음.
+	}
+
+	int nPos, nSerial;
+
+	CString sFileName, sSerial;
+	CString sNewName;
+
+	nTot = 0;
+	while (bExist)
+	{
+		bExist = cFile.FindNextFile();
+		if (cFile.IsDots()) continue;
+		if (!cFile.IsDirectory())
+		{
+			sFileName = cFile.GetFileName();
+
+			if (!SortingInUp(pDoc->WorkingInfo.System.sPathVrsBufUp + sFileName, nTot))
+				return FALSE;
+
+			nTot++;
+		}
+	}
+
+	BOOL bRtn = SortingOutUp(pSerial, nTot);
+
+	if (nTot == 0)
+		pDoc->m_bBufEmpty[0] = TRUE;
+	else
+	{
+		pDoc->m_bBufEmpty[0] = FALSE;
+		m_bIsBuf[0] = TRUE;
+	}
+
+	return (bRtn);
+}
+
+BOOL CGvisRTR_PunchView::ChkBufDn(int* pSerial, int &nTot)
+{
+	CFileFind cFile;
+	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsBufDn + _T("*.pcr"));
+	if (!bExist)
+	{
+		pDoc->m_bBufEmpty[1] = TRUE;
+		if (!pDoc->m_bBufEmptyF[1])
+			pDoc->m_bBufEmptyF[1] = TRUE;
+		return FALSE; // pcr파일이 존재하지 않음.
+	}
+
+	int nPos, nSerial;
+
+	CString sFileName, sSerial;
+	nTot = 0;
+	while (bExist)
+	{
+		bExist = cFile.FindNextFile();
+		if (cFile.IsDots()) continue;
+		if (!cFile.IsDirectory())
+		{
+			sFileName = cFile.GetFileName();
+			//nPos = sFileName.ReverseFind('.');
+			//if (nPos > 0)
+			//	sSerial = sFileName.Left(nPos);
+
+			//nSerial = _tstoi(sSerial);
+			//if (nSerial > 0)
+			//{
+			//	pSerial[nTot] = nSerial;
+			//	nTot++;
+			//}
+
+			if (!SortingInDn(pDoc->WorkingInfo.System.sPathVrsBufDn + sFileName, nTot))
+				return FALSE;
+
+			nTot++;
+		}
+	}
+
+
+	BOOL bRtn = SortingOutDn(pSerial, nTot);
+
+	if (nTot == 0)
+		pDoc->m_bBufEmpty[1] = TRUE;
+	else
+	{
+		pDoc->m_bBufEmpty[1] = FALSE;
+		m_bIsBuf[1] = TRUE;
+	}
+
+	return (bRtn);
+	//return TRUE;
+}
+
+void CGvisRTR_PunchView::SetListBuf()	// m_mgrStatus->ListBuf에 버퍼 폴더의 시리얼번호를 가지고 재갱신함.
+{
+	m_mgrStatus->ListBuf[0].Clear();
+	if (ChkBufUp(m_pBufSerial[0], m_nBufTot[0]))
+	{
+		for (int i = 0; i < m_nBufTot[0]; i++)
+			m_mgrStatus->ListBuf[0].Push(m_pBufSerial[0][i]);
+	}
+
+	m_mgrStatus->ListBuf[1].Clear();
+	if (ChkBufDn(m_pBufSerial[1], m_nBufTot[1]))
+	{
+		for (int i = 0; i < m_nBufTot[1]; i++)
+			m_mgrStatus->ListBuf[1].Push(m_pBufSerial[1][i]);
+	}
+}
+
+void CGvisRTR_PunchView::DelOverLotEndSerialUp(int nSerial)
+{
+	CString sSrc;
+
+	if (nSerial > 0)
+	{
+		sSrc.Format(_T("%s%04d.pcr"), pDoc->WorkingInfo.System.sPathVrsBufUp, nSerial);
+
+		if (m_mgrStatus->General.bSerialDecrese)
+		{
+			if (m_mgrStatus->General.nLotEndSerial > 0 && nSerial < m_mgrStatus->General.nLotEndSerial)
+			{
+				// Delete PCR File
+				pDoc->m_pFile->DeleteFolerOrFile(sSrc);
+			}
+		}
+		else
+		{
+			if (m_mgrStatus->General.nLotEndSerial > 0 && nSerial > m_mgrStatus->General.nLotEndSerial)
+			{
+				// Delete PCR File
+				pDoc->m_pFile->DeleteFolerOrFile(sSrc);
+			}
+		}
+	}
+
+}
+
+
+void CGvisRTR_PunchView::DelOverLotEndSerialDn(int nSerial)
+{
+	CString sSrc;
+
+	if (nSerial > 0)
+	{
+		sSrc.Format(_T("%s%04d.pcr"), pDoc->WorkingInfo.System.sPathVrsBufDn, nSerial);
+
+		if (m_mgrStatus->General.bSerialDecrese)
+		{
+			if (m_mgrStatus->General.nLotEndSerial > 0 && nSerial < m_mgrStatus->General.nLotEndSerial)
+			{
+				// Delete PCR File
+				pDoc->m_pFile->DeleteFolerOrFile(sSrc);
+			}
+		}
+		else
+		{
+			if (m_mgrStatus->General.nLotEndSerial > 0 && nSerial > m_mgrStatus->General.nLotEndSerial)
+			{
+				// Delete PCR File
+				pDoc->m_pFile->DeleteFolerOrFile(sSrc);
+			}
+		}
+	}
+
+}
 
 // CGvisRTR_PunchView 메시지 처리기
 void CGvisRTR_PunchView::InitMgr()
@@ -304,19 +970,6 @@ void CGvisRTR_PunchView::CloseMsgBox()
 	}
 }
 
-LONG CGvisRTR_PunchView::OnQuitDispMsg(UINT wParam, LONG lParam)
-{
-	if (m_pDlgMsgBox)
-	{
-		if (m_pDlgMsgBox->GetSafeHwnd())
-			m_pDlgMsgBox->DestroyWindow();
-		delete m_pDlgMsgBox;
-		m_pDlgMsgBox = NULL;
-	}
-
-	return 0L;
-}
-
 void CGvisRTR_PunchView::ClrDispMsg()
 {
 	OnQuitDispMsg(NULL, NULL);
@@ -394,6 +1047,39 @@ int CGvisRTR_PunchView::MsgBox(CString sMsg, int nThreadIdx, int nType, int nTim
 		nRtnVal = m_pDlgMyMsg->SyncMsgBox(sMsg, nThreadIdx, nType, nTimOut);
 
 	return nRtnVal;
+}
+
+void CGvisRTR_PunchView::SetMyMsgYes()
+{
+	if (m_pDlgMyMsg)
+	{
+		if (m_pDlgMyMsg->m_pDlgMyMsgSub01)
+		{
+			((CDlgMyMsgSub01*)(m_pDlgMyMsg->m_pDlgMyMsgSub01))->ClickYes();
+		}
+	}
+}
+
+void CGvisRTR_PunchView::SetMyMsgNo()
+{
+	if (m_pDlgMyMsg)
+	{
+		if (m_pDlgMyMsg->m_pDlgMyMsgSub01)
+		{
+			((CDlgMyMsgSub01*)(m_pDlgMyMsg->m_pDlgMyMsgSub01))->ClickNo();
+		}
+	}
+}
+
+void CGvisRTR_PunchView::SetMyMsgOk()
+{
+	if (m_pDlgMyMsg)
+	{
+		if (m_pDlgMyMsg->m_pDlgMyMsgSub02)
+		{
+			((CDlgMyMsgSub02*)(m_pDlgMyMsg->m_pDlgMyMsgSub02))->ClickOk();
+		}
+	}
 }
 
 void CGvisRTR_PunchView::InitDlg()
@@ -554,132 +1240,47 @@ void CGvisRTR_PunchView::DelAllDlg()
 	}
 }
 
-LRESULT CGvisRTR_PunchView::OnDlgInfo(WPARAM wParam, LPARAM lParam)
+void CGvisRTR_PunchView::DispMain(CString sMsg, COLORREF rgb)
 {
-	ClrDispMsg();
-	CDlgInfo Dlg;
-	m_pDlgInfo = &Dlg;
-	Dlg.DoModal();
-	m_pDlgInfo = NULL;
+	pDoc->SetMonDispMain(sMsg);
 
-	if (m_pDlgMenu01)
-		m_pDlgMenu01->ChkUserInfo(FALSE);
+	m_stDispMain.sMsg = sMsg;
+	m_stDispMain.rgb = rgb;
 
-	return 0L;
-}
-
-void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (nIDEvent == TIM_INIT_VIEW)
+	if (sMsg == _T("정 지"))
 	{
-		KillTimer(TIM_INIT_VIEW);
-
-		switch (m_nStepInitView)
-		{
-		case 0:
-			DoDispMsg(_T("프로그램을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			m_nStepInitView++;
-			break;
-		case 1:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 1"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_02);
-			break;
-		case 2:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.-2"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_01);
-			//if (bDualTest)
-			//	m_pDlgMenu01->SelMap(ALL);
-			//else
-			//	m_pDlgMenu01->SelMap(UP);
-			//break;
-		case 3:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 3"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			//ShowDlg(IDD_DLG_MENU_02);
-			break;
-		case 4:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 4"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_03);
-			break;
-		case 5:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 5"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_04);
-			break;
-		case 6:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 6"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_05);
-			break;
-		case 7:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 7"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_06);
-			break;
-		case 8:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 8"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_MENU_07);
-			break;
-		case 9:
-			m_nStepInitView++;
-			DispMsg(_T("화면구성을 생성합니다.- 9"), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			ShowDlg(IDD_DLG_FRAME_HIGH);
-			if (m_pDlgFrameHigh)
-				m_pDlgFrameHigh->ChkMenu01();
-			//SetDualTest(pDoc->WorkingInfo.LastJob.bDualTest);
-
-			//if (pDoc->GetCurrentInfoEng())
-			//{
-			//	if (m_mgrReelmap->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-			//	{
-			//		//if (pDoc->GetTestMode() == MODE_OUTER)
-			//		if (m_mgrReelmap->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
-			//		{
-			//			if (m_pDlgMenu06)
-			//				m_pDlgMenu06->RedrawWindow();
-			//		}
-			//	}
-			//}
-			Sleep(300);
-
-		case 10:
-			m_nStepInitView++;
-			DispMsg(_T("Manager를 생성합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			CreateMgr();
-			break;
-			break;
-
-		case 11:
-			m_nStepInitView++;
-			DispMsg(_T("Motion을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			if (m_mgrPunch)
-				m_mgrPunch->ResetMotion();
-			Sleep(300);
-			break;
-		case 12:
-			m_nStepInitView++;
-			//m_bLoadMstInfo = TRUE;
-			DispMsg(_T("H/W를 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			m_mgrPunch->InitAct();
-			m_mgrReelmap->InitAct();
-			m_mgrFeeding->InitAct();
-			//m_mgrProcedure->m_bStopFeeding = TRUE;
-			//MpeWrite(_T("MB440115"), 1); // 마킹부Feeding금지
-			//Sleep(300);
-			m_bTIM_INIT_VIEW = FALSE;
-			break;
-		}
-
-		if (m_bTIM_INIT_VIEW)
-			SetTimer(TIM_INIT_VIEW, 100, NULL);
+		pDoc->SetMkMenu03(_T("Main"), _T("Stop"), TRUE);
+		pDoc->SetMkMenu03(_T("Main"), _T("Run"), FALSE);
+	}
+	else
+	{
+		pDoc->SetMkMenu03(_T("Main"), _T("Run"), TRUE);
+		pDoc->SetMkMenu03(_T("Main"), _T("Stop"), FALSE);
 	}
 
-	CFormView::OnTimer(nIDEvent);
+	sMsg.Empty();
+}
+
+int CGvisRTR_PunchView::DoDispMain()
+{
+	int nRtn = -1;
+
+	if (m_stDispMain.sMsg.IsEmpty())
+		return nRtn;
+
+	if (m_pDlgMenu01)
+	{
+		CString sMsg = m_stDispMain.sMsg;
+		COLORREF rgb = m_stDispMain.rgb;
+		m_sDispMain = sMsg;
+		m_pDlgMenu01->DispMain(sMsg, rgb);
+		m_stDispMain.sMsg = _T("");
+		m_stDispMain.rgb = RGB_WHITE;
+
+		return 0;
+	}
+
+	return nRtn;
 }
 
 int CGvisRTR_PunchView::MyPassword(CString strMsg, int nCtrlId)
@@ -690,3 +1291,84 @@ int CGvisRTR_PunchView::MyPassword(CString strMsg, int nCtrlId)
 	return (dlg1.m_nRtnVal);
 
 }
+
+void CGvisRTR_PunchView::EnableItsMode(BOOL bEnable)
+{
+	if(m_pDlgMenu01)
+		m_pDlgMenu01->EnableItsMode(bEnable);
+}
+
+void CGvisRTR_PunchView::SetDualTest(BOOL bOn)
+{
+	MpeWrite(_T("MB44017A"), (long)(bOn ? 0 : 1));		// 단면 검사 On
+
+	if (m_pDlgFrameHigh)
+		m_pDlgFrameHigh->SetDualTest(bOn);
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->SetDualTest(bOn);
+	if (m_pDlgMenu03)
+		m_pDlgMenu03->SetDualTest(bOn);
+	if (m_pDlgMenu06)
+		m_pDlgMenu06->SetDualTest(bOn);
+}
+
+void CGvisRTR_PunchView::SetTestMode(int nMode)
+{
+	pDoc->SetTestMode(nMode); // MODE_NONE = 0, MODE_INNER = 1, MODE_OUTER = 2 .
+
+	if (pDoc->GetTestMode() == MODE_INNER)
+	{
+		MpeWrite(_T("MB440172"), 1);// 내층 검사 사용/미사용 
+		MpeWrite(_T("MB440176"), 0);// 외층 검사 사용/미사용
+		pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), TRUE);
+		pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), FALSE);
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->EnableItsMode(FALSE);
+	}
+	else if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		MpeWrite(_T("MB440172"), 0);// 내층 검사 사용/미사용
+		MpeWrite(_T("MB440176"), 1);// 외층 검사 사용/미사용
+		pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), FALSE);
+		pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), TRUE);
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->EnableItsMode();
+	}
+	else
+	{
+		MpeWrite(_T("MB440172"), 0);// 내층 검사 사용/미사용
+		MpeWrite(_T("MB440176"), 0);// 외층 검사 사용/미사용
+		pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), FALSE);
+		pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), FALSE);
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->EnableItsMode(FALSE);
+	}
+}
+
+long CGvisRTR_PunchView::GetMpeData(int nSection, int nName)
+{
+	long nVal = 0;
+	if (m_mgrFeeding)
+		nVal = m_mgrFeeding->GetMpeData(nSection, nName);
+	return nVal;
+}
+
+BOOL CGvisRTR_PunchView::MpeWrite(CString strRegAddr, long lData, BOOL bCheck)
+{
+	return m_mgrFeeding->MpeWrite(strRegAddr, lData, bCheck);
+}
+
+BOOL CGvisRTR_PunchView::IsAuto()
+{
+	BOOL bVal = 0;
+	if (m_mgrFeeding)
+		bVal = m_mgrFeeding->IsAuto();
+	return bVal;
+}
+
+void CGvisRTR_PunchView::ResetMotion()
+{
+	if (m_mgrPunch)
+		m_mgrPunch->ResetMotion();
+}
+

@@ -10,6 +10,8 @@
 #endif // _MSC_VER > 1000
 
 
+#include "../Device/MotionParam.h"
+
 #define TEST_MODE		1
 
 #ifndef MAX_STRIP
@@ -62,7 +64,7 @@
 
 	//#define USE_CAM_MASTER
 	//#define	USE_NMC
-	//#define	USE_MPE
+	#define	USE_MPE
 	//#define	USE_IRAYPLE
 	//#define	USE_SR1000W
 	//#define	USE_LIGHT
@@ -503,20 +505,6 @@ typedef enum {KOREAN=0, ENGLISH=1, JAPANESE=2} LANG;
 #define DEF_WIDE					24	    // User Define 3
 #define DEF_LIGHT					25	
 
-enum SAPP3_CODE
-{	
-	SAPP3_OPEN = 0,
-	SAPP3_SHORT = 1,
-	SAPP3_NICK = 2,
-	SAPP3_SPACE_EXTRA_PROTRUSION = 3,
-	SAPP3_PINHOLE = 4,
-	SAPP3_HOPEN = 5,
-	SAPP3_HMISS_HPOS_HBAD = 6,
-	SAPP3_USHORT = 7,
-	SAPP3_PAD = 8,
-	SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF = 9
-};
-
 #define DLY_INK_MK			300
 
 #define  MAX_PROCNODENUM			60    // Max ProcNodeNum : 600mm/2.5um = 48 
@@ -548,24 +536,6 @@ enum SAPP3_CODE
 #ifndef ID_ENGRAVE
 #define ID_ENGRAVE		2
 #endif
-
-typedef struct 
-{
-	int iStartX, iStartY;
-	int iEndX, iEndY;
-	int FMirror;	//0 : Defult 1 : Up to Down Mirroring  2 : Left to Right Mirroring
-	int FRotate;	//0 : 0  1 : 90  2 : 180  3 : 270 [Degree]
-} REGIONS_PIECE;
-
-typedef struct {
-	int nId;
-	int iStartX, iStartY;
-	int iEndX, iEndY;
-	int FMirror;	//0 : 원본 1 : 상하미러  2 : 좌퓖E肩?
-	int FRotate;	//0 : 0도  1 : 90도  2 : 180도  3 : 270도
-	int Row;
-	int Col;
-} REGIONS_PIECE_2;
 
 
 #define MYGL_GAP_PNL				5
@@ -610,6 +580,38 @@ typedef struct {
 #define PNL_TOT						2500
 #define PNLBUF_Y					50
 #define PNLBUF_X					50
+
+enum SAPP3_CODE
+{
+	SAPP3_OPEN = 0,
+	SAPP3_SHORT = 1,
+	SAPP3_NICK = 2,
+	SAPP3_SPACE_EXTRA_PROTRUSION = 3,
+	SAPP3_PINHOLE = 4,
+	SAPP3_HOPEN = 5,
+	SAPP3_HMISS_HPOS_HBAD = 6,
+	SAPP3_USHORT = 7,
+	SAPP3_PAD = 8,
+	SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF = 9
+};
+
+typedef struct
+{
+	int iStartX, iStartY;
+	int iEndX, iEndY;
+	int FMirror;	//0 : Defult 1 : Up to Down Mirroring  2 : Left to Right Mirroring
+	int FRotate;	//0 : 0  1 : 90  2 : 180  3 : 270 [Degree]
+} REGIONS_PIECE;
+
+typedef struct {
+	int nId;
+	int iStartX, iStartY;
+	int iEndX, iEndY;
+	int FMirror;	//0 : 원본 1 : 상하미러  2 : 좌퓖E肩?
+	int FRotate;	//0 : 0도  1 : 90도  2 : 180도  3 : 270도
+	int Row;
+	int Col;
+} REGIONS_PIECE_2;
 
 enum SEL_RMAP {
 	RMAP_NONE = -1, RMAP_UP = 0, RMAP_DN = 1, RMAP_ALLUP = 2, RMAP_ALLDN = 3, 
@@ -735,6 +737,7 @@ struct stLastJob
 	BOOL bContFixDef;
 	CString sNumRangeFixDef, sNumContFixDef, sUltraSonicCleannerStTim, sEngItsCode;
 	BOOL bRclDrSen, bMkDrSen, bBufDrSen, bAoiUpDrSen, bAoiDnDrSen, bEngvDrSen, bUclDrSen;
+	BOOL bUse380mm;
 	BOOL bDispMkPcs, bStopFixDef, bMkSftySen, bAoiSftySen;
 	CString sJogSpd, sLotSerial; //sLightVal, 
 	BOOL bLightOn, bMkOnePnl, bAoiOnePnl, bEngraveOnePnl;
@@ -782,6 +785,7 @@ struct stLastJob
 		sNumContFixDef = _T("");
 		sUltraSonicCleannerStTim = _T("5.0"); // AOI_Dn : MW05940, AOI_Up : MW05942
 		bRclDrSen = FALSE; bMkDrSen = FALSE; bBufDrSen = FALSE; bAoiUpDrSen = FALSE; bAoiDnDrSen = FALSE; bEngvDrSen = FALSE; bUclDrSen = FALSE;
+		bUse380mm = FALSE;
 		bDispMkPcs = FALSE; bStopFixDef = FALSE; bMkSftySen = FALSE; bAoiSftySen = FALSE;
 		sJogSpd = _T(""); sLotSerial = _T(""); //sLightVal=""); 
 		bLightOn = FALSE; bMkOnePnl = FALSE; bAoiOnePnl = FALSE; bEngraveOnePnl = FALSE;
@@ -1069,8 +1073,6 @@ struct stLot
 	}
 };
 
-#include "../Device/MotionParam.h"
-
 struct stWorkingInfo
 {
 	stSystem System;
@@ -1114,6 +1116,8 @@ struct stYield
 		;
 	}
 };
+
+
 
 struct stSliceIo
 {
@@ -1840,104 +1844,41 @@ typedef enum {
 	DOOR_FL_MK = 0, DOOR_FR_MK = 1,
 	DOOR_BL_MK = 2, DOOR_BR_MK = 3
 }  DOOR_MK;
+
 typedef enum {
 	DOOR_FM_AOI_UP = 0, DOOR_FL_AOI_UP = 1, DOOR_FR_AOI_UP = 2,
 	DOOR_BM_AOI_UP = 3, DOOR_BL_AOI_UP = 4, DOOR_BR_AOI_UP = 5
 }  DOOR_AOI_UP;
+
 typedef enum {
 	DOOR_FM_AOI_DN = 6, DOOR_FL_AOI_DN = 7, DOOR_FR_AOI_DN = 8,
 	DOOR_BM_AOI_DN = 9, DOOR_BL_AOI_DN = 10, DOOR_BR_AOI_DN = 11
 }  DOOR_AOI_DN;
+
 typedef enum {
 	DOOR_FL_UC = 0, DOOR_FR_UC = 1,
 	DOOR_BL_UC = 2, DOOR_BR_UC = 3
 }  DOOR_UC;
+
 typedef enum {
 	DOOR_FL_RC = 0, DOOR_FR_RC = 1,
 	DOOR_S_RC = 2, DOOR_BL_RC = 3, DOOR_BR_RC = 4
 }  DOOR_RC;
+
 typedef enum {
 	DOOR_FL_ENGV = 0, DOOR_FR_ENGV = 1,
 	DOOR_BL_ENGV = 2, DOOR_BR_ENGV = 3
 }  DOOR_ENGV;//DOOR_S_ENGV = 2, 
 
 typedef enum { EMG_M_MK = 0, EMG_B_MK = 1 }  EMG_MK;
+
 typedef enum { EMG_F_AOI_UP = 0, EMG_B_AOI_UP = 1 }  EMG_AOI_UP;
+
 typedef enum { EMG_F_AOI_DN = 2, EMG_B_AOI_DN = 3 }  EMG_AOI_DN;
+
 typedef enum { LMT_NEG = 0, LMT_POS = 1 }  SENS_LIMIT;
 
 
-
-struct stPcrShare
-{
-	BOOL bExist;
-	int nSerial;
-	CString sModel, sLayer, sLot, sItsCode, sPrcsCode;
-
-	stPcrShare()
-	{
-		bExist = FALSE;
-		nSerial = 0;
-		sModel = _T(""); sLayer = _T(""); sLot = _T(""); sItsCode = _T(""); sPrcsCode = _T("");
-	}
-};
-
-struct stStatus
-{
-	BOOL bAuto, bManual, bOneCycle;								// Mode 스위치
-	BOOL bSwJogLeft, bSwJogFast, bSwJogStep;								// Jog 판넬 선택 스위치
-	BOOL bDoorMk[4], bDoorAoi[12];								// 도어 센서
-	BOOL bDoorMkF[4], bDoorAoiF[12];							// 도어 센서
-	BOOL bEmgMk[2], bEmgAoi[4];									// 비상정지 스위치
-	BOOL bEmgUc, bEmgRc;										// 비상정지 스위치
-	BOOL bEmgEngv[2], bEmgEngvF[2];								// 비상정지 스위치
-	BOOL bEmgMkF[2], bEmgAoiF[4];								// 비상정지 스위치
-	BOOL bEmgUcF, bEmgRcF;										// 비상정지 스위치
-	BOOL bMainAirMk, bMainAirAoi;								// 메인 에어
-	BOOL bSensTblVacMk, bSensTblVacAoi;							// 테이블 진공 센서
-	BOOL bSensTblPrsMk, bSensTblPrsAoi;							// 테이블 압력 센서
-	BOOL bSensSaftyMk, bSensSaftyAoi;							// 안전 센서
-	BOOL bSensSaftyMkF, bSensSaftyAoiF;							// 안전 센서
-	BOOL bSensLmtBufMk[2], bSensLmtBufRc[2], bSensLmtBufUc[2];	// 버퍼 롤러 리미트 센서
-	BOOL bSigTestDoneAoi, bSigTblAirAoi;						// 검사부 신호
-	BOOL bDoorUc[4], bDoorRe[5];								// 도어 센서
-	BOOL bDoorUcF[4], bDoorReF[5];								// 도어 센서
-	BOOL bDoorEngv[4], bDoorEngvF[4];							// 도어 센서
-
-	stPcrShare PcrShare[2];
-
-	stStatus()
-	{
-		bAuto = FALSE; bManual = FALSE; bOneCycle = FALSE; bSwJogLeft = FALSE; bSwJogFast = FALSE; bSwJogStep = FALSE;
-		bDoorEngv[0] = FALSE; bDoorEngv[1] = FALSE; bDoorEngv[2] = FALSE; bDoorEngv[3] = FALSE;
-		bDoorEngvF[0] = FALSE; bDoorEngvF[1] = FALSE; bDoorEngvF[2] = FALSE; bDoorEngvF[3] = FALSE;
-		bDoorMk[0] = FALSE; bDoorMk[1] = FALSE; bDoorMk[2] = FALSE; bDoorMk[3] = FALSE;
-		bDoorMkF[0] = FALSE; bDoorMkF[1] = FALSE; bDoorMkF[2] = FALSE; bDoorMkF[3] = FALSE;
-		bDoorAoi[0] = FALSE; bDoorAoi[1] = FALSE; bDoorAoi[2] = FALSE; bDoorAoi[3] = FALSE; bDoorAoi[4] = FALSE; bDoorAoi[5] = FALSE;
-		bDoorAoiF[0] = FALSE; bDoorAoiF[1] = FALSE; bDoorAoiF[2] = FALSE; bDoorAoiF[3] = FALSE; bDoorAoiF[4] = FALSE; bDoorAoiF[5] = FALSE;
-		bEmgMk[0] = FALSE; bEmgMk[1] = FALSE;
-		bEmgAoi[0] = FALSE; bEmgAoi[1] = FALSE;
-		bEmgUc = FALSE; bEmgRc = FALSE;
-		bEmgEngv[0] = FALSE; bEmgEngvF[0] = FALSE;
-		bEmgEngv[1] = FALSE; bEmgEngvF[1] = FALSE;
-		bEmgMkF[0] = FALSE; bEmgMkF[1] = FALSE;
-		bEmgAoiF[0] = FALSE; bEmgAoiF[1] = FALSE;
-		bEmgUcF = FALSE; bEmgRcF = FALSE;
-		bMainAirMk = FALSE; bMainAirAoi = FALSE;
-		bSensTblVacMk = FALSE; bSensTblVacAoi = FALSE;
-		bSensTblPrsMk = FALSE; bSensTblPrsAoi = FALSE;
-		bSensSaftyMk = FALSE; bSensSaftyAoi = FALSE;
-		bSensSaftyMkF = FALSE; bSensSaftyAoiF = FALSE;
-		bSensLmtBufMk[0] = FALSE; bSensLmtBufMk[1] = FALSE;
-		bSensLmtBufUc[0] = FALSE; bSensLmtBufUc[1] = FALSE;
-		bSensLmtBufRc[0] = FALSE; bSensLmtBufRc[1] = FALSE;
-		bSigTestDoneAoi = FALSE; bSigTblAirAoi = FALSE;
-		bDoorUc[0] = FALSE; bDoorUc[1] = FALSE; bDoorUc[2] = FALSE; bDoorUc[3] = FALSE;
-		bDoorUcF[0] = FALSE; bDoorUcF[1] = FALSE; bDoorUcF[2] = FALSE; bDoorUcF[3] = FALSE;
-		bDoorRe[0] = FALSE; bDoorRe[1] = FALSE; bDoorRe[2] = FALSE; bDoorRe[3] = FALSE; bDoorRe[4] = FALSE;
-		bDoorReF[0] = FALSE; bDoorReF[1] = FALSE; bDoorReF[2] = FALSE; bDoorReF[3] = FALSE; bDoorReF[4] = FALSE;
-	}
-};
 
 struct stMpeIoWrite
 {

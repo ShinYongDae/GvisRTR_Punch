@@ -39,7 +39,6 @@ public:
 
 	// 작업입니다.
 public:
-	void ResetMotion();
 	BOOL InitAct();
 
 	void SetLight(int nVal = -1);
@@ -48,6 +47,9 @@ public:
 	void ResetLight2();
 	int GetLight();
 	int GetLight2();
+
+	void ResetMotion();
+	void ResetMotion(int nMsId);
 
 	// 보조작업입니다.
 public:

@@ -24,10 +24,16 @@ CManagerProcedure::CManagerProcedure(CWnd* pParent)
 	}
 }
 
-
 CManagerProcedure::~CManagerProcedure()
 {
 	m_bTIM_INIT_PROCEDURE = FALSE;
+
+	if (m_pEngrave)
+	{
+		m_pEngrave->Close();
+		delete m_pEngrave;
+		m_pEngrave = NULL;
+	}
 }
 
 BEGIN_MESSAGE_MAP(CManagerProcedure, CWnd)
@@ -71,5 +77,12 @@ void CManagerProcedure::Init()
 
 BOOL CManagerProcedure::InitAct()
 {
+#ifdef USE_TCPIP
+	if (!m_pEngrave)
+	{
+		m_pEngrave = new CEngrave(pDoc->WorkingInfo.System.sIpClient[ID_PUNCH], pDoc->WorkingInfo.System.sIpServer[ID_ENGRAVE], pDoc->WorkingInfo.System.sPort[ID_ENGRAVE], this);
+		m_pEngrave->SetHwnd(this->GetSafeHwnd());
+	}
+#endif
 	return TRUE;
 }

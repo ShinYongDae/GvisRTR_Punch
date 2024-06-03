@@ -6,7 +6,8 @@
 
 class CMainFrame : public CFrameWnd
 {
-	
+	CString m_sDispStatusBar[10];
+
 protected: // serialization에서만 만들어집니다.
 	CMainFrame();
 	DECLARE_DYNCREATE(CMainFrame)
@@ -28,6 +29,8 @@ public:
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 #endif
+
+	void DispStatusBar(CString strMsg, int nStatusBarID);
 
 protected:  // 컨트롤 모음이 포함된 멤버입니다.
 	CStatusBar        m_wndStatusBar;

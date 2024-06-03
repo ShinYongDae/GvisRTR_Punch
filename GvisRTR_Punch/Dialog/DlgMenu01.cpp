@@ -44,6 +44,7 @@ void CDlgMenu01::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CDlgMenu01, CDialog)
 	ON_WM_SHOWWINDOW()
+	ON_BN_CLICKED(IDC_CHK_USER_INFO, &CDlgMenu01::OnBnClickedChkUserInfo)
 END_MESSAGE_MAP()
 
 
@@ -672,20 +673,6 @@ void CDlgMenu01::AtDlgHide()
 }
 
 
-void CDlgMenu01::ChkUserInfo(BOOL bOn)
-{
-	if (bOn)
-	{
-		pView->PostMessage(WM_DLG_INFO, 0, 0);
-	}
-	else
-	{
-		UpdateData();
-	}
-
-	//myBtn[1].SetCheck(bOn);
-}
-
 
 //void CDlgMenu01::SetRgbStcDef()
 //{
@@ -803,3 +790,169 @@ void CDlgMenu01::ChkUserInfo(BOOL bOn)
 //	myStcTitle[47].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_WIDE]);
 //}
 
+
+void CDlgMenu01::DispMain(CString sMsg, COLORREF rgb)
+{
+	if (myStcTitle[14].GetText() != sMsg)
+	{
+		myStcTitle[14].SetText(sMsg);
+		myStcTitle[14].SetTextColor(rgb);
+	}
+}
+
+void CDlgMenu01::DispRunTime()
+{
+	CString str, sPrev;
+	int nDiff;
+	int nHour, nMin, nSec;
+	int nStYear, nStMonth, nStDay, nStHour, nStMin, nStSec;
+	int nCurYear, nCurMonth, nCurDay, nCurHour, nCurMin, nCurSec;
+	int nEdYear, nEdMonth, nEdDay, nEdHour, nEdMin, nEdSec;
+
+	nStYear = pDoc->WorkingInfo.Lot.StTime.nYear;
+	nStMonth = pDoc->WorkingInfo.Lot.StTime.nMonth;
+	nStDay = pDoc->WorkingInfo.Lot.StTime.nDay;
+	nStHour = pDoc->WorkingInfo.Lot.StTime.nHour;
+	nStMin = pDoc->WorkingInfo.Lot.StTime.nMin;
+	nStSec = pDoc->WorkingInfo.Lot.StTime.nSec;
+
+	nCurYear = pDoc->WorkingInfo.Lot.CurTime.nYear;
+	nCurMonth = pDoc->WorkingInfo.Lot.CurTime.nMonth;
+	nCurDay = pDoc->WorkingInfo.Lot.CurTime.nDay;
+	nCurHour = pDoc->WorkingInfo.Lot.CurTime.nHour;
+	nCurMin = pDoc->WorkingInfo.Lot.CurTime.nMin;
+	nCurSec = pDoc->WorkingInfo.Lot.CurTime.nSec;
+
+	nEdYear = pDoc->WorkingInfo.Lot.EdTime.nYear;
+	nEdMonth = pDoc->WorkingInfo.Lot.EdTime.nMonth;
+	nEdDay = pDoc->WorkingInfo.Lot.EdTime.nDay;
+	nEdHour = pDoc->WorkingInfo.Lot.EdTime.nHour;
+	nEdMin = pDoc->WorkingInfo.Lot.EdTime.nMin;
+	nEdSec = pDoc->WorkingInfo.Lot.EdTime.nSec;
+
+	if (!nStYear && !nStMonth && !nStDay && !nStHour && !nStMin && !nStSec)
+	{
+		str = _T("");
+	}
+	else if (!nEdYear && !nEdMonth && !nEdDay && !nEdHour && !nEdMin && !nEdSec)
+	{
+		nDiff = (GetTickCount() - pView->m_dwLotSt) / 1000;
+		nHour = int(nDiff / 3600);
+		nMin = int((nDiff - 3600 * nHour) / 60);
+		nSec = nDiff % 60;
+		str.Format(_T("%02d:%02d:%02d"), nHour, nMin, nSec);
+	}
+	else
+	{
+		if (pView->m_dwLotEd > 0)
+		{
+			nDiff = (pView->m_dwLotEd - pView->m_dwLotSt) / 1000;
+			nHour = int(nDiff / 3600);
+			nMin = int((nDiff - 3600 * nHour) / 60);
+			nSec = nDiff % 60;
+			str.Format(_T("%02d:%02d:%02d"), nHour, nMin, nSec);
+		}
+		else
+		{
+			nHour = nEdHour - nStHour;
+			if (nHour < 0)
+				nHour += 24;
+
+			nMin = nEdMin - nStMin;
+			if (nMin < 0)
+				nMin += 60;
+
+			nSec = nEdSec - nStSec;
+			if (nSec < 0)
+				nSec += 60;
+
+			str.Format(_T("%02d:%02d:%02d"), nHour, nMin, nSec);
+		}
+	}
+
+	//sPrev = myStcData[22].GetText();
+	GetDlgItem(IDC_STC_LOT_START)->GetWindowText(sPrev);
+
+	if (!sPrev.IsEmpty())
+	{
+		GetDlgItem(IDC_STC_LOT_RUN)->GetWindowText(sPrev);
+		if (sPrev != str)
+		{
+			myStcData[22].SetText(str);
+			pDoc->SetMkMenu01(_T("LotTime"), _T("Run"), str);
+
+#ifdef USE_ENGRAVE
+			if (pView)
+			{
+				if (pView->m_pEngrave)
+				{
+					pView->m_pEngrave->SetRunTime();
+				}
+			}
+#endif
+		}
+	}
+}
+
+CString CDlgMenu01::GetRunTime()
+{
+	CString str;
+	GetDlgItem(IDC_STC_LOT_RUN)->GetWindowText(str);
+	return str;
+}
+
+void CDlgMenu01::ChkUserInfo(BOOL bOn)
+{
+	if (bOn)
+	{
+		pView->PostMessage(WM_DLG_INFO, 0, 0);
+	}
+	else
+	{
+		UpdateData();
+	}
+
+	myBtn[1].SetCheck(bOn);
+}
+
+void CDlgMenu01::OnBnClickedChkUserInfo()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// TODO: Add your control notification handler code here
+	BOOL bOn = myBtn[1].GetCheck();
+	ChkUserInfo(bOn);
+	this->MoveWindow(m_pRect, TRUE);
+}
+
+void CDlgMenu01::EnableItsMode(BOOL bEnable)
+{
+	if (bEnable)
+	{
+		//if (pView->m_nSelRmap != RMAP_ITS)
+		//	m_nSelRmapPrev = pView->m_nSelRmap;
+
+		//pView->m_nSelRmap = RMAP_ITS;
+
+		myBtn[12].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_UP
+		myBtn[13].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_DN
+		myBtn[14].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_ALL
+
+		myStcTitle[49].SetText(_T("외층")); // IDC_STC_WK_UP
+		myStcTitle[50].SetText(_T("내층")); // IDC_STC_WK_DN
+		myStcTitle[53].SetText(_T("외층")); // IDC_STC_ST_UP
+		myStcTitle[54].SetText(_T("내층")); // IDC_STC_ST_DN
+	}
+	else
+	{
+		//pView->m_nSelRmap = m_nSelRmapPrev;
+
+		myBtn[12].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_UP
+		myBtn[13].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_DN
+		myBtn[14].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_ALL
+
+		myStcTitle[49].SetText(_T("상면")); // IDC_STC_WK_UP
+		myStcTitle[50].SetText(_T("하면")); // IDC_STC_WK_DN
+		myStcTitle[53].SetText(_T("상면")); // IDC_STC_ST_UP
+		myStcTitle[54].SetText(_T("하면")); // IDC_STC_ST_DN
+	}
+}

@@ -19,8 +19,13 @@ class CDlgInfo : public CDialog
 
 	void LoadImg();
 	void DelImg();
-	BOOL Create();
 	void InitGui();
+	void InitStatic();
+	void InitStcTitle();
+	void InitStcData();
+	void InitBtn();
+	BOOL Create();
+	void Disp();
 
 public:
 	CDlgInfo(CWnd* pParent = NULL);   // 표준 생성자입니다.
@@ -37,4 +42,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 };

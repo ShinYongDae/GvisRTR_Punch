@@ -410,6 +410,7 @@
 #define IDC_STC_GD_RA_2                 1158
 #define IDC_BTN_LT_UP2                  1158
 #define IDC_STC_103                     1158
+#define IDC_STC_44                      1158
 #define IDC_STC_0025                    1159
 #define IDC_STC_GD_RA_2_UP              1159
 #define IDC_BTN_LT_DN2                  1159

@@ -15,8 +15,8 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 	m_pParent = pParent;
 	m_bCreated = FALSE;
 
-	Init();
 	InitDevices();
+	Init();
 
 	if (!Create())
 	{
@@ -24,7 +24,6 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 		AfxMessageBox(_T("CManagerPunch::Create() Failed!!!"));
 	}
 }
-
 
 CManagerPunch::~CManagerPunch()
 {
@@ -81,6 +80,8 @@ void CManagerPunch::InitDevices()
 	m_pVision[1] = NULL;			// Camera & MIL
 	m_pVisionInner[0] = NULL;		// Camera & MIL
 	m_pVisionInner[1] = NULL;		// Camera & MIL
+
+	CreateDevices();
 }
 
 BOOL CManagerPunch::CreateDevices()
@@ -90,7 +91,9 @@ BOOL CManagerPunch::CreateDevices()
 		delete m_pMotion;
 		m_pMotion = NULL;
 	}
+
 	m_pMotion = new CMotion(this);
+
 	if (!m_pMotion->InitBoard())
 	{
 		MsgBox(_T("XMP 보드 초기화 실패, 다시 시작하세요.!!!"));
@@ -128,8 +131,7 @@ BOOL CManagerPunch::CreateDevices()
 }
 
 
-//===> Motion
-void CManagerPunch::ResetMotion()
+void CManagerPunch::Init()
 {
 	int nAxis;
 	if (m_pMotion)
@@ -140,10 +142,6 @@ void CManagerPunch::ResetMotion()
 			Sleep(30);
 		}
 	}
-}
-
-void CManagerPunch::Init()
-{
 }
 
 BOOL CManagerPunch::InitAct()
@@ -188,6 +186,7 @@ BOOL CManagerPunch::InitAct()
 	return TRUE;
 }
 
+//===> Light
 int CManagerPunch::GetLight()
 {
 	int nVal = 0;
@@ -254,5 +253,79 @@ void CManagerPunch::ResetLight2()
 	}
 }
 
+//===> Motion
+
+void CManagerPunch::ResetMotion()
+{
+	int nAxis;
+	for (nAxis = 0; nAxis < MAX_MS; nAxis++)
+	{
+		ResetMotionPunch(nAxis);
+
+		if (nAxis < MAX_AXIS)
+		{
+			while (!m_pMotion->IsServoOn(nAxis))
+			{
+				if (nAxis == MS_X0 || nAxis == MS_Y0)
+					m_pMotion->Clear(MS_X0Y0);
+				else if (nAxis == MS_X1 || nAxis == MS_Y1)
+					m_pMotion->Clear(MS_X1Y1);
+				else
+					m_pMotion->Clear(nAxis);
+				Sleep(30);
+				m_pMotion->ServoOnOff(nAxis, TRUE);
+				Sleep(30);
+			}
+		}
+	}
+}
+
+
+void CManagerPunch::ResetMotion(int nMsId)
+{
+	if (!m_pMotion)
+		return;
+
+	long lRtn = m_pMotion->GetState(nMsId);  // -1 : MPIStateERROR, 0 : MPIStateIDLE, 1 : MPIStateSTOPPING, 2 : MPIStateMOVING
+	if (lRtn == 2)
+	{
+		if (nMsId == MS_X0 || nMsId == MS_Y0)
+			m_pMotion->Abort(MS_X0Y0);
+		else if (nMsId == MS_X1 || nMsId == MS_Y1)
+			m_pMotion->Abort(MS_X1Y1);
+		else
+			m_pMotion->Abort(nMsId);
+		Sleep(30);
+	}
+
+	if (nMsId == MS_X0 || nMsId == MS_Y0)
+		m_pMotion->Clear(MS_X0Y0);
+	else if (nMsId == MS_X1 || nMsId == MS_Y1)
+		m_pMotion->Clear(MS_X1Y1);
+	else
+		m_pMotion->Clear(nMsId);
+
+	Sleep(30);
+
+	if (!m_pMotion->IsEnable(nMsId))
+	{
+		if (nMsId == MS_X0Y0 || nMsId == MS_X0 || nMsId == MS_Y0)
+		{
+			m_pMotion->ServoOnOff(AXIS_X0, TRUE);
+			Sleep(30);
+			m_pMotion->ServoOnOff(AXIS_Y0, TRUE);
+		}
+		else if (nMsId == MS_X1Y1 || nMsId == MS_X1 || nMsId == MS_Y1)
+		{
+			m_pMotion->ServoOnOff(AXIS_X1, TRUE);
+			Sleep(30);
+			m_pMotion->ServoOnOff(AXIS_Y1, TRUE);
+		}
+		else
+			m_pMotion->ServoOnOff(nMsId, TRUE);
+
+		Sleep(30);
+	}
+}
 
 
