@@ -155,6 +155,13 @@ long CManagerFeeding::GetMpeData(int nSection, int nName)
 	return m_pMpe->m_pMpeData[nSection][nName];
 }
 
+BOOL CManagerFeeding::GetMpeSignal(int nSection, int nName)
+{
+	if (!m_pMpe || !m_pMpe->m_pMpeData)
+		return 0;
+	return (m_pMpe->m_pMpeSignal[nSection] & (0x01 << nName));
+}
+
 BOOL CManagerFeeding::MpeWrite(CString strRegAddr, long lData, BOOL bCheck)
 {
 	if (!m_pMpe)

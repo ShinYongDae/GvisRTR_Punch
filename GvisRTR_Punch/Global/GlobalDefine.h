@@ -763,6 +763,28 @@ struct stLastJob
 	CString sCurrentShotNum, sSettingShotNum;
 	int nAlarmTimePunch, nAlarmTimeAoi;
 
+	struct stEngraveInfo
+	{
+		CString sProcessNum;
+		CString sModelUp, sLayerUp, sLotUp, sSerialUp, sCompletedSerialUp;
+		CString sModelDn, sLayerDn, sLotDn, sSerialDn, sCompletedSerialDn;
+		CString sSerialEng;
+		CString sInnerModelUp, sInnerLayerUp, sInnerLotUp;
+		CString sInnerModelDn, sInnerLayerDn, sInnerLotDn;
+		CString sEngItsCode;
+
+		stEngraveInfo()
+		{
+			sProcessNum = _T("");
+			sModelUp = _T(""); sLayerUp = _T(""); sLotUp = _T(""); sSerialUp = _T(""); sCompletedSerialUp = _T("");
+			sModelDn = _T(""); sLayerDn = _T(""); sLotDn = _T(""); sSerialDn = _T(""); sCompletedSerialDn = _T("");
+			sSerialEng = _T("");
+			sInnerModelUp = _T(""); sInnerLayerUp = _T(""); sInnerLotUp = _T("");
+			sInnerModelDn = _T(""); sInnerLayerDn = _T(""); sInnerLotDn = _T("");
+			sEngItsCode = _T("");
+		}
+	};
+
 	stLastJob()
 	{
 		sProcessNum = _T("");
@@ -819,73 +841,6 @@ struct stLastJob
 		nAlarmTimePunch = 10800; nAlarmTimeAoi = 10800;
 	}
 };
-
-//struct stMotion
-//{
-//	BOOL bBufHomming;
-//	CString sLmtFdAdjOffSet;	// Feeding량 Offset보정용 초과값설정. [mm]
-//	CString sLmtFdOvrNum;		// Feeding량 연속 초과값 초과횟수 설정. [회]
-//	CString sLmtFdErr;			// Feeding량 Offset보정(설비정지) 한계값 설정. [mm]
-//	CString sMkTq;				// Tension Servo 0 Gain Torque Value. Plus Value is Feeding direction torque[Kgf].
-//	CString sAoiTq;				// Tension Servo 0 Gain Torque Value. Plus Value is Feeding direction torque[Kgf].
-//	CString sMkFdDist, sMkFdVel, sMkFdAcc;
-//	CString sMkJogVel, sMkJogAcc;
-//	CString sMkFdTotLen, sMkTotVel, sMkPatlVel; //
-//	CString sAoiFdDist, sAoiFdVel, sAoiFdAcc;
-//	CString sAoiJogVel, sAoiJogAcc;
-//	CString sAoiFdTotLen, sAoiTotVel, sAoiPatlVel; //
-//	CString sPinPosX[2], sPinPosY[2];
-//	CString sStPosX[2], sStPosY[2];
-//	CString sMkEdPosX[2], sMkEdPosY[2];
-//	CString sStBufPos, sBufHomeSpd, sBufHomeAcc;
-//	CString sMkFdLead, sAoiFdLead;
-//	CString sFdInitDist, sFdAoiAoiDistShot;//, sBufStdPosDist;
-//	BOOL bStNewPrdt, bMkTq, bAoiTq;
-//	CString sMkFdVacOff, sAoiFdVacOff;
-//	CString sSafeZone, sCollisionLength, sCollisionMargin;
-//	CString sAlignResultPosX[2][2], sAlignResultPosY[2][2], sAlignResultTheta[2][2], sAlignResultScore[2][2]; // [Cam][Pos]
-//
-//	stMotion()
-//	{
-//		bBufHomming = FALSE;
-//		sLmtFdAdjOffSet = _T("");		// Feeding량 Offset보정용 초과값설정. [mm]
-//		sLmtFdOvrNum = _T("");		// Feeding량 연속 초과값 초과횟수 설정. [회]
-//		sLmtFdErr = _T("");			// Feeding량 Offset보정(설비정지) 한계값 설정. [mm]
-//		sMkTq = _T("");				// Tension Servo 0 Gain Torque Value. Plus Value is Feeding direction torque[Kgf].
-//		sAoiTq = _T("");				// Tension Servo 0 Gain Torque Value. Plus Value is Feeding direction torque[Kgf].
-//		sMkFdDist = _T(""); sMkFdVel = _T(""); sMkFdAcc = _T("");
-//		sMkJogVel = _T(""); sMkJogAcc = _T("");
-//		sMkFdTotLen = _T(""); sMkTotVel = _T(""); sMkPatlVel = _T("");
-//		sAoiFdDist = _T(""); sAoiFdVel = _T(""); sAoiFdAcc = _T("");
-//		sAoiJogVel = _T(""); sAoiJogAcc = _T("");
-//		sAoiFdTotLen = _T(""); sAoiTotVel = _T(""); sAoiPatlVel = _T("");
-//		sPinPosX[0] = _T(""); sPinPosY[0] = _T("");
-//		sPinPosX[1] = _T(""); sPinPosY[1] = _T("");
-//		sStPosX[0] = _T(""); sStPosY[0] = _T("");
-//		sStPosX[1] = _T(""); sStPosY[1] = _T("");
-//		sMkEdPosX[0] = _T(""); sMkEdPosY[0] = _T("");
-//		sMkEdPosX[1] = _T(""); sMkEdPosY[1] = _T("");
-//		sStBufPos = _T(""); sBufHomeSpd = _T(""); sBufHomeAcc = _T("");
-//		sMkFdLead = _T(""); sAoiFdLead = _T("");
-//		sFdInitDist = _T(""); sFdAoiAoiDistShot = _T("");//sBufStdPosDist="");
-//		bStNewPrdt = FALSE; bMkTq = FALSE; bAoiTq = FALSE;
-//		sMkFdVacOff = _T(""); sAoiFdVacOff = _T("");
-//		sSafeZone = _T("");
-//		sCollisionLength = _T("");
-//		sCollisionMargin = _T("");
-//
-//		for (int k = 0; k < 2; k++)
-//		{
-//			for (int i = 0; i < 2; i++)
-//			{
-//				sAlignResultPosX[k][i] = _T("");
-//				sAlignResultPosY[k][i] = _T("");
-//				sAlignResultTheta[k][i] = _T("");
-//				sAlignResultScore[k][i] = _T("");
-//			}
-//		}
-//	}
-//};
 
 struct stMarking
 {
@@ -1085,6 +1040,7 @@ struct stWorkingInfo
 	stVision Vision[2];
 	stLot Lot;
 	stElecChk Probing[2];
+	stEngraveInfo EngInfo;
 };
 
 struct stYield

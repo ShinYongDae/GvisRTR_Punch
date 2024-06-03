@@ -33,6 +33,7 @@ public:
 	void SetMkInfo(CString sMenu, CString sItem, BOOL bOn);
 	void SetMkInfo(CString sMenu, CString sItem, CString sData);
 	void SetMonDispMain(CString sDisp);
+	void SetEngItsCode(CString sItsCode);
 
 	void LogAuto(CString strMsg, int nType = 0);
 	void LogPLC(CString strMsg, int nType = 0);

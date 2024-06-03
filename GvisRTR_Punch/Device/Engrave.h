@@ -35,13 +35,14 @@ class CEngrave : public CWnd
 	void StopClient();
 	BOOL CheckResponse(int nCmd, CString sResponse);
 	BOOL WaitResponse();
+	CString CharToString(char *szStr);
 
 public:
 	CEngrave(CString sAddrCli, CString sAddrSvr, CString sPortSvr, CWnd* pParent = NULL);
 	~CEngrave();
 
 	stBtnStatus BtnStatus;
-
+	BOOL m_bRcvSig[_SigInx::_EndIdx];
 
 	BOOL m_bGetOpInfo, m_bGetInfo, m_bGetEngInfo;
 	BOOL m_bGetSignalMain, m_bGetSignalTorqueMotor, m_bGetSignalInductionMotor, m_bGetSignalCore150mm, m_bGetSignalEtc;

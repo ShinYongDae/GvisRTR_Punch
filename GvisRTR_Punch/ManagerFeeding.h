@@ -6,24 +6,10 @@
 #define TIM_INIT_FEEDING			0
 #define TIM_SCAN_MPE				10
 
-struct stPcrShare
-{
-	BOOL bExist;
-	int nSerial;
-	CString sModel, sLayer, sLot, sItsCode, sPrcsCode;
-
-	stPcrShare()
-	{
-		bExist = FALSE;
-		nSerial = 0;
-		sModel = _T(""); sLayer = _T(""); sLot = _T(""); sItsCode = _T(""); sPrcsCode = _T("");
-	}
-};
-
 struct stStatus
 {
 	BOOL bAuto, bManual, bOneCycle;								// Mode 스위치
-	BOOL bSwJogLeft, bSwJogFast, bSwJogStep;								// Jog 판넬 선택 스위치
+	BOOL bSwJogLeft, bSwJogFast, bSwJogStep;					// Jog 판넬 선택 스위치
 	BOOL bDoorMk[4], bDoorAoi[12];								// 도어 센서
 	BOOL bDoorMkF[4], bDoorAoiF[12];							// 도어 센서
 	BOOL bEmgMk[2], bEmgAoi[4];									// 비상정지 스위치
@@ -41,8 +27,6 @@ struct stStatus
 	BOOL bDoorUc[4], bDoorRe[5];								// 도어 센서
 	BOOL bDoorUcF[4], bDoorReF[5];								// 도어 센서
 	BOOL bDoorEngv[4], bDoorEngvF[4];							// 도어 센서
-
-	stPcrShare PcrShare[2];
 
 	stStatus()
 	{
@@ -128,6 +112,7 @@ public:
 public:
 	BOOL InitAct();
 	long GetMpeData(int nSection, int nName);
+	BOOL GetMpeSignal(int nSection, int nName);
 	BOOL MpeWrite(CString strRegAddr, long lData, BOOL bCheck = FALSE);
 	BOOL IsAuto();
 	void Buzzer(BOOL bOn, int nCh = 0);

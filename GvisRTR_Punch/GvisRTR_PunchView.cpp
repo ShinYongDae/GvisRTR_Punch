@@ -14,6 +14,9 @@
 #endif
 
 #include "Dialog/DlgMyPassword.h"
+#include "Dialog/DlgMyMsgSub00.h"
+#include "Dialog/DlgMyMsgSub01.h"
+#include "Dialog/DlgMyMsgSub02.h"
 
 #include "MainFrm.h"
 #include "GvisRTR_PunchDoc.h"
@@ -342,9 +345,9 @@ void CGvisRTR_PunchView::DispTime()
 CString CGvisRTR_PunchView::GetTime(stLotTime &LotTime)
 {
 	CString strVal;
-	time_t osBinTime;			// C run-time time (defined in <time.h>)
-	time(&osBinTime);		// Get the current time from the 
-							// operating system.
+	time_t osBinTime;				// C run-time time (defined in <time.h>)
+	time(&osBinTime);				// Get the current time from the 
+									// operating system.
 	CTime Tim(osBinTime);
 
 	LotTime.nYear = Tim.GetYear();
@@ -373,17 +376,17 @@ void CGvisRTR_PunchView::ChkShareUp()
 	if (ChkShareUp(nSerial))
 	{
 		str.Format(_T("US: %d"), nSerial);
-		m_mgrFeeding->Status.PcrShare[0].bExist = TRUE;
-		m_mgrFeeding->Status.PcrShare[0].nSerial = nSerial;
+		m_mgrReelmap->PcrShare[0].bExist = TRUE;
+		m_mgrReelmap->PcrShare[0].nSerial = nSerial;
 		str2.Format(_T("PCR파일 Received - US: %d"), nSerial);
 		pDoc->LogAuto(str2);
-		MpeWrite(_T("ML45112"), (long)nSerial);	// 검사한 Panel의 AOI 상 Serial
-		MpeWrite(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+		MpeWrite(_T("ML45112"), (long)nSerial);		// 검사한 Panel의 AOI 상 Serial
+		MpeWrite(_T("MB44012B"), 1);				// AOI 상 : PCR파일 Received
 	}
 	else
 	{
-		m_mgrFeeding->Status.PcrShare[0].bExist = FALSE;
-		m_mgrFeeding->Status.PcrShare[0].nSerial = -1;
+		m_mgrReelmap->PcrShare[0].bExist = FALSE;
+		m_mgrReelmap->PcrShare[0].nSerial = -1;
 		str.Format(_T("US: "));
 	}
 	if (pFrm)
@@ -404,19 +407,19 @@ void CGvisRTR_PunchView::ChkShareDn()
 	if (ChkShareDn(nSerial))
 	{
 		str.Format(_T("DS: %d"), nSerial);
-		m_mgrFeeding->Status.PcrShare[1].bExist = TRUE;
-		m_mgrFeeding->Status.PcrShare[1].nSerial = nSerial;
+		m_mgrReelmap->PcrShare[1].bExist = TRUE;
+		m_mgrReelmap->PcrShare[1].nSerial = nSerial;
 
 		str2.Format(_T("PCR파일 Received - DS: %d"), nSerial);
 		pDoc->LogAuto(str2);
 
-		MpeWrite(_T("ML45114"), (long)nSerial);	// 검사한 Panel의 AOI 하 Serial
-		MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+		MpeWrite(_T("ML45114"), (long)nSerial);		// 검사한 Panel의 AOI 하 Serial
+		MpeWrite(_T("MB44012C"), 1);				// AOI 하 : PCR파일 Received
 	}
 	else
 	{
-		m_mgrFeeding->Status.PcrShare[1].bExist = FALSE;
-		m_mgrFeeding->Status.PcrShare[1].nSerial = -1;
+		m_mgrReelmap->PcrShare[1].bExist = FALSE;
+		m_mgrReelmap->PcrShare[1].nSerial = -1;
 		str.Format(_T("DS: "));
 	}
 	if (pFrm)
@@ -556,13 +559,13 @@ void CGvisRTR_PunchView::ChkBufUp()
 			m_sBuf[0] = str;
 			pFrm->DispStatusBar(str, 3);
 
-			pDoc->SetCurrentInfoBufUpTot(m_nBufTot[0]);
+			m_mgrProcedure->SetCurrentInfoBufUpTot(m_nBufTot[0]);
 			for (int k = 0; k < m_nBufTot[0]; k++)
-				pDoc->SetCurrentInfoBufUp(k, m_pBufSerial[0][k]);
+				m_mgrProcedure->SetCurrentInfoBufUp(k, m_pBufSerial[0][k]);
 
 			if (m_nBufTot[0] == 1)
 			{
-				pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+				m_mgrStatus->General.nAoiCamInfoStrPcs[0] = m_mgrProcedure->GetAoiUpCamMstInfo(); // AOI상 strpcs.bin 연결
 			}
 		}
 	}
@@ -577,9 +580,6 @@ void CGvisRTR_PunchView::ChkBufDn()
 	{
 		for (int i = 0; i < m_nBufTot[1]; i++)
 		{
-			if (m_bShift2Mk)
-				return;
-
 			DelOverLotEndSerialDn(m_pBufSerial[1][i]);
 
 			if (i == m_nBufTot[1] - 1)
@@ -601,13 +601,13 @@ void CGvisRTR_PunchView::ChkBufDn()
 			m_sBuf[1] = str;
 			pFrm->DispStatusBar(str, 1);
 
-			pDoc->SetCurrentInfoBufDnTot(m_nBufTot[1]);
+			m_mgrProcedure->SetCurrentInfoBufDnTot(m_nBufTot[1]);
 			for (int k = 0; k < m_nBufTot[1]; k++)
-				pDoc->SetCurrentInfoBufDn(k, m_pBufSerial[1][k]);
+				m_mgrProcedure->SetCurrentInfoBufDn(k, m_pBufSerial[1][k]);
 
 			if (m_nBufTot[1] == 1)
 			{
-				pDoc->m_nAoiCamInfoStrPcs[1] = GetAoiDnCamMstInfo();
+				m_mgrStatus->General.nAoiCamInfoStrPcs[1] = m_mgrProcedure->GetAoiDnCamMstInfo(); // AOI하 strpcs.bin 연결
 			}
 		}
 	}
@@ -619,9 +619,9 @@ BOOL CGvisRTR_PunchView::ChkBufUp(int* pSerial, int &nTot)
 	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsBufUp + _T("*.pcr"));
 	if (!bExist)
 	{
-		pDoc->m_bBufEmpty[0] = TRUE;
-		if (!pDoc->m_bBufEmptyF[0])
-			pDoc->m_bBufEmptyF[0] = TRUE;		// 최초 한번 버퍼가 비어있으면(초기화를 하고 난 이후) TRUE.
+		m_mgrStatus->General.bBufEmpty[0] = TRUE;
+		if (!m_mgrStatus->General.bBufEmptyF[0])
+			m_mgrStatus->General.bBufEmptyF[0] = TRUE;		// 최초 한번 버퍼가 비어있으면(초기화를 하고 난 이후) TRUE.
 
 		return FALSE; // pcr파일이 존재하지 않음.
 	}
@@ -650,12 +650,9 @@ BOOL CGvisRTR_PunchView::ChkBufUp(int* pSerial, int &nTot)
 	BOOL bRtn = SortingOutUp(pSerial, nTot);
 
 	if (nTot == 0)
-		pDoc->m_bBufEmpty[0] = TRUE;
+		m_mgrStatus->General.bBufEmpty[0] = TRUE;
 	else
-	{
-		pDoc->m_bBufEmpty[0] = FALSE;
-		m_bIsBuf[0] = TRUE;
-	}
+		m_mgrStatus->General.bBufEmpty[0] = FALSE;
 
 	return (bRtn);
 }
@@ -666,9 +663,9 @@ BOOL CGvisRTR_PunchView::ChkBufDn(int* pSerial, int &nTot)
 	BOOL bExist = cFile.FindFile(pDoc->WorkingInfo.System.sPathVrsBufDn + _T("*.pcr"));
 	if (!bExist)
 	{
-		pDoc->m_bBufEmpty[1] = TRUE;
-		if (!pDoc->m_bBufEmptyF[1])
-			pDoc->m_bBufEmptyF[1] = TRUE;
+		m_mgrStatus->General.bBufEmpty[1] = TRUE;
+		if (!m_mgrStatus->General.bBufEmptyF[1])
+			m_mgrStatus->General.bBufEmptyF[1] = TRUE;
 		return FALSE; // pcr파일이 존재하지 않음.
 	}
 
@@ -683,17 +680,6 @@ BOOL CGvisRTR_PunchView::ChkBufDn(int* pSerial, int &nTot)
 		if (!cFile.IsDirectory())
 		{
 			sFileName = cFile.GetFileName();
-			//nPos = sFileName.ReverseFind('.');
-			//if (nPos > 0)
-			//	sSerial = sFileName.Left(nPos);
-
-			//nSerial = _tstoi(sSerial);
-			//if (nSerial > 0)
-			//{
-			//	pSerial[nTot] = nSerial;
-			//	nTot++;
-			//}
-
 			if (!SortingInDn(pDoc->WorkingInfo.System.sPathVrsBufDn + sFileName, nTot))
 				return FALSE;
 
@@ -705,15 +691,182 @@ BOOL CGvisRTR_PunchView::ChkBufDn(int* pSerial, int &nTot)
 	BOOL bRtn = SortingOutDn(pSerial, nTot);
 
 	if (nTot == 0)
-		pDoc->m_bBufEmpty[1] = TRUE;
+		m_mgrStatus->General.bBufEmpty[1] = TRUE;
 	else
-	{
-		pDoc->m_bBufEmpty[1] = FALSE;
-		m_bIsBuf[1] = TRUE;
-	}
+		m_mgrStatus->General.bBufEmpty[1] = FALSE;
 
 	return (bRtn);
-	//return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::SortingInUp(CString sPath, int nIndex)
+{
+	struct _stat buf;
+	struct tm *t;
+
+	CString sMsg, sFileName, sSerial;
+	int nPos, nSerial;
+	char filename[MAX_PATH];
+	StringToChar(sPath, filename);
+
+	if (_stat(filename, &buf) != 0)
+	{
+		sMsg.Format(_T("일시정지 - Failed getting information."));
+		pView->ClrDispMsg();
+		AfxMessageBox(sMsg);
+		return FALSE;
+	}
+	else
+	{
+		sFileName = sPath;
+		nPos = sFileName.ReverseFind('.');
+		if (nPos > 0)
+		{
+			sSerial = sFileName.Left(nPos);
+			sSerial = sSerial.Right(4);
+		}
+
+		nSerial = _tstoi(sSerial);
+
+		t = localtime(&buf.st_ctime);
+
+		CString sYear, sMonth, sDay, sHour, sMin, sSec;
+		sYear.Format(_T("%04d"), t->tm_year + 1900);
+		sMonth.Format(_T("%02d"), t->tm_mon + 1);
+		sDay.Format(_T("%02d"), t->tm_mday);
+		sHour.Format(_T("%02d"), t->tm_hour);
+		sMin.Format(_T("%02d"), t->tm_min);
+		sSec.Format(_T("%02d"), t->tm_sec);
+
+		__int64 nYear = _tstoi(sYear);
+		__int64 nMonth = _tstoi(sMonth);
+		__int64 nDay = _tstoi(sDay);
+		__int64 nHour = _tstoi(sHour);
+		__int64 nMin = _tstoi(sMin);
+		__int64 nSec = _tstoi(sSec);
+
+		m_nBufSerialSorting[0][nIndex] = nYear * 100000000000000 + nMonth * 1000000000000 + nDay * 10000000000 +
+			nHour * 100000000 + nMin * 1000000 + nSec * 10000 + nSerial;
+	}
+
+	return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::SortingOutUp(int* pSerial, int nTot)
+{
+	int i, k;
+
+	for (k = 0; k < nTot; k++) 			// 버블 정렬 소스 시작
+	{
+		for (i = 0; i < (nTot - 1) - k; i++)
+		{
+
+			if (m_nBufSerialSorting[0][i] > m_nBufSerialSorting[0][i + 1])
+			{
+				SwapUp(&m_nBufSerialSorting[0][i + 1], &m_nBufSerialSorting[0][i]);
+			}
+		}
+	} // 버블 정렬 소스 끝
+
+	for (i = 0; i < nTot; i++)
+	{
+		pSerial[i] = (int)(m_nBufSerialSorting[0][i] % 10000);
+	}
+	return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::SortingInDn(CString sPath, int nIndex)
+{
+	struct _stat buf;
+	struct tm *t;
+
+	CString sMsg, sFileName, sSerial;
+	int nPos, nSerial;
+	char filename[MAX_PATH];
+	StringToChar(sPath, filename);
+
+	if (_stat(filename, &buf) != 0)
+	{
+		sMsg.Format(_T("일시정지 - Failed getting information."));
+		pView->ClrDispMsg();
+		AfxMessageBox(sMsg);
+		return FALSE;
+	}
+	else
+	{
+		sFileName = sPath;
+		nPos = sFileName.ReverseFind('.');
+		if (nPos > 0)
+		{
+			sSerial = sFileName.Left(nPos);
+			sSerial = sSerial.Right(4);
+		}
+
+		nSerial = _tstoi(sSerial);
+
+		t = localtime(&buf.st_ctime);
+
+		CString sYear, sMonth, sDay, sHour, sMin, sSec;
+		sYear.Format(_T("%04d"), t->tm_year + 1900);
+		sMonth.Format(_T("%02d"), t->tm_mon + 1);
+		sDay.Format(_T("%02d"), t->tm_mday);
+		sHour.Format(_T("%02d"), t->tm_hour);
+		sMin.Format(_T("%02d"), t->tm_min);
+		sSec.Format(_T("%02d"), t->tm_sec);
+
+		__int64 nYear = _tstoi(sYear);
+		__int64 nMonth = _tstoi(sMonth);
+		__int64 nDay = _tstoi(sDay);
+		__int64 nHour = _tstoi(sHour);
+		__int64 nMin = _tstoi(sMin);
+		__int64 nSec = _tstoi(sSec);
+
+		m_nBufSerialSorting[1][nIndex] = nYear * 100000000000000 + nMonth * 1000000000000 + nDay * 10000000000 +
+			nHour * 100000000 + nMin * 1000000 + nSec * 10000 + nSerial;
+
+	}
+
+	return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::SortingOutDn(int* pSerial, int nTot)
+{
+	int i, k;
+
+	for (k = 0; k < nTot; k++) 			// 버블 정렬 소스 시작
+	{
+		for (i = 0; i < (nTot - 1) - k; i++)
+		{
+
+			if (m_nBufSerialSorting[1][i] > m_nBufSerialSorting[1][i + 1])
+			{
+				SwapUp(&m_nBufSerialSorting[1][i + 1], &m_nBufSerialSorting[1][i]);
+			}
+		}
+	} // 버블 정렬 소스 끝
+
+	for (i = 0; i < nTot; i++)
+	{
+		pSerial[i] = (int)(m_nBufSerialSorting[1][i] % 10000);
+	}
+	return TRUE;
+}
+
+void CGvisRTR_PunchView::SwapDn(__int64 *num1, __int64 *num2) 	// 위치 바꾸는 함수
+{
+	__int64 temp;
+
+	temp = *num2;
+	*num2 = *num1;
+	*num1 = temp;
+}
+
+void CGvisRTR_PunchView::SwapUp(__int64 *num1, __int64 *num2) 	// 위치 바꾸는 함수
+{
+	__int64 temp;
+
+	temp = *num2;
+	*num2 = *num1;
+	*num1 = temp;
 }
 
 void CGvisRTR_PunchView::SetListBuf()	// m_mgrStatus->ListBuf에 버퍼 폴더의 시리얼번호를 가지고 재갱신함.
@@ -760,7 +913,6 @@ void CGvisRTR_PunchView::DelOverLotEndSerialUp(int nSerial)
 	}
 
 }
-
 
 void CGvisRTR_PunchView::DelOverLotEndSerialDn(int nSerial)
 {
@@ -819,7 +971,6 @@ void CGvisRTR_PunchView::CreateMgrPunch()
 		m_mgrPunch = NULL;
 	}
 	m_mgrPunch = new CManagerPunch(this);
-	//m_mgrPunch->Init();
 }
 
 void CGvisRTR_PunchView::CreateMgrProcedure()
@@ -830,7 +981,6 @@ void CGvisRTR_PunchView::CreateMgrProcedure()
 		m_mgrProcedure = NULL;
 	}
 	m_mgrProcedure = new CManagerProcedure(this);
-	//m_mgrProcedure->Init();
 }
 
 void CGvisRTR_PunchView::CreateMgrReelmap()
@@ -1030,18 +1180,11 @@ int CGvisRTR_PunchView::MsgBox(CString sMsg, int nThreadIdx, int nType, int nTim
 {
 	int nRtnVal = -1; // Reply(-1) is None.
 
-	//if (bEngave)
-	//{
-	//	if (m_pEngrave)
-	//	{
-	//		pDoc->m_sMsgBox = sMsg;
-	//		if (pDoc->m_sIsMsgBox != pDoc->m_sMsgBox)
-	//		{
-	//			if (m_pEngrave)
-	//				m_pEngrave->SetMsgBox(pDoc->m_sMsgBox, nType);
-	//		}
-	//	}
-	//}
+	if (bEngave)
+	{
+		if (m_mgrProcedure && m_mgrProcedure->m_pEngrave)
+			m_mgrProcedure->m_pEngrave->SetMsgBox(sMsg, nType);
+	}
 
 	if (m_pDlgMyMsg)
 		nRtnVal = m_pDlgMyMsg->SyncMsgBox(sMsg, nThreadIdx, nType, nTimOut);
@@ -1092,9 +1235,8 @@ void CGvisRTR_PunchView::InitDlg()
 	m_pDlgMenu04 = NULL;
 	m_pDlgMenu05 = NULL;
 	m_pDlgMenu06 = NULL;
-	//m_pDlgMenu07 = NULL;
+	m_pDlgMenu07 = NULL;
 	//m_pDlgOption01 = NULL;
-
 }
 
 void CGvisRTR_PunchView::ShowDlg(int nID)
@@ -1151,6 +1293,13 @@ void CGvisRTR_PunchView::ShowDlg(int nID)
 		if (m_pDlgMenu06->GetSafeHwnd())
 			m_pDlgMenu06->ShowWindow(SW_SHOW);
 		break;
+
+	case IDD_DLG_MENU_07:
+		if (!m_pDlgMenu07)
+			m_pDlgMenu07 = new CDlgMenu07(this);
+		if (m_pDlgMenu07->GetSafeHwnd())
+			m_pDlgMenu07->ShowWindow(SW_SHOW);
+		break;
 	}
 }
 
@@ -1186,15 +1335,20 @@ void CGvisRTR_PunchView::HideAllDlg()
 		if (m_pDlgMenu06->IsWindowVisible())
 			m_pDlgMenu06->ShowWindow(SW_HIDE);
 	}
+	if (m_pDlgMenu07 && m_pDlgMenu07->GetSafeHwnd())
+	{
+		if (m_pDlgMenu07->IsWindowVisible())
+			m_pDlgMenu07->ShowWindow(SW_HIDE);
+	}
 }
 
 void CGvisRTR_PunchView::DelAllDlg()
 {
-	//if (m_pDlgMenu07 != NULL)
-	//{
-	//	delete m_pDlgMenu07;
-	//	m_pDlgMenu07 = NULL;
-	//}
+	if (m_pDlgMenu07 != NULL)
+	{
+		delete m_pDlgMenu07;
+		m_pDlgMenu07 = NULL;
+	}
 	if (m_pDlgMenu06 != NULL)
 	{
 		delete m_pDlgMenu06;
@@ -1372,3 +1526,19 @@ void CGvisRTR_PunchView::ResetMotion()
 		m_mgrPunch->ResetMotion();
 }
 
+void CGvisRTR_PunchView::StringToChar(CString str, char* pCh) // char* returned must be deleted... 
+{
+	wchar_t*	wszStr;
+	int				nLenth;
+
+	USES_CONVERSION;
+	//1. CString to wchar_t* conversion
+	wszStr = T2W(str.GetBuffer(str.GetLength()));
+
+	//2. wchar_t* to char* conversion
+	nLenth = WideCharToMultiByte(CP_ACP, 0, wszStr, -1, NULL, 0, NULL, NULL); //char* 형에 대한길이를 구함 
+
+	//3. wchar_t* to char* conversion
+	WideCharToMultiByte(CP_ACP, 0, wszStr, -1, pCh, nLenth, 0, 0);
+	return;
+}

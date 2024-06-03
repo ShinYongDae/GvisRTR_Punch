@@ -264,11 +264,11 @@
     <ClInclude Include="Device\SocketComm.h">
       <Filter>Device</Filter>
     </ClInclude>
-    <ClInclude Include="Aoi.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="Device\Aoi.h">
+      <Filter>Device</Filter>
     </ClInclude>
-    <ClInclude Include="VerifySys.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="Device\VerifySys.h">
+      <Filter>Device</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -467,11 +467,11 @@
     <ClCompile Include="Device\SocketComm.cpp">
       <Filter>Device</Filter>
     </ClCompile>
-    <ClCompile Include="Aoi.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="Device\Aoi.cpp">
+      <Filter>Device</Filter>
     </ClCompile>
-    <ClCompile Include="VerifySys.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="Device\VerifySys.cpp">
+      <Filter>Device</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

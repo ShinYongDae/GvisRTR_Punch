@@ -62,8 +62,9 @@ class CGvisRTR_PunchView : public CFormView
 	stDispMain m_stDispMain;
 	CString m_sDispMain, m_sDispTime;
 	CString m_sDispStatusBar[10];
-	CString m_sShare[2], m_sBuf[2]; // [0]: AOI-Up , [1]: AOI-Dn
+	CString m_sShare[2], m_sBuf[2];			// [0]: AOI-Up , [1]: AOI-Dn
 	int	m_pBufSerial[2][100], m_nBufTot[2]; // [0]: AOI-Up , [1]: AOI-Dn
+	__int64 m_nBufSerialSorting[2][100];	// [0]: AOI-Up , [1]: AOI-Dn
 
 	void InitMgr();
 	void CreateMgr();
@@ -107,8 +108,16 @@ class CGvisRTR_PunchView : public CFormView
 	void ChkBufDn();
 	BOOL ChkBufUp(int* pSerial, int &nTot);
 	BOOL ChkBufDn(int* pSerial, int &nTot);
+	BOOL SortingInUp(CString sPath, int nIndex);
+	BOOL SortingOutUp(int* pSerial, int nTot);
+	void SwapUp(__int64 *num1, __int64 *num2);
+	BOOL SortingInDn(CString sPath, int nIndex);
+	BOOL SortingOutDn(int* pSerial, int nTot);
+	void SwapDn(__int64 *num1, __int64 *num2);
+
 	void DelOverLotEndSerialUp(int nSerial);
 	void DelOverLotEndSerialDn(int nSerial);
+	void StringToChar(CString str, char* pCh); // char* returned must be deleted... 
 
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchView();
@@ -157,6 +166,7 @@ public:
 	CDlgMenu04 *m_pDlgMenu04;
 	CDlgMenu05 *m_pDlgMenu05;
 	CDlgMenu06 *m_pDlgMenu06;
+	CDlgMenu07 *m_pDlgMenu07;
 	void ShowDlg(int nID);
 	void HideAllDlg();
 	void DelAllDlg();

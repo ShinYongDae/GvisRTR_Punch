@@ -315,3 +315,8 @@ void CGvisRTR_PunchDoc::LogPLC(CString strMsg, int nType)
 	file.Close();
 }
 
+void CGvisRTR_PunchDoc::SetEngItsCode(CString sItsCode)
+{
+	WorkingInfo.LastJob.sEngItsCode = sItsCode;
+	::WritePrivateProfileString(_T("Last Job"), _T("Engrave Its Code"), sItsCode, PATH_WORKING_INFO);
+}

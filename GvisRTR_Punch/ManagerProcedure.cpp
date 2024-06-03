@@ -86,3 +86,111 @@ BOOL CManagerProcedure::InitAct()
 #endif
 	return TRUE;
 }
+
+void CManagerProcedure::SetCurrentInfoBufUpTot(int nTotal)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkCurrInfoBuf;
+	TCHAR szData[512];
+	CString sData = _T("");
+
+	if (sPath.IsEmpty())
+		return;
+
+	sData.Format(_T("%d"), nTotal);
+	::WritePrivateProfileString(_T("Up"), _T("Total"), sData, sPath);
+}
+
+void CManagerProcedure::SetCurrentInfoBufUp(int nIdx, int nData)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkCurrInfoBuf;
+	TCHAR szData[512];
+	CString sIdx, sData;
+
+	if (sPath.IsEmpty())
+		return;
+
+	sIdx.Format(_T("%d"), nIdx);
+	sData.Format(_T("%d"), nData);
+
+	::WritePrivateProfileString(_T("Up"), sIdx, sData, sPath);
+}
+
+void CManagerProcedure::SetCurrentInfoBufDnTot(int nTotal)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkCurrInfoBuf;
+	TCHAR szData[512];
+	CString sData = _T("");
+
+	if (sPath.IsEmpty())
+		return;
+
+	sData.Format(_T("%d"), nTotal);
+	::WritePrivateProfileString(_T("Dn"), _T("Total"), sData, sPath);
+}
+
+void CManagerProcedure::SetCurrentInfoBufDn(int nIdx, int nData)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkCurrInfoBuf;
+	TCHAR szData[512];
+	CString sIdx, sData;
+
+	if (sPath.IsEmpty())
+		return;
+
+	sIdx.Format(_T("%d"), nIdx);
+	sData.Format(_T("%d"), nData);
+
+	::WritePrivateProfileString(_T("Dn"), sIdx, sData, sPath);
+}
+
+int CManagerProcedure::GetAoiUpCamMstInfo() // AOI상 strpcs.bin 연결
+{
+	TCHAR szData[200];
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiUpVrsData,
+		pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerUp, pDoc->WorkingInfo.LastJob.sLotUp);
+
+	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
+		pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+	else
+		pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi = -1;
+
+	return pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi;
+}
+
+int CManagerProcedure::GetAoiDnCamMstInfo() // AOI하 strpcs.bin 연결
+{
+	TCHAR szData[200];
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiDnVrsData,
+		pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerDn, pDoc->WorkingInfo.LastJob.sLotUp);
+
+	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
+		pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+	else
+		pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi = -1;
+
+	return pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi;
+}
+
+void CManagerProcedure::SetMkMenu01(CString sMenu, CString sItem, CString sData)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkMenu01;
+
+	if (sPath.IsEmpty())
+		return;
+
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
+}
+
+void CManagerProcedure::SetMkMenu03(CString sMenu, CString sItem, BOOL bOn)
+{
+	CString sPath = pDoc->WorkingInfo.System.sPathMkMenu03;
+	CString sData = _T("");
+
+	if (sPath.IsEmpty())
+		return;
+
+	sData.Format(_T("%d"), bOn > 0 ? 1 : 0);
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
+}

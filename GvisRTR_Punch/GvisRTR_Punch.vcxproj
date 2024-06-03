@@ -194,7 +194,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Aoi.h" />
+    <ClInclude Include="Device\Aoi.h" />
     <ClInclude Include="Device\BufferControl.h" />
     <ClInclude Include="Device\EasyThread.h" />
     <ClInclude Include="Device\Engrave.h" />
@@ -217,6 +217,7 @@
     <ClInclude Include="Device\SocketComm.h" />
     <ClInclude Include="Device\TcpIpClient.h" />
     <ClInclude Include="Device\type_def.h" />
+    <ClInclude Include="Device\VerifySys.h" />
     <ClInclude Include="Device\Vision.h" />
     <ClInclude Include="Dialog\DlgFrameHigh.h" />
     <ClInclude Include="Dialog\DlgInfo.h" />
@@ -273,10 +274,9 @@
     <ClInclude Include="SingleInstance.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="VerifySys.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Aoi.cpp" />
+    <ClCompile Include="Device\Aoi.cpp" />
     <ClCompile Include="Device\BufferControl.cpp" />
     <ClCompile Include="Device\EasyThread.cpp" />
     <ClCompile Include="Device\Engrave.cpp" />
@@ -292,6 +292,7 @@
     <ClCompile Include="Device\Smac.cpp" />
     <ClCompile Include="Device\SocketComm.cpp" />
     <ClCompile Include="Device\TcpIpClient.cpp" />
+    <ClCompile Include="Device\VerifySys.cpp" />
     <ClCompile Include="Device\Vision.cpp" />
     <ClCompile Include="Dialog\DlgFrameHigh.cpp" />
     <ClCompile Include="Dialog\DlgInfo.cpp" />
@@ -347,7 +348,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="VerifySys.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GvisRTR_Punch.rc" />

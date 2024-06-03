@@ -3,6 +3,20 @@
 
 #define TIM_INIT_REELMAP			0
 
+struct stPcrShare
+{
+	BOOL bExist;
+	int nSerial;
+	CString sModel, sLayer, sLot, sItsCode, sPrcsCode;
+
+	stPcrShare()
+	{
+		bExist = FALSE;
+		nSerial = 0;
+		sModel = _T(""); sLayer = _T(""); sLot = _T(""); sItsCode = _T(""); sPrcsCode = _T("");
+	}
+};
+
 class CManagerReelmap : public CWnd
 {
 	CWnd* m_pParent;
@@ -20,6 +34,7 @@ public:
 
 	// 특성입니다.
 public:
+	stPcrShare PcrShare[2];
 
 
 	// 작업입니다.

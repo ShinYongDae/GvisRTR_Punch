@@ -12,10 +12,12 @@ struct stGeneral
 	BOOL bSkipAlign, bReAlign;
 	BOOL bFailAlign, bDoMk, bDoneMk, bReMark, bRejectDone, bAnswer;
 	BOOL bInitAuto;
+	BOOL bBufEmpty[2], bBufEmptyF[2];							// [0] : Up, [1] : Dn
 
 	int nLotEndAuto, nMkStAuto, nPrevMkStAuto, nLastProcAuto, nTestMode, nLotEndSerial;
 	int nPrevStepAuto, nMkStrip, nSaveMk0Img, nSaveMk1Img;
-	int nTotMk[2], nPrevTotMk[2], nMkPcs[2], nPrevMkPcs[2];
+	int nTotMk[2], nPrevTotMk[2], nMkPcs[2], nPrevMkPcs[2];		// [0] : Up, [1] : Dn
+	int nAoiCamInfoStrPcs[2];									// [0] : Up, [1] : Dn
 
 	CString sNewLotUp;
 
@@ -28,7 +30,9 @@ struct stGeneral
 		bSkipAlign = FALSE; bReAlign = FALSE;
 		bFailAlign = FALSE; bDoMk = FALSE; bDoneMk = FALSE;
 		bReMark = FALSE; bRejectDone = FALSE; bAnswer = FALSE;
-		bInitAuto = FALSE;
+		bInitAuto = FALSE; 
+		bBufEmpty[0] = FALSE; bBufEmptyF[0] = FALSE;
+		bBufEmpty[1] = FALSE; bBufEmptyF[1] = FALSE;
 
 		nLotEndAuto = 0; nMkStAuto = 0; nPrevMkStAuto = 0;
 		nLastProcAuto = 0; nTestMode = 0; nLotEndSerial = 0;
@@ -38,6 +42,7 @@ struct stGeneral
 		nPrevTotMk[0] = 0; nPrevTotMk[1] = 0;
 		nMkPcs[0] = 0; nMkPcs[1] = 0;
 		nPrevMkPcs[0] = 0; nPrevMkPcs[1] = 0;
+		nAoiCamInfoStrPcs[0] = -1; nAoiCamInfoStrPcs[1] = -1;
 
 		sNewLotUp = _T("");
 
