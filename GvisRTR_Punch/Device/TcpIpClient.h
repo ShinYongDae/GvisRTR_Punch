@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "CEasyThread.h"
+#include "EasyThread.h"
 #include "SocketComm.h"
 
 class CTcpIpClient : public CSocketComm //, public CEasyThread

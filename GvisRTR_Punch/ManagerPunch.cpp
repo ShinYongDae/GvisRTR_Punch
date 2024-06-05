@@ -260,7 +260,7 @@ void CManagerPunch::ResetMotion()
 	int nAxis;
 	for (nAxis = 0; nAxis < MAX_MS; nAxis++)
 	{
-		ResetMotionPunch(nAxis);
+		ResetMotion(nAxis);
 
 		if (nAxis < MAX_AXIS)
 		{
@@ -279,7 +279,6 @@ void CManagerPunch::ResetMotion()
 		}
 	}
 }
-
 
 void CManagerPunch::ResetMotion(int nMsId)
 {

@@ -98,6 +98,19 @@ class CManagerFeeding : public CWnd
 	unsigned long ChkDoor();
 	void ChkRcvSig();
 
+	void DoIO();
+	void DoEmgSens();		// SliceIo[4]
+	void DoSaftySens();
+	void DoDoorSens();
+	void DoModeSel();		// SliceIo[0]
+	void DoMainSw();		// SliceIo[0]
+	void DoEngraveSens();	// MpeIo[28]
+	void DoInterlock();
+	void MonPlcAlm();
+	void MonDispMain();
+	void MonPlcSignal();
+
+
 public:
 	CManagerFeeding(CWnd* pParent = NULL);
 	~CManagerFeeding();

@@ -1213,6 +1213,198 @@ void CManagerFeeding::ChkRcvSig()
 	}
 }
 
+void CManagerFeeding::DoIO()
+{
+	DoEmgSens();
+	DoSaftySens();
+	DoDoorSens();
+
+	DoModeSel();
+	DoMainSw();
+	DoEngraveSens();
+
+	DoInterlock();
+
+	MonPlcAlm();
+	MonDispMain();
+	MonPlcSignal();
+
+	if (m_bCycleStop)
+	{
+		m_bCycleStop = FALSE;
+		Buzzer(TRUE);
+		TowerLamp(RGB_YELLOW, TRUE);
+
+		if (!pDoc->m_sAlmMsg.IsEmpty())
+		{
+			pDoc->LogAuto(pDoc->m_sAlmMsg);
+			pView->MsgBox(pDoc->m_sAlmMsg, 0, 0, DEFAULT_TIME_OUT, FALSE);
+
+			if (pDoc->m_sAlmMsg == m_sAoiUpAlarmReStartMsg || pDoc->m_sAlmMsg == m_sAoiUpAlarmReTestMsg)
+			{ // Wait for AOI 검사시작 신호.
+				ChkReTestAlarmOnAoiUp(); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off
+			}
+			else if (pDoc->m_sAlmMsg == m_sAoiDnAlarmReStartMsg || pDoc->m_sAlmMsg == m_sAoiDnAlarmReTestMsg)
+			{ // Wait for AOI 검사시작 신호.
+				ChkReTestAlarmOnAoiDn(); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off
+			}
+		}
+		pDoc->m_sAlmMsg = _T("");
+		pDoc->m_sIsAlmMsg = _T("");
+		pDoc->m_sPrevAlmMsg = _T("");
+	}
+
+	if (Status.bManual)
+	{
+		DoBoxSw();
+	}
+	else if (Status.bAuto)
+	{
+		DoAutoEng();
+		DoAuto();
+	}
+
+	if (IsRun())
+	{
+		if (m_pDlgMenu01)
+		{
+			if (m_pDlgMenu01->IsEnableBtn())
+				m_pDlgMenu01->EnableBtn(FALSE);
+		}
+	}
+	else
+	{
+		if (m_pDlgMenu01)
+		{
+			if (!m_pDlgMenu01->IsEnableBtn())
+				m_pDlgMenu01->EnableBtn(TRUE);
+		}
+	}
+}
+
+void CManagerFeeding::DoEmgSens()
+{
+#ifdef USE_MPE
+	unsigned short usIn, *usInF;
+
+	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
+		return;
+
+	usIn = m_pMpe->m_pMpeIb[0];
+	usInF = &m_pMpe->m_pMpeIbF[0];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 언코일러 비상정지 스위치
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgUc = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgUc = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[4];
+	usInF = &m_pMpe->m_pMpeIbF[4];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 마킹부 비상정지 스위치(모니터부)
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgMk[EMG_M_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgMk[EMG_M_MK] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[5];
+	usInF = &m_pMpe->m_pMpeIbF[5];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 마킹부 비상정지 스위치(스위치부)	
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgMk[EMG_B_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgMk[EMG_B_MK] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[8];
+	usInF = &m_pMpe->m_pMpeIbF[8];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 검사부 상 비상정지 스위치(후면) 
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgAoi[EMG_B_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgAoi[EMG_B_AOI_UP] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[12];
+	usInF = &m_pMpe->m_pMpeIbF[12];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 검사부 하 비상정지 스위치(후면) 
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgAoi[EMG_B_AOI_DN] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgAoi[EMG_B_AOI_DN] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[16];
+	usInF = &m_pMpe->m_pMpeIbF[16];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 리코일러 비상정지 스위치
+	{
+		*usInF |= (0x01 << 0);
+		Status.bEmgRc = TRUE;
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+		Status.bEmgRc = FALSE;
+	}
+
+	//usIn = m_pMpe->m_pMpeIb[24];
+	//usInF = &m_pMpe->m_pMpeIbF[24];
+
+	//if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 각인부 비상정지 스위치(모니터부)
+	//{
+	//	*usInF |= (0x01 << 0);
+	//	Status.bEmgEngv[0] = TRUE;
+	//}
+	//else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	//{
+	//	*usInF &= ~(0x01 << 0);
+	//	Status.bEmgEngv[0] = FALSE;
+	//}
+
+	//usIn = m_pMpe->m_pMpeIb[25];
+	//usInF = &m_pMpe->m_pMpeIbF[25];
+
+	//if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 각인부 비상정지 스위치(스위치부)
+	//{
+	//	*usInF |= (0x01 << 0);
+	//	Status.bEmgEngv[1] = TRUE;
+	//}
+	//else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	//{
+	//	*usInF &= ~(0x01 << 0);
+	//	Status.bEmgEngv[1] = FALSE;
+	//}
+#endif
+}
+
+
 void CManagerFeeding::Buzzer(BOOL bOn, int nCh)
 {
 	if (!m_pMpe)

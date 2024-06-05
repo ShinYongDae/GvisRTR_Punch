@@ -718,6 +718,28 @@ struct stSystem
 	}
 };
 
+struct stEngraveInfo
+{
+	CString sProcessNum;
+	CString sModelUp, sLayerUp, sLotUp, sSerialUp, sCompletedSerialUp;
+	CString sModelDn, sLayerDn, sLotDn, sSerialDn, sCompletedSerialDn;
+	CString sSerialEng;
+	CString sInnerModelUp, sInnerLayerUp, sInnerLotUp;
+	CString sInnerModelDn, sInnerLayerDn, sInnerLotDn;
+	CString sEngItsCode;
+
+	stEngraveInfo()
+	{
+		sProcessNum = _T("");
+		sModelUp = _T(""); sLayerUp = _T(""); sLotUp = _T(""); sSerialUp = _T(""); sCompletedSerialUp = _T("");
+		sModelDn = _T(""); sLayerDn = _T(""); sLotDn = _T(""); sSerialDn = _T(""); sCompletedSerialDn = _T("");
+		sSerialEng = _T("");
+		sInnerModelUp = _T(""); sInnerLayerUp = _T(""); sInnerLotUp = _T("");
+		sInnerModelDn = _T(""); sInnerLayerDn = _T(""); sInnerLotDn = _T("");
+		sEngItsCode = _T("");
+	}
+};
+
 struct stLastJob
 {
 	CString sProcessNum;
@@ -762,28 +784,6 @@ struct stLastJob
 	BOOL bVelEngraveUltrasonic, bVelAoiDnUltrasonic;
 	CString sCurrentShotNum, sSettingShotNum;
 	int nAlarmTimePunch, nAlarmTimeAoi;
-
-	struct stEngraveInfo
-	{
-		CString sProcessNum;
-		CString sModelUp, sLayerUp, sLotUp, sSerialUp, sCompletedSerialUp;
-		CString sModelDn, sLayerDn, sLotDn, sSerialDn, sCompletedSerialDn;
-		CString sSerialEng;
-		CString sInnerModelUp, sInnerLayerUp, sInnerLotUp;
-		CString sInnerModelDn, sInnerLayerDn, sInnerLotDn;
-		CString sEngItsCode;
-
-		stEngraveInfo()
-		{
-			sProcessNum = _T("");
-			sModelUp = _T(""); sLayerUp = _T(""); sLotUp = _T(""); sSerialUp = _T(""); sCompletedSerialUp = _T("");
-			sModelDn = _T(""); sLayerDn = _T(""); sLotDn = _T(""); sSerialDn = _T(""); sCompletedSerialDn = _T("");
-			sSerialEng = _T("");
-			sInnerModelUp = _T(""); sInnerLayerUp = _T(""); sInnerLotUp = _T("");
-			sInnerModelDn = _T(""); sInnerLayerDn = _T(""); sInnerLotDn = _T("");
-			sEngItsCode = _T("");
-		}
-	};
 
 	stLastJob()
 	{
