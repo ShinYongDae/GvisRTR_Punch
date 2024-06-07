@@ -918,3 +918,12 @@ void CDlgMenu03::AtDlgHide()
 {
 }
 
+void CDlgMenu03::SetLed(int nIdx, BOOL bOn)
+{
+	if (bOn && myLabel[nIdx].GetImageBk() != LBL_IMG_DN)
+		myLabel[nIdx].SetImageBk(LBL_IMG_DN);
+	else if (!bOn && myLabel[nIdx].GetImageBk() != LBL_IMG_UP)
+		myLabel[nIdx].SetImageBk(LBL_IMG_UP);
+}
+
+

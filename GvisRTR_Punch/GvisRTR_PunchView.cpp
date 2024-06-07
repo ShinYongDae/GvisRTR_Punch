@@ -47,6 +47,7 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	m_bTIM_DISP_STATUS = FALSE;
 	m_sDispMain = _T("");
 	m_sDispTime = _T("");
+	m_dwLotSt = 0; m_dwLotEd = 0;
 
 	for (int i = 0; i < 10; i++)
 		m_sDispStatusBar[i] = _T("");
@@ -55,6 +56,8 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	m_sBuf[0] = _T("");
 	m_sShare[1] = _T("");
 	m_sBuf[1] = _T("");
+
+	ClrAlarm();
 
 	InitMgr();	
 	InitDispMsg();
@@ -262,12 +265,13 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 			m_nStepInitView++;
 			//m_bLoadMstInfo = TRUE;
 			DispMsg(_T("H/W를 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-			m_mgrPunch->InitAct();
+			if (!m_mgrPunch->InitAct() || !m_mgrFeeding->InitAct())
+			{
+				PostMessage(WM_CLOSE);;
+			}
 			m_mgrReelmap->InitAct();
-			m_mgrFeeding->InitAct();
-			//m_mgrProcedure->m_bStopFeeding = TRUE;
-			//MpeWrite(_T("MB440115"), 1); // 마킹부Feeding금지
-			//Sleep(300);
+			m_mgrPunch->StopFeeding(TRUE); // 마킹부Feeding금지
+			Sleep(300);
 			break;
 		case 13:
 			m_nStepInitView++;
@@ -276,6 +280,7 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 			SetListBuf();
 			m_bTIM_DISP_STATUS = TRUE;
 			SetTimer(TIM_DISP_STATUS, 100, NULL);
+			m_mgrPunch->StopFeeding(FALSE); // 마킹부Feeding금지해제
 			m_bTIM_INIT_VIEW = FALSE;
 			break;
 		}
@@ -1394,6 +1399,20 @@ void CGvisRTR_PunchView::DelAllDlg()
 	}
 }
 
+BOOL CGvisRTR_PunchView::IsRun()
+{
+	if (m_sDispMain == _T("운전중") || m_sDispMain == _T("초기운전") || m_sDispMain == _T("단면샘플")
+		|| m_sDispMain == _T("단면검사") || m_sDispMain == _T("내층검사") || m_sDispMain == _T("외층검사")
+		|| m_sDispMain == _T("중층검사") || m_sDispMain == _T("양면검사") || m_sDispMain == _T("양면샘플"))
+		return TRUE;
+	return FALSE;
+}
+
+CString CGvisRTR_PunchView::GetDispMain()
+{
+	return m_stDispMain.sMsg;
+}
+
 void CGvisRTR_PunchView::DispMain(CString sMsg, COLORREF rgb)
 {
 	pDoc->SetMonDispMain(sMsg);
@@ -1403,13 +1422,17 @@ void CGvisRTR_PunchView::DispMain(CString sMsg, COLORREF rgb)
 
 	if (sMsg == _T("정 지"))
 	{
-		pDoc->SetMkMenu03(_T("Main"), _T("Stop"), TRUE);
-		pDoc->SetMkMenu03(_T("Main"), _T("Run"), FALSE);
+		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Stop"), TRUE);
+		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Run"), FALSE);
+	}
+	else if (sMsg == _T("운전준비"))
+	{
+		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Ready"), TRUE);
 	}
 	else
 	{
-		pDoc->SetMkMenu03(_T("Main"), _T("Run"), TRUE);
-		pDoc->SetMkMenu03(_T("Main"), _T("Stop"), FALSE);
+		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Run"), TRUE);
+		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Stop"), FALSE);
 	}
 
 	sMsg.Empty();
@@ -1435,6 +1458,20 @@ int CGvisRTR_PunchView::DoDispMain()
 	}
 
 	return nRtn;
+}
+
+void CGvisRTR_PunchView::DispContRun(BOOL bOn)
+{
+	if (pDoc->WorkingInfo.LastJob.bDispContRun != bOn)
+	{
+		pDoc->WorkingInfo.LastJob.bDispContRun = bOn;
+		pDoc->SetMkInfo(_T("Signal"), _T("DispContRun"), bOn);
+
+#ifdef USE_ENGRAVE
+		if (m_mgrProcedure->m_pEngrave)
+			m_mgrProcedure->m_pEngrave->SetDispContRun();	//_stSigInx::_DispContRun
+#endif
+	}
 }
 
 int CGvisRTR_PunchView::MyPassword(CString strMsg, int nCtrlId)
@@ -1499,6 +1536,45 @@ void CGvisRTR_PunchView::SetTestMode(int nMode)
 	}
 }
 
+void CGvisRTR_PunchView::SetAlarm(CString sMsg)
+{
+	if(m_mgrProcedure->m_pEngrave)
+		m_mgrProcedure->m_pEngrave->SetAlarm(sMsg);
+}
+
+void CGvisRTR_PunchView::ClrAlarm()
+{
+	m_sAlmMsg = _T("");
+	m_sIsAlmMsg = _T("");
+	m_sPrevAlmMsg = _T("");
+}
+
+int CGvisRTR_PunchView::GetLastShotMk()
+{
+	int nLastShot = 0;
+	if (m_pDlgFrameHigh)
+		nLastShot = m_pDlgFrameHigh->GetLastShotMk();
+	return nLastShot;
+}
+
+BOOL CGvisRTR_PunchView::GetMkStSignal()
+{
+	return GetMpeSignal(1, 0);
+}
+
+void CGvisRTR_PunchView::ResetMkStSignal()
+{
+	MpeWrite(_T("MB440110"), 0); // 마킹시작(PC가 확인하고 Reset시킴.)
+}
+
+BOOL CGvisRTR_PunchView::GetMpeSignal(int nSection, int nName)
+{
+	BOOL bVal = FALSE;
+	if (m_mgrFeeding)
+		bVal = m_mgrFeeding->GetMpeSignal(nSection, nName);
+	return bVal;
+}
+
 long CGvisRTR_PunchView::GetMpeData(int nSection, int nName)
 {
 	long nVal = 0;
@@ -1510,6 +1586,12 @@ long CGvisRTR_PunchView::GetMpeData(int nSection, int nName)
 BOOL CGvisRTR_PunchView::MpeWrite(CString strRegAddr, long lData, BOOL bCheck)
 {
 	return m_mgrFeeding->MpeWrite(strRegAddr, lData, bCheck);
+}
+
+void CGvisRTR_PunchView::Auto()
+{
+	if (m_mgrProcedure)
+		m_mgrProcedure->Auto();
 }
 
 BOOL CGvisRTR_PunchView::IsAuto()
@@ -1541,4 +1623,120 @@ void CGvisRTR_PunchView::StringToChar(CString str, char* pCh) // char* returned 
 	//3. wchar_t* to char* conversion
 	WideCharToMultiByte(CP_ACP, 0, wszStr, -1, pCh, nLenth, 0, 0);
 	return;
+}
+
+DWORD CGvisRTR_PunchView::GetLotSt()
+{
+	return m_dwLotSt;
+}
+
+DWORD CGvisRTR_PunchView::GetLotEd()
+{
+	return m_dwLotEd;
+}
+
+void CGvisRTR_PunchView::SetLotSt()
+{
+	stLotTime LotTime;
+	GetTime(LotTime);
+
+	pDoc->WorkingInfo.Lot.StTime.nYear = LotTime.nYear;
+	pDoc->WorkingInfo.Lot.StTime.nMonth = LotTime.nMonth;
+	pDoc->WorkingInfo.Lot.StTime.nDay = LotTime.nDay;
+	pDoc->WorkingInfo.Lot.StTime.nHour = LotTime.nHour;
+	pDoc->WorkingInfo.Lot.StTime.nMin = LotTime.nMin;
+	pDoc->WorkingInfo.Lot.StTime.nSec = LotTime.nSec;
+
+	pDoc->WorkingInfo.Lot.CurTime.nYear = LotTime.nYear;
+	pDoc->WorkingInfo.Lot.CurTime.nMonth = LotTime.nMonth;
+	pDoc->WorkingInfo.Lot.CurTime.nDay = LotTime.nDay;
+	pDoc->WorkingInfo.Lot.CurTime.nHour = LotTime.nHour;
+	pDoc->WorkingInfo.Lot.CurTime.nMin = LotTime.nMin;
+	pDoc->WorkingInfo.Lot.CurTime.nSec = LotTime.nSec;
+
+	pDoc->WorkingInfo.Lot.EdTime.nYear = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nMonth = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nDay = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nHour = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nMin = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nSec = 0;
+
+	m_dwLotSt = GetTickCount();
+	pDoc->SaveLotTime(m_dwLotSt);
+	DispLotTime();
+
+	//BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->SetLotSt();
+	//if (pDoc->m_pReelMapUp)
+	//	pDoc->m_pReelMapUp->SetLotSt();
+	//if (bDualTest)
+	//{
+	//	if (pDoc->m_pReelMapDn)
+	//		pDoc->m_pReelMapDn->SetLotSt();
+	//	if (pDoc->m_pReelMapAllUp)
+	//		pDoc->m_pReelMapAllUp->SetLotSt();
+	//	if (pDoc->m_pReelMapAllDn)
+	//		pDoc->m_pReelMapAllDn->SetLotSt();
+	//}
+}
+
+void CGvisRTR_PunchView::SetLotEd()
+{
+	stLotTime LotTime;
+	GetTime(LotTime);
+
+	pDoc->WorkingInfo.Lot.EdTime.nYear = LotTime.nYear;
+	pDoc->WorkingInfo.Lot.EdTime.nMonth = LotTime.nMonth;
+	pDoc->WorkingInfo.Lot.EdTime.nDay = LotTime.nDay;
+	pDoc->WorkingInfo.Lot.EdTime.nHour = LotTime.nHour;
+	pDoc->WorkingInfo.Lot.EdTime.nMin = LotTime.nMin;
+	pDoc->WorkingInfo.Lot.EdTime.nSec = LotTime.nSec;
+
+	pDoc->WorkingInfo.Lot.CurTime.nYear = LotTime.nYear;
+	pDoc->WorkingInfo.Lot.CurTime.nMonth = LotTime.nMonth;
+	pDoc->WorkingInfo.Lot.CurTime.nDay = LotTime.nDay;
+	pDoc->WorkingInfo.Lot.CurTime.nHour = LotTime.nHour;
+	pDoc->WorkingInfo.Lot.CurTime.nMin = LotTime.nMin;
+	pDoc->WorkingInfo.Lot.CurTime.nSec = LotTime.nSec;
+
+	m_dwLotEd = GetTickCount();
+
+	pDoc->SaveLotTime(pDoc->WorkingInfo.Lot.dwStTick);
+	DispLotTime();
+
+	//BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->SetLotEd();
+	//if (pDoc->m_pReelMapUp)
+	//	pDoc->m_pReelMapUp->SetLotEd();
+	//if (bDualTest)
+	//{
+	//	if (pDoc->m_pReelMapDn)
+	//		pDoc->m_pReelMapDn->SetLotEd();
+	//	if (pDoc->m_pReelMapAllUp)
+	//		pDoc->m_pReelMapAllUp->SetLotEd();
+	//	if (pDoc->m_pReelMapAllDn)
+	//		pDoc->m_pReelMapAllDn->SetLotEd();
+	//}
+}
+
+void CGvisRTR_PunchView::DispLotTime()
+{
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->DispLotTime();
+}
+
+void CGvisRTR_PunchView::SetMkMenu01(CString sMenu, CString sItem, CString sData)
+{
+	if(m_mgrProcedure)
+		m_mgrProcedure->SetMkMenu01(sMenu, sItem, sData);
+}
+
+void CGvisRTR_PunchView::SetMkMenu03(CString sMenu, CString sItem, BOOL bOn)
+{
+	if (m_mgrProcedure)
+		m_mgrProcedure->SetMkMenu03(sMenu, sItem, bOn);
 }

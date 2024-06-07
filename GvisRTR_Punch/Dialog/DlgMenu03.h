@@ -44,6 +44,7 @@ public:
 
 	// 작업입니다.
 public:
+	void SetLed(int nIdx, BOOL bOn = TRUE);
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

@@ -66,6 +66,8 @@ class CGvisRTR_PunchView : public CFormView
 	int	m_pBufSerial[2][100], m_nBufTot[2]; // [0]: AOI-Up , [1]: AOI-Dn
 	__int64 m_nBufSerialSorting[2][100];	// [0]: AOI-Up , [1]: AOI-Dn
 
+	DWORD m_dwLotSt, m_dwLotEd;
+
 	void InitMgr();
 	void CreateMgr();
 	void CreateMgrProcedure();
@@ -92,6 +94,7 @@ class CGvisRTR_PunchView : public CFormView
 	void CloseMsgBox();
 
 	int DoDispMain();
+
 	void DispStsBar();
 	void DispStsMainMsg(int nIdx = 0);	// 0
 	void DispTime();					// 7
@@ -119,6 +122,9 @@ class CGvisRTR_PunchView : public CFormView
 	void DelOverLotEndSerialDn(int nSerial);
 	void StringToChar(CString str, char* pCh); // char* returned must be deleted... 
 
+	void DispLotTime();
+
+
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchView();
 	DECLARE_DYNCREATE(CGvisRTR_PunchView)
@@ -139,6 +145,8 @@ public:
 	CManagerFeeding *m_mgrFeeding;
 	CManagerStatus* m_mgrStatus;
 
+	CString m_sAlmMsg, m_sPrevAlmMsg, m_sIsAlmMsg;
+
 	// from Engrave
 	BOOL m_bRcvSig[_SigInx::_EndIdx];
 
@@ -154,9 +162,12 @@ public:
 	void DoDispMsg(CString strMsg, CString strTitle = _T(""), COLORREF color = RGB(255, 0, 0), DWORD dwDispTime = 0, BOOL bOverWrite = TRUE);
 	void GetDispMsg(CString &strMsg, CString &strTitle);
 	void DispMsg(CString strMsg, CString strTitle = _T(""), COLORREF color = RGB(255, 0, 0), DWORD dwDispTime = 0, BOOL bOverWrite = TRUE);
+	void DispContRun(BOOL bOn);
 	void SetMyMsgYes();
 	void SetMyMsgNo();
 	void SetMyMsgOk();
+	void SetAlarm(CString sMsg);
+	void ClrAlarm();
 
 	CDlgInfo *m_pDlgInfo;
 	CDlgFrameHigh *m_pDlgFrameHigh;
@@ -177,18 +188,34 @@ public:
 	int MsgBox(CString sMsg, int nThreadIdx = 0, int nType = MB_OK, int nTimOut = DEFAULT_TIME_OUT, BOOL bEngave = TRUE);		// SyncMsgBox
 	int MyPassword(CString strMsg, int nCtrlId = 0);
 
+	CString GetDispMain();
 	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
 	void DispStsBar(CString sMsg, int nIdx = 0);
+	BOOL IsRun();
 
 	void SetDualTest(BOOL bOn);
 	void SetTestMode(int nMode);
 
+	void SetLotSt();
+	void SetLotEd();
+	DWORD GetLotSt();
+	DWORD GetLotEd();
+
+	void SetMkMenu01(CString sMenu, CString sItem, CString sData);
+	void SetMkMenu03(CString sMenu, CString sItem, BOOL bOn);
+
 	// ManagerFeeding
+	BOOL GetMpeSignal(int nSection, int nName);
 	long GetMpeData(int nSection, int nName);
 	BOOL MpeWrite(CString strRegAddr, long lData, BOOL bCheck = FALSE);
+
 	BOOL IsAuto();
+	BOOL GetMkStSignal();
+	void ResetMkStSignal();
+	int GetLastShotMk();
 
 	// ManagerProcedure
+	void Auto();
 
 	// ManagerPunch
 	void ResetMotion();

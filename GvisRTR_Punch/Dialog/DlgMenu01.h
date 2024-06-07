@@ -44,6 +44,9 @@ class CDlgMenu01 : public CDialog
 	//void SetRgbStcDef();
 	//void SetTitleStcDef();
 
+	void DispStTime();
+	void DispEdTime();
+
 public:
 	CDlgMenu01(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgMenu01();
@@ -64,6 +67,7 @@ public:
 	void DispMain(CString sMsg, COLORREF rgb = RGB_GREEN);
 	CString GetRunTime();
 	void DispRunTime();
+	void DispLotTime();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.

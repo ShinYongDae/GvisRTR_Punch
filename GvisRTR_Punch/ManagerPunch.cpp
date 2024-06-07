@@ -14,9 +14,10 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 {
 	m_pParent = pParent;
 	m_bCreated = FALSE;
+	m_bTIM_INIT_PUNCH = FALSE;
+	m_bTIM_SCAN_STATUS = FALSE;
 
 	InitDevices();
-	Init();
 
 	if (!Create())
 	{
@@ -27,6 +28,8 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 
 CManagerPunch::~CManagerPunch()
 {
+	m_bTIM_INIT_PUNCH = FALSE;
+	m_bTIM_SCAN_STATUS = FALSE;
 }
 
 BOOL CManagerPunch::Create()
@@ -61,6 +64,13 @@ void CManagerPunch::OnShowWindow(BOOL bShow, UINT nStatus)
 void CManagerPunch::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (nIDEvent == TIM_SCAN_STATUS)
+	{
+		KillTimer(TIM_SCAN_STATUS);
+		DoInterlock();
+		if (m_bTIM_SCAN_STATUS)
+			SetTimer(TIM_SCAN_STATUS, 100, NULL);
+	}
 
 	CWnd::OnTimer(nIDEvent);
 }
@@ -81,7 +91,6 @@ void CManagerPunch::InitDevices()
 	m_pVisionInner[0] = NULL;		// Camera & MIL
 	m_pVisionInner[1] = NULL;		// Camera & MIL
 
-	CreateDevices();
 }
 
 BOOL CManagerPunch::CreateDevices()
@@ -97,7 +106,6 @@ BOOL CManagerPunch::CreateDevices()
 	if (!m_pMotion->InitBoard())
 	{
 		MsgBox(_T("XMP 보드 초기화 실패, 다시 시작하세요.!!!"));
-		PostMessage(WM_CLOSE);
 		return FALSE;
 	}
 
@@ -130,9 +138,11 @@ BOOL CManagerPunch::CreateDevices()
 	return TRUE;
 }
 
-
-void CManagerPunch::Init()
+BOOL CManagerPunch::Init()
 {
+	if (!CreateDevices())
+		return FALSE;
+
 	int nAxis;
 	if (m_pMotion)
 	{
@@ -146,6 +156,9 @@ void CManagerPunch::Init()
 
 BOOL CManagerPunch::InitAct()
 {
+	if (!Init())
+		return FALSE;
+
 #ifdef USE_XMP
 	if (!m_pMotion)
 		return FALSE;
@@ -182,6 +195,9 @@ BOOL CManagerPunch::InitAct()
 		m_pVoiceCoil[0]->SearchHomeSmac();
 	if (m_pVoiceCoil[1])
 		m_pVoiceCoil[1]->SearchHomeSmac();
+
+	m_bTIM_SCAN_STATUS = TRUE;
+	SetTimer(TIM_SCAN_STATUS, 100, NULL);
 
 	return TRUE;
 }
@@ -327,4 +343,26 @@ void CManagerPunch::ResetMotion(int nMsId)
 	}
 }
 
+void CManagerPunch::DoInterlock()
+{
+	if (m_dEnc[AXIS_Y0] < 20.0 && m_dEnc[AXIS_Y1] < 20.0)
+	{
+		if (Status.bStopFeeding)
+			StopFeeding(FALSE);
+	}
+	else
+	{
+		if (!Status.bStopFeeding)
+			StopFeeding(TRUE);
+	}
+}
+
+void CManagerPunch::StopFeeding(BOOL bStop)
+{
+	Status.bStopFeeding = bStop;
+	if(bStop)
+		pView->MpeWrite(_T("MB440115"), 1); // 마킹부Feeding금지
+	else
+		pView->MpeWrite(_T("MB440115"), 0); // 마킹부Feeding금지 해제
+}
 

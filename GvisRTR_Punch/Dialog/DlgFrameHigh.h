@@ -21,6 +21,8 @@ class CDlgFrameHigh : public CDialog
 	CMyBtn myChkMenu01, myChkMenu02, myChkMenu03, myChkMenu04, myChkMenu05, myChkMenu06;
 	CMyStatic myStc[MAX_FRMHIGH_STC];
 
+	int m_nMkLastShot, m_nAoiLastShot[2], m_nEngraveLastShot; // [Up/Dn]
+
 
 	void LoadImg();
 	void DelImg();
@@ -57,6 +59,9 @@ public:
 	void ChkMenu04();
 	void ChkMenu05();
 	void ChkMenu06();
+
+	int GetLastShotMk();
+	void SetMkLastShot(int nSerial);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.

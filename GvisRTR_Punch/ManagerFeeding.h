@@ -6,7 +6,7 @@
 #define TIM_INIT_FEEDING			0
 #define TIM_SCAN_MPE				10
 
-struct stStatus
+struct stStatusFeeding
 {
 	BOOL bAuto, bManual, bOneCycle;								// Mode 스위치
 	BOOL bSwJogLeft, bSwJogFast, bSwJogStep;					// Jog 판넬 선택 스위치
@@ -28,7 +28,7 @@ struct stStatus
 	BOOL bDoorUcF[4], bDoorReF[5];								// 도어 센서
 	BOOL bDoorEngv[4], bDoorEngvF[4];							// 도어 센서
 
-	stStatus()
+	stStatusFeeding()
 	{
 		bAuto = FALSE; bManual = FALSE; bOneCycle = FALSE; bSwJogLeft = FALSE; bSwJogFast = FALSE; bSwJogStep = FALSE;
 		bDoorEngv[0] = FALSE; bDoorEngv[1] = FALSE; bDoorEngv[2] = FALSE; bDoorEngv[3] = FALSE;
@@ -86,8 +86,12 @@ class CManagerFeeding : public CWnd
 	BOOL m_bTIM_INIT_FEEDING;
 	BOOL m_bTIM_SCAN_MPE;
 	int m_nStepInitFeeding;
+	BOOL m_bCycleStop;
+	CString m_sAoiUpAlarmReStartMsg, m_sAoiDnAlarmReStartMsg;
+	CString m_sAoiUpAlarmReTestMsg, m_sAoiDnAlarmReTestMsg;
+	int m_nMonAlmF, m_nClrAlmF;
 
-	void Init();
+	BOOL Init();
 	BOOL Create();
 	void Free();
 	void CntMk();
@@ -98,6 +102,8 @@ class CManagerFeeding : public CWnd
 	unsigned long ChkDoor();
 	void ChkRcvSig();
 
+	void MonDispMain();
+
 	void DoIO();
 	void DoEmgSens();		// SliceIo[4]
 	void DoSaftySens();
@@ -105,11 +111,16 @@ class CManagerFeeding : public CWnd
 	void DoModeSel();		// SliceIo[0]
 	void DoMainSw();		// SliceIo[0]
 	void DoEngraveSens();	// MpeIo[28]
-	void DoInterlock();
 	void MonPlcAlm();
-	void MonDispMain();
 	void MonPlcSignal();
+	void PlcAlm(BOOL bMon, BOOL bClr);
+	void FindAlarm();
+	void ResetMonAlm();
+	void ClrAlarm();
+	void ChkReTestAlarmOnAoiUp();
+	void ChkReTestAlarmOnAoiDn();
 
+	void DoAutoEng();
 
 public:
 	CManagerFeeding(CWnd* pParent = NULL);
@@ -118,7 +129,7 @@ public:
 	// 특성입니다.
 public:
 	stBtnPush Btn;
-	stStatus Status;
+	stStatusFeeding Status;
 
 
 	// 작업입니다.
@@ -130,6 +141,8 @@ public:
 	BOOL IsAuto();
 	void Buzzer(BOOL bOn, int nCh = 0);
 	void Stop();
+	void CycleStop();
+	void SetLed(int nIdx, BOOL bOn = TRUE);
 
 	void SetBufInitPos(double dPos);
 	void SetBufHomeParam(double dVel, double dAcc);

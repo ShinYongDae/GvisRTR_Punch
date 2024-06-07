@@ -23,6 +23,10 @@ CDlgFrameHigh::CDlgFrameHigh(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DLG_FRAME_HIGH, pParent)
 {
 	m_pRect = NULL;
+	m_nMkLastShot = 0;
+	m_nAoiLastShot[0] = 0;
+	m_nAoiLastShot[1] = 0;
+	m_nEngraveLastShot = 0;
 
 	Create();
 }
@@ -257,6 +261,8 @@ BOOL CDlgFrameHigh::OnInitDialog()
 
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 	InitGui();
+	myStc[6].SetText(pDoc->WorkingInfo.LastJob.sMkLastShot);
+	m_nMkLastShot = _tstoi(pDoc->WorkingInfo.LastJob.sMkLastShot);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -475,3 +481,25 @@ void CDlgFrameHigh::SetChk(int nID)
 	}
 }
 
+int CDlgFrameHigh::GetLastShotMk()
+{
+	return m_nMkLastShot;
+}
+
+void CDlgFrameHigh::SetMkLastShot(int nSerial)
+{
+	if (nSerial < 0)
+	{
+		return;
+	}
+
+	m_nMkLastShot = nSerial;
+
+	CString str;
+	str.Format(_T("%d"), nSerial);
+	myStc[6].SetText(str);
+
+	CString sPath = PATH_WORKING_INFO;
+	pDoc->WorkingInfo.LastJob.sMkLastShot = str;
+	::WritePrivateProfileString(_T("Last Job"), _T("Mk Last Shot"), str, sPath);
+}

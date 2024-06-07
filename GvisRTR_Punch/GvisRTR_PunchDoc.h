@@ -30,6 +30,7 @@ public:
 	void SetTestMode(int nMode);
 
 	// File communication for Engrave
+	void GetMkInfo(); // About Engrave Signal
 	void SetMkInfo(CString sMenu, CString sItem, BOOL bOn);
 	void SetMkInfo(CString sMenu, CString sItem, CString sData);
 	void SetMonDispMain(CString sDisp);
@@ -37,6 +38,11 @@ public:
 
 	void LogAuto(CString strMsg, int nType = 0);
 	void LogPLC(CString strMsg, int nType = 0);
+
+	void SaveLotTime(DWORD dwStTick);
+	void SetEngraveFdPitch(double dPitch);
+	void SetEngraveAoiDist(double dLen);
+	void SetEngBufInitPos(double dPos);
 
 // 재정의입니다.
 public:

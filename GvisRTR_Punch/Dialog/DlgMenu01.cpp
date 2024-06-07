@@ -672,8 +672,6 @@ void CDlgMenu01::AtDlgHide()
 {
 }
 
-
-
 //void CDlgMenu01::SetRgbStcDef()
 //{
 //	if (!pDoc->m_pReelMap)
@@ -790,13 +788,45 @@ void CDlgMenu01::AtDlgHide()
 //	myStcTitle[47].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_WIDE]);
 //}
 
-
 void CDlgMenu01::DispMain(CString sMsg, COLORREF rgb)
 {
 	if (myStcTitle[14].GetText() != sMsg)
 	{
 		myStcTitle[14].SetText(sMsg);
 		myStcTitle[14].SetTextColor(rgb);
+	}
+}
+
+void CDlgMenu01::DispLotTime()
+{
+	DispStTime();
+	DispRunTime();
+	DispEdTime();
+}
+
+void CDlgMenu01::DispStTime()
+{
+	CString str, sPrev;
+	int nYear, nMonth, nDay, nHour, nMin, nSec;
+
+	nYear = pDoc->WorkingInfo.Lot.StTime.nYear;
+	nMonth = pDoc->WorkingInfo.Lot.StTime.nMonth;
+	nDay = pDoc->WorkingInfo.Lot.StTime.nDay;
+	nHour = pDoc->WorkingInfo.Lot.StTime.nHour;
+	nMin = pDoc->WorkingInfo.Lot.StTime.nMin;
+	nSec = pDoc->WorkingInfo.Lot.StTime.nSec;
+
+	if (!nYear && !nMonth && !nDay && !nHour && !nMin && !nSec)
+		str = _T("");
+	else
+		str.Format(_T("%04d-%02d-%02d, %02d:%02d:%02d"), nYear, nMonth, nDay, nHour, nMin, nSec);
+
+	// 	sPrev = myStcData[21].GetText();
+	GetDlgItem(IDC_STC_LOT_START)->GetWindowText(sPrev);
+	if (sPrev != str)
+	{
+		myStcData[21].SetText(str);
+		pView->SetMkMenu01(_T("LotTime"), _T("Start"), str);
 	}
 }
 
@@ -836,7 +866,7 @@ void CDlgMenu01::DispRunTime()
 	}
 	else if (!nEdYear && !nEdMonth && !nEdDay && !nEdHour && !nEdMin && !nEdSec)
 	{
-		nDiff = (GetTickCount() - pView->m_dwLotSt) / 1000;
+		nDiff = (GetTickCount() - pView->GetLotSt()) / 1000;
 		nHour = int(nDiff / 3600);
 		nMin = int((nDiff - 3600 * nHour) / 60);
 		nSec = nDiff % 60;
@@ -844,9 +874,9 @@ void CDlgMenu01::DispRunTime()
 	}
 	else
 	{
-		if (pView->m_dwLotEd > 0)
+		if (pView->GetLotEd() > 0)
 		{
-			nDiff = (pView->m_dwLotEd - pView->m_dwLotSt) / 1000;
+			nDiff = (pView->GetLotEd() - pView->GetLotSt()) / 1000;
 			nHour = int(nDiff / 3600);
 			nMin = int((nDiff - 3600 * nHour) / 60);
 			nSec = nDiff % 60;
@@ -870,7 +900,6 @@ void CDlgMenu01::DispRunTime()
 		}
 	}
 
-	//sPrev = myStcData[22].GetText();
 	GetDlgItem(IDC_STC_LOT_START)->GetWindowText(sPrev);
 
 	if (!sPrev.IsEmpty())
@@ -879,18 +908,33 @@ void CDlgMenu01::DispRunTime()
 		if (sPrev != str)
 		{
 			myStcData[22].SetText(str);
-			pDoc->SetMkMenu01(_T("LotTime"), _T("Run"), str);
-
-#ifdef USE_ENGRAVE
-			if (pView)
-			{
-				if (pView->m_pEngrave)
-				{
-					pView->m_pEngrave->SetRunTime();
-				}
-			}
-#endif
+			pView->SetMkMenu01(_T("LotTime"), _T("Run"), str);
 		}
+	}
+}
+
+void CDlgMenu01::DispEdTime()
+{
+	CString str, sPrev;
+	int nYear, nMonth, nDay, nHour, nMin, nSec;
+
+	nYear = pDoc->WorkingInfo.Lot.EdTime.nYear;
+	nMonth = pDoc->WorkingInfo.Lot.EdTime.nMonth;
+	nDay = pDoc->WorkingInfo.Lot.EdTime.nDay;
+	nHour = pDoc->WorkingInfo.Lot.EdTime.nHour;
+	nMin = pDoc->WorkingInfo.Lot.EdTime.nMin;
+	nSec = pDoc->WorkingInfo.Lot.EdTime.nSec;
+
+	if (!nYear && !nMonth && !nDay && !nHour && !nMin && !nSec)
+		str = _T("");
+	else
+		str.Format(_T("%04d-%02d-%02d, %02d:%02d:%02d"), nYear, nMonth, nDay, nHour, nMin, nSec);
+
+	GetDlgItem(IDC_STC_LOT_END)->GetWindowText(sPrev);
+	if (sPrev != str)
+	{
+		myStcData[23].SetText(str);
+		pView->SetMkMenu01(_T("LotTime"), _T("End"), str);
 	}
 }
 
@@ -928,11 +972,6 @@ void CDlgMenu01::EnableItsMode(BOOL bEnable)
 {
 	if (bEnable)
 	{
-		//if (pView->m_nSelRmap != RMAP_ITS)
-		//	m_nSelRmapPrev = pView->m_nSelRmap;
-
-		//pView->m_nSelRmap = RMAP_ITS;
-
 		myBtn[12].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_UP
 		myBtn[13].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_DN
 		myBtn[14].ShowWindow(SW_HIDE);	// IDC_CHK_DEF_ALL
@@ -944,8 +983,6 @@ void CDlgMenu01::EnableItsMode(BOOL bEnable)
 	}
 	else
 	{
-		//pView->m_nSelRmap = m_nSelRmapPrev;
-
 		myBtn[12].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_UP
 		myBtn[13].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_DN
 		myBtn[14].ShowWindow(SW_SHOW);	// IDC_CHK_DEF_ALL

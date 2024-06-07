@@ -18,6 +18,9 @@
 #define new DEBUG_NEW
 #endif
 
+#include "GvisRTR_PunchView.h"
+extern CGvisRTR_PunchView* pView;
+
 CGvisRTR_PunchDoc* pDoc;
 
 // CGvisRTR_PunchDoc
@@ -176,6 +179,109 @@ void CGvisRTR_PunchDoc::SetTestMode(int nMode)
 	::WritePrivateProfileString(_T("Infomation"), _T("Last Shot"), _T("10000"), WorkingInfo.System.sPathMkCurrInfo);
 }
 
+void CGvisRTR_PunchDoc::GetMkInfo() // About Engrave Signal
+{
+	CString sPath = WorkingInfo.System.sPathMkInfo;
+	TCHAR szData[512];
+
+	if (sPath.IsEmpty())
+		return;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DispContRun"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bDispContRun = (_ttoi(szData) > 0) ? TRUE : FALSE;
+	else
+		WorkingInfo.LastJob.bDispContRun = FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DispLotEnd"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bDispLotEnd = (_ttoi(szData) > 0) ? TRUE : FALSE;
+	else
+		WorkingInfo.LastJob.bDispLotEnd = FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("Use Dual AOI"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bDualTest = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	WorkingInfo.LastJob.nTestMode = MODE_NONE;
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("Inner Test On"), NULL, szData, sizeof(szData), sPath))
+	{
+		if ((_ttoi(szData) > 0) ? TRUE : FALSE)
+			WorkingInfo.LastJob.nTestMode = MODE_INNER;
+	}
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("Outer Test On"), NULL, szData, sizeof(szData), sPath))
+	{
+		if ((_ttoi(szData) > 0) ? TRUE : FALSE)
+			WorkingInfo.LastJob.nTestMode = MODE_OUTER;
+	}
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("Sample Test On"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bSampleTest = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("UncoilerCcw"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bTwoMetal = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("RecoilerCcw"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bOneMetal = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("2PtAlign"), NULL, szData, sizeof(szData), sPath))
+	{
+		if ((_ttoi(szData) > 0) ? TRUE : FALSE)
+			WorkingInfo.LastJob.nAlignMethode = TWO_POINT;
+	}
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("4PtAlign"), NULL, szData, sizeof(szData), sPath))
+	{
+		if ((_ttoi(szData) > 0) ? TRUE : FALSE)
+			WorkingInfo.LastJob.nAlignMethode = FOUR_POINT;
+		else
+			WorkingInfo.LastJob.nAlignMethode = TWO_POINT;
+	}
+	else
+		WorkingInfo.LastJob.nAlignMethode = TWO_POINT;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensRecoil"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bRclDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensPunch"), NULL, szData, sizeof(szData), sPath))
+		WorkingInfo.LastJob.bMkDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensAoiUp"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bAoiUpDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensAoiDn"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bAoiDnDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensEngrave"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bEngvDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("DoorSensUncoil"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bUclDrSen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("SaftySensPunch"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bMkSftySen = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("CleanRolerAoiUp"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bUseAoiUpCleanRoler = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("CleanRolerAoiDn"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bUseAoiDnCleanRoler = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("UltrasonicAoi"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bUseAoiDnUltrasonic = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("UltrasonicEngrave"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bUseEngraveUltrasonic = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("TempStop"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bTempPause = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("SeparateLot"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bLotSep = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Signal"), _T("FixBed"), NULL, szData, sizeof(szData), sPath))
+		pDoc->WorkingInfo.LastJob.bContFixDef = (_ttoi(szData) > 0) ? TRUE : FALSE;
+
+}
+
 void CGvisRTR_PunchDoc::SetMkInfo(CString sMenu, CString sItem, BOOL bOn)
 {
 	CString sPath = WorkingInfo.System.sPathMkInfo;
@@ -319,4 +425,81 @@ void CGvisRTR_PunchDoc::SetEngItsCode(CString sItsCode)
 {
 	WorkingInfo.LastJob.sEngItsCode = sItsCode;
 	::WritePrivateProfileString(_T("Last Job"), _T("Engrave Its Code"), sItsCode, PATH_WORKING_INFO);
+}
+
+void CGvisRTR_PunchDoc::SaveLotTime(DWORD dwStTick)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+
+	// [Lot]
+	WorkingInfo.Lot.dwStTick = dwStTick;
+	sData.Format(_T("%d"), dwStTick);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Tick"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nYear);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Year"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nMonth);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Month"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nDay);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Day"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nHour);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Hour"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nMin);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Minute"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.StTime.nSec);
+	::WritePrivateProfileString(_T("Lot"), _T("Start Second"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nYear);
+	::WritePrivateProfileString(_T("Lot"), _T("End Year"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nMonth);
+	::WritePrivateProfileString(_T("Lot"), _T("End Month"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nDay);
+	::WritePrivateProfileString(_T("Lot"), _T("End Day"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nHour);
+	::WritePrivateProfileString(_T("Lot"), _T("End Hour"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nMin);
+	::WritePrivateProfileString(_T("Lot"), _T("End Minute"), sData, sPath);
+
+	sData.Format(_T("%d"), WorkingInfo.Lot.EdTime.nSec);
+	::WritePrivateProfileString(_T("Lot"), _T("End Second"), sData, sPath);
+}
+
+void CGvisRTR_PunchDoc::SetEngraveFdPitch(double dPitch)
+{
+	CString sPath = PATH_WORKING_INFO;
+	CString sVal;
+	sVal.Format(_T("%.3f"), dPitch);
+	WorkingInfo.Motion.sEngraveFdLead = sVal;
+	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_FEEDING_DRUM_LEAD_PITCH"), sVal, sPath);
+	long lData = (long)(dPitch * 1000.0);
+	pView->MpeWrite(_T("ML45026"), lData);	// 각인부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
+}
+
+void CGvisRTR_PunchDoc::SetEngraveAoiDist(double dLen)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+	sData.Format(_T("%.3f"), dLen);
+	WorkingInfo.Motion.sFdEngraveAoiInitDist = sData;
+	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_ENGRAVE_AOI_INIT_DIST"), sData, sPath);
+	long lData = (long)(dLen * 1000.0);
+	pView->MpeWrite(_T("ML45024"), lData);	// 각인부에서 AOI(상)까지 거리 (단위 mm * 1000)
+}
+
+void CGvisRTR_PunchDoc::SetEngBufInitPos(double dPos)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+	sData.Format(_T("%.3f"), dPos);
+	WorkingInfo.Motion.sStEngBufPos = sData;
+	::WritePrivateProfileString(_T("Motion"), _T("START_ENG_BUFFER_POSITION"), sData, sPath);
+	long lData = (long)(dPos * 1000.0);
+	pView->MpeWrite(_T("ML45028"), lData);	// 각인부 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
 }

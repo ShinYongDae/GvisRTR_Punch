@@ -828,7 +828,7 @@ void CEngrave::GetSignalPunch(SOCKET_DATA SockData)
 		case _SigInx::_OnePnlMk:
 			BtnStatus.Mk.MvOne = (SockData.nData1 > 0) ? TRUE : FALSE;
 			m_bRcvSig[_SigInx::_OnePnlMk] = TRUE;
-			//pView->m_pMpe->Write(_T("MB440151"), (long)SockData.nData1);
+			//pView->MpeWrite(_T("MB440151"), (long)SockData.nData1);
 			break;
 		case _SigInx::_DancerUpMk:
 			BtnStatus.Mk.DcRSol = (SockData.nData1 > 0) ? TRUE : FALSE;
@@ -943,7 +943,7 @@ void CEngrave::GetSignalAOIDn(SOCKET_DATA SockData)
 		case _SigInx::_OnePnlAoiDn:
 			BtnStatus.AoiDn.MvOne = (SockData.nData1 > 0) ? TRUE : FALSE;
 			m_bRcvSig[_SigInx::_OnePnlAoiDn] = TRUE;
-			//pView->m_pMpe->Write(_T("MB440151"), (long)SockData.nData1);
+			//pView->MpeWrite(_T("MB440151"), (long)SockData.nData1);
 			break;
 		case _SigInx::_ClrRollAoiDn:
 			BtnStatus.AoiDn.ClrRoll = (SockData.nData1 > 0) ? TRUE : FALSE;
@@ -1163,7 +1163,7 @@ void CEngrave::GetSignalEngrave(SOCKET_DATA SockData)
 		case _SigInx::_OnePnlEng:
 			BtnStatus.Eng.MvOne = (SockData.nData1 > 0) ? TRUE : FALSE;
 			m_bRcvSig[_SigInx::_OnePnlEng] = TRUE;
-			//pView->m_pMpe->Write(_T("MB440151"), (long)SockData.nData1);
+			//pView->MpeWrite(_T("MB440151"), (long)SockData.nData1);
 			break;
 		case _SigInx::_DancerUpEng:
 			BtnStatus.Eng.DcRSol = (SockData.nData1 > 0) ? TRUE : FALSE;
@@ -1330,45 +1330,45 @@ void CEngrave::GetSignalEngraveAutoSequence(SOCKET_DATA SockData)
 		case _SigInx::_EngAutoSeqMkSt:
 			BtnStatus.EngAuto.MkSt = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if (pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440103"), SockData.nData1);// 2D(GUI) 각인 동작 Start신호(PLC On->PC Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440103"), SockData.nData1);// 2D(GUI) 각인 동작 Start신호(PLC On->PC Off)
 //#endif
 			break;
 		case _SigInx::_EngAutoSeqOnMkIng:
 			BtnStatus.EngAuto.OnMking = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if(pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440173"), SockData.nData1);// 2D(GUI) 각인 동작Running신호(PC On->PC Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440173"), SockData.nData1);// 2D(GUI) 각인 동작Running신호(PC On->PC Off)
 //#endif
 			break;
 		case _SigInx::_EngAutoSeqMkDone:
 			BtnStatus.EngAuto.MkDone = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if (pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440174"), 1);// 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
-//				//pView->m_pMpe->Write(_T("MB440174"), SockData.nData1);// 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440174"), 1);// 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+//				//pView->MpeWrite(_T("MB440174"), SockData.nData1);// 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
 //#endif
 			break;
 		case _SigInx::_EngAutoSeq2dReadSt:
 			BtnStatus.EngAuto.Read2dSt = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if (pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440105"), SockData.nData1);// 각인부 2D 리더 시작신호(PLC On->PC Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440105"), SockData.nData1);// 각인부 2D 리더 시작신호(PLC On->PC Off)
 //#endif
 			break;
 		case _SigInx::_EngAutoSeqOnReading2d:
 			BtnStatus.EngAuto.OnRead2d = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if (pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440178"), SockData.nData1);// 각인부 2D 리더 작업중 신호(PC On->PC Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440178"), SockData.nData1);// 각인부 2D 리더 작업중 신호(PC On->PC Off)
 //#endif
 			break;
 		case _SigInx::_EngAutoSeq2dReadDone:
 			BtnStatus.EngAuto.Read2dDone = (SockData.nData1 > 0) ? TRUE : FALSE;
 //#ifdef USE_MPE	
-//			if (pView && pView->m_pMpe)
-//				pView->m_pMpe->Write(_T("MB440179"), 1);// 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
-//				//pView->m_pMpe->Write(_T("MB440179"), SockData.nData1);// 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
+//			if (pView)
+//				pView->MpeWrite(_T("MB440179"), 1);// 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
+//				//pView->MpeWrite(_T("MB440179"), SockData.nData1);// 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
 //#endif
 			break;
 			// Is
@@ -1485,7 +1485,7 @@ void CEngrave::GetOpInfo(SOCKET_DATA SockData)
 				pDoc->WorkingInfo.LastJob.bSampleTest = (SockData.nData1 > 0) ? TRUE : FALSE;
 				m_bRcvSig[_SigInx::_SampleTest] = TRUE;
 //#ifdef USE_MPE
-//				pView->m_pMpe->Write(_T("MB44017B"), (pDoc->WorkingInfo.LastJob.bSampleTest) ? 1 : 0);		// Sample 검사 On
+//				pView->MpeWrite(_T("MB44017B"), (pDoc->WorkingInfo.LastJob.bSampleTest) ? 1 : 0);		// Sample 검사 On
 //#endif
 			}
 			break;
@@ -1623,7 +1623,7 @@ void CEngrave::GetOpInfo(SOCKET_DATA SockData)
 				m_bGetOpInfo = TRUE;
 				pDoc->WorkingInfo.LastJob.bTempPause = (SockData.nData1 > 0) ? TRUE : FALSE;
 				m_bRcvSig[_SigInx::_TempPause] = TRUE;
-				//pView->m_pMpe->Write(_T("MB440183"), pDoc->WorkingInfo.LastJob.bTempPause ? 1 : 0);	// 일시정지사용(PC가 On시키고, PLC가 확인하고 Off시킴)
+				//pView->MpeWrite(_T("MB440183"), pDoc->WorkingInfo.LastJob.bTempPause ? 1 : 0);	// 일시정지사용(PC가 On시키고, PLC가 확인하고 Off시킴)
 			}
 			break;
 		case _SigInx::_LotCut:
@@ -2279,8 +2279,7 @@ void CEngrave::GetEngInfo(SOCKET_DATA SockData)
 		switch (nMsgId)
 		{
 		case _ItemInx::_EngLeadPitch:
-			pDoc->WorkingInfo.Motion.sEngraveFdLead = CharToString(SockData.strData);
-			pDoc->SetEngraveFdPitch(_tstof(pDoc->WorkingInfo.Motion.sEngraveFdLead));
+			pDoc->SetEngraveFdPitch(_tstof(CharToString(SockData.strData)));
 			break;
 		case _ItemInx::_EngPushOffLen:
 			pDoc->WorkingInfo.Motion.sEngraveFdVacOff = CharToString(SockData.strData);
@@ -2289,8 +2288,7 @@ void CEngrave::GetEngInfo(SOCKET_DATA SockData)
 			pDoc->WorkingInfo.Motion.sEngraveTq = CharToString(SockData.strData);
 			break;
 		case _ItemInx::_EngAoiLen:
-			pDoc->WorkingInfo.Motion.sFdEngraveAoiInitDist = pDoc->WorkingInfo.Motion.sEngAoiLen = CharToString(SockData.strData);
-			pDoc->SetEngraveAoiDist(_tstoi(pDoc->WorkingInfo.Motion.sEngAoiLen));
+			pDoc->SetEngraveAoiDist(_tstoi(CharToString(SockData.strData)));
 			break;
 		case _ItemInx::_EngFdDiffMax:
 			pDoc->WorkingInfo.Motion.sEngFdDiffMax = CharToString(SockData.strData);
@@ -2332,8 +2330,8 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_VEL"), pDoc->WorkingInfo.Motion.sAoiJogVel, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkJogVel) * 1000.0);
-			if(pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45038"), lData);	// 연속공급 속도 (단위 mm/sec * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45038"), lData);	// 연속공급 속도 (단위 mm/sec * 1000)
 #endif
 			break;
 		case _ItemInx::_FdAcc:
@@ -2343,8 +2341,8 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_ACC"), pDoc->WorkingInfo.Motion.sAoiJogAcc, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkJogAcc) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45040"), lData);	// 연속공급 가속도 (단위 mm/s^2 * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45040"), lData);	// 연속공급 가속도 (단위 mm/s^2 * 1000)
 #endif
 			break;
 		case _ItemInx::_OnePnlLen:
@@ -2357,8 +2355,8 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_VEL"), pDoc->WorkingInfo.Motion.sMkFdVel, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkFdVel) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45034"), lData);	// 한 판넬 Feeding 속도 (단위 mm/sec * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45034"), lData);	// 한 판넬 Feeding 속도 (단위 mm/sec * 1000)
 #endif
 			break;
 		case _ItemInx::_OnePnlAcc:
@@ -2368,8 +2366,8 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_ACC"), pDoc->WorkingInfo.Motion.sMkFdAcc, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkFdAcc) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45036"), lData);	// 한 판넬 Feeding 가속도 (단위 mm/s^2 * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45036"), lData);	// 한 판넬 Feeding 가속도 (단위 mm/s^2 * 1000)
 #endif
 			break;
 		case _ItemInx::_FdDiffMax:
@@ -2420,8 +2418,8 @@ void CEngrave::GetAoiInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_TENSION_SERVO_TORQUE"), pDoc->WorkingInfo.Motion.sAoiTq, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sAoiTq) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45042"), lData);	// 검사부 Tension 모터 토크값 (단위 Kgf * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45042"), lData);	// 검사부 Tension 모터 토크값 (단위 Kgf * 1000)
 #endif
 			break;
 		case _ItemInx::_AoiBuffShotNum:
@@ -2430,8 +2428,8 @@ void CEngrave::GetAoiInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("FEEDING_AOI_AOI_SHOT_NUM"), pDoc->WorkingInfo.Motion.sFdAoiAoiDistShot, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstoi(pDoc->WorkingInfo.Motion.sFdAoiAoiDistShot) * 1000);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45010"), lData);	// AOI(상)에서 AOI(하) Shot수 (단위 Shot수 * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45010"), lData);	// AOI(상)에서 AOI(하) Shot수 (단위 Shot수 * 1000)
 #endif
 			break;
 		case _ItemInx::_AoiMkLen:
@@ -2440,8 +2438,8 @@ void CEngrave::GetAoiInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("FEEDING_PUNCH_AOI_INIT_DIST"), pDoc->WorkingInfo.Motion.sFdMkAoiInitDist, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sFdMkAoiInitDist) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45008"), lData);	// AOI(하)에서 마킹까지 거리 (단위 mm * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45008"), lData);	// AOI(하)에서 마킹까지 거리 (단위 mm * 1000)
 #endif
 			break;
 		default:
@@ -2478,8 +2476,8 @@ void CEngrave::GetMkInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("MARKING_TENSION_SERVO_TORQUE"), pDoc->WorkingInfo.Motion.sMkTq, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkTq) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45044"), lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45044"), lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
 #endif
 			break;
 		case _ItemInx::_MkBuffInitPos:
@@ -2488,8 +2486,8 @@ void CEngrave::GetMkInfo(SOCKET_DATA SockData)
 			::WritePrivateProfileString(_T("Motion"), _T("START_BUFFER_POSITION"), pDoc->WorkingInfo.Motion.sStBufPos, PATH_WORKING_INFO);
 #ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sStBufPos) * 1000.0);
-			if (pView && pView->m_pMpe)
-				pView->m_pMpe->Write(_T("ML45016"), lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
+			if (pView)
+				pView->MpeWrite(_T("ML45016"), lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
 #endif
 			break;
 		case _ItemInx::_MkBuffCurrPos:
@@ -8842,7 +8840,7 @@ void CEngrave::GetSignal2dEng(SOCKET_DATA SockData)
 			m_bRcvSig[_SigInx::_2DOffsetInitPos] = TRUE;
 //#ifdef USE_MPE
 //			lData = (long)(pDoc->GetOffsetInitPos() * 1000.0); // WorkingInfo.Motion.sOffsetInitPos
-//			pView->m_pMpe->Write(_T("ML44046"), lData);	// 각인부, 검사부, 마킹부 offset 이송 값 (단위 mm * 1000)
+//			pView->MpeWrite(_T("ML44046"), lData);	// 각인부, 검사부, 마킹부 offset 이송 값 (단위 mm * 1000)
 //#endif
 			break;
 
@@ -8855,7 +8853,7 @@ void CEngrave::GetSignal2dEng(SOCKET_DATA SockData)
 				m_bRcvSig[_SigInx::_2DOffsetInitPosMove] = TRUE;
 //#ifdef USE_MPE
 //				if (pView->m_pMpe)
-//					pView->m_pMpe->Write(_T("MB44013F"), 1); // 각인부, 검사부, 마킹부 offset 이송 ON(PC가 On시키고, PLC가 확인하고 Off시킴)
+//					pView->MpeWrite(_T("MB44013F"), 1); // 각인부, 검사부, 마킹부 offset 이송 ON(PC가 On시키고, PLC가 확인하고 Off시킴)
 //#endif
 			}
 			break;

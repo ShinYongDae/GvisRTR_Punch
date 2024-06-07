@@ -15,16 +15,18 @@ CManagerFeeding::CManagerFeeding(CWnd* pParent)
 	m_pParent = pParent;
 	m_bTIM_INIT_FEEDING = FALSE;
 	m_bTIM_SCAN_MPE = FALSE;
+	m_bCycleStop = FALSE;
+	m_sAoiUpAlarmReStartMsg = _T(""); m_sAoiDnAlarmReStartMsg = _T("");
+	m_sAoiUpAlarmReTestMsg = _T(""); m_sAoiDnAlarmReTestMsg = _T("");
+	m_nMonAlmF = 0;
+	m_nClrAlmF = 0;
 
 	if (!Create())
 	{
 		pView->ClrDispMsg(); 
 		AfxMessageBox(_T("CManagerFeeding::Create() Failed!!!"));
 	}
-
-	Init();
 }
-
 
 CManagerFeeding::~CManagerFeeding()
 {
@@ -81,19 +83,18 @@ void CManagerFeeding::OnTimer(UINT_PTR nIDEvent)
 	CWnd::OnTimer(nIDEvent);
 }
 
-void CManagerFeeding::Init()
+BOOL CManagerFeeding::Init()
 {
 #ifdef USE_MPE
 	if (!m_pMpe)
 		m_pMpe = new CMpDevice(this);
 	if (!m_pMpe->Init(1, 1))
 	{
-		//		DoMyMsgBox(_T("메카트로링크(MC0)의 통신프로그램을 실행 후, 다시 시작하세요.!!!"));
-		MsgBox(_T("메카트로링크(MC0)의 통신프로그램을 실행 후, 다시 시작하세요.!!!"));
-		PostMessage(WM_CLOSE);
+		pView->MsgBox(_T("메카트로링크(MC0)의 통신프로그램을 실행 후, 다시 시작하세요.!!!"));
 		return FALSE;
 	}
 #endif
+	return TRUE;
 }
 
 void CManagerFeeding::Free()
@@ -107,6 +108,10 @@ void CManagerFeeding::Free()
 
 BOOL CManagerFeeding::InitAct()
 {
+	if (!Init())
+	{
+		return FALSE;
+	}
 
 	m_bTIM_SCAN_MPE = TRUE;
 	SetTimer(TIM_SCAN_MPE, 100, NULL);
@@ -291,7 +296,6 @@ void CManagerFeeding::ChkEmg()
 	{
 		Status.bEmgMkF[EMG_B_MK] = TRUE;
 		Buzzer(TRUE, 0);
-		TowerLamp(RGB_RED, TRUE);
 		Stop();
 		pView->DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 마킹부 스위치"));
@@ -410,7 +414,6 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			ulOpenDoor &= ~(0x01 << 0);
 			Status.bDoorAoiF[DOOR_FM_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
-			TowerLamp(RGB_RED, TRUE);
 			Stop();
 			//pView->DispStsBar(_T("정지-5"), 0);
 			pView->DispMain(_T("정 지"), RGB_RED);
@@ -1223,8 +1226,6 @@ void CManagerFeeding::DoIO()
 	DoMainSw();
 	DoEngraveSens();
 
-	DoInterlock();
-
 	MonPlcAlm();
 	MonDispMain();
 	MonPlcSignal();
@@ -1233,38 +1234,31 @@ void CManagerFeeding::DoIO()
 	{
 		m_bCycleStop = FALSE;
 		Buzzer(TRUE);
-		TowerLamp(RGB_YELLOW, TRUE);
 
-		if (!pDoc->m_sAlmMsg.IsEmpty())
+		if (!pView->m_sAlmMsg.IsEmpty())
 		{
-			pDoc->LogAuto(pDoc->m_sAlmMsg);
-			pView->MsgBox(pDoc->m_sAlmMsg, 0, 0, DEFAULT_TIME_OUT, FALSE);
+			pDoc->LogAuto(pView->m_sAlmMsg);
+			pView->MsgBox(pView->m_sAlmMsg, 0, 0, DEFAULT_TIME_OUT, FALSE);
 
-			if (pDoc->m_sAlmMsg == m_sAoiUpAlarmReStartMsg || pDoc->m_sAlmMsg == m_sAoiUpAlarmReTestMsg)
+			if (pView->m_sAlmMsg == m_sAoiUpAlarmReStartMsg || pView->m_sAlmMsg == m_sAoiUpAlarmReTestMsg)
 			{ // Wait for AOI 검사시작 신호.
 				ChkReTestAlarmOnAoiUp(); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off
 			}
-			else if (pDoc->m_sAlmMsg == m_sAoiDnAlarmReStartMsg || pDoc->m_sAlmMsg == m_sAoiDnAlarmReTestMsg)
+			else if (pView->m_sAlmMsg == m_sAoiDnAlarmReStartMsg || pView->m_sAlmMsg == m_sAoiDnAlarmReTestMsg)
 			{ // Wait for AOI 검사시작 신호.
 				ChkReTestAlarmOnAoiDn(); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off
 			}
 		}
-		pDoc->m_sAlmMsg = _T("");
-		pDoc->m_sIsAlmMsg = _T("");
-		pDoc->m_sPrevAlmMsg = _T("");
+		ClrAlarm();
 	}
 
-	if (Status.bManual)
-	{
-		DoBoxSw();
-	}
-	else if (Status.bAuto)
+	if (Status.bAuto)
 	{
 		DoAutoEng();
-		DoAuto();
+		pView->Auto();
 	}
 
-	if (IsRun())
+	if (pView->IsRun())
 	{
 		if (m_pDlgMenu01)
 		{
@@ -1280,6 +1274,18 @@ void CManagerFeeding::DoIO()
 				m_pDlgMenu01->EnableBtn(TRUE);
 		}
 	}
+}
+
+void CManagerFeeding::DoAutoEng()
+{
+	if (!IsAuto() || (MODE_INNER != pDoc->GetTestMode()))
+		return;
+
+	// 각인부 마킹시작 신호를 확인
+	DoAtuoGetEngStSignal();
+
+	// 각인부 2D 코드 Reading신호를 확인
+	DoAtuoGet2dReadStSignal();
 }
 
 void CManagerFeeding::DoEmgSens()
@@ -1373,37 +1379,1009 @@ void CManagerFeeding::DoEmgSens()
 		*usInF &= ~(0x01 << 0);
 		Status.bEmgRc = FALSE;
 	}
-
-	//usIn = m_pMpe->m_pMpeIb[24];
-	//usInF = &m_pMpe->m_pMpeIbF[24];
-
-	//if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 각인부 비상정지 스위치(모니터부)
-	//{
-	//	*usInF |= (0x01 << 0);
-	//	Status.bEmgEngv[0] = TRUE;
-	//}
-	//else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
-	//{
-	//	*usInF &= ~(0x01 << 0);
-	//	Status.bEmgEngv[0] = FALSE;
-	//}
-
-	//usIn = m_pMpe->m_pMpeIb[25];
-	//usInF = &m_pMpe->m_pMpeIbF[25];
-
-	//if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))		// 각인부 비상정지 스위치(스위치부)
-	//{
-	//	*usInF |= (0x01 << 0);
-	//	Status.bEmgEngv[1] = TRUE;
-	//}
-	//else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
-	//{
-	//	*usInF &= ~(0x01 << 0);
-	//	Status.bEmgEngv[1] = FALSE;
-	//}
 #endif
 }
 
+void CManagerFeeding::DoSaftySens()
+{
+#ifdef USE_MPE
+	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
+		return;
+
+	if (!pView->IsRun())
+		return;
+
+	unsigned short usIn = m_pMpe->m_pMpeIb[7];
+	unsigned short *usInF = &m_pMpe->m_pMpeIbF[7];
+
+
+	if ((usIn & (0x01 << 8)) && !(*usInF & (0x01 << 8)))		// 마킹부 안전 센서
+	{
+		*usInF |= (0x01 << 8);
+		Status.bSensSaftyMk = TRUE;
+	}
+	else if (!(usIn & (0x01 << 8)) && (*usInF & (0x01 << 8)))	// 마킹부 안전 센서
+	{
+		*usInF &= ~(0x01 << 8);
+		Status.bSensSaftyMk = FALSE;
+	}
+#endif
+}
+
+void CManagerFeeding::DoDoorSens()
+{
+#ifdef USE_MPE
+	unsigned short usIn;
+	unsigned short *usInF;
+
+	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
+		return;
+
+	if (!pView->IsRun())
+		return;
+
+	usIn = m_pMpe->m_pMpeIb[1];
+	usInF = &m_pMpe->m_pMpeIbF[1];
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 언코일러 전면 도어 센서
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorUc[DOOR_FL_UC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 언코일러 전면 도어 센서
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorUc[DOOR_FL_UC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 언코일러 측면 도어 센서
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorUc[DOOR_FR_UC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 언코일러 측면 도어 센서
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorUc[DOOR_FR_UC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 14)) && !(*usInF & (0x01 << 14)))		// 언코일러 후면 도어 센서(좌)
+	{
+		*usInF |= (0x01 << 14);
+		Status.bDoorUc[DOOR_BL_UC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 14)) && (*usInF & (0x01 << 14)))	// 언코일러 후면 도어 센서(좌)
+	{
+		*usInF &= ~(0x01 << 14);
+		Status.bDoorUc[DOOR_BL_UC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 15)) && !(*usInF & (0x01 << 15)))		// 언코일러 후면 도어 센서(우)
+	{
+		*usInF |= (0x01 << 15);
+		Status.bDoorUc[DOOR_BR_UC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 15)) && (*usInF & (0x01 << 15)))	// 언코일러 후면 도어 센서(우)
+	{
+		*usInF &= ~(0x01 << 15);
+		Status.bDoorUc[DOOR_BR_UC] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[7];
+	usInF = &m_pMpe->m_pMpeIbF[7];
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))		// 마킹부 도어 센서 1 
+	{
+		*usInF |= (0x01 << 10);
+		Status.bDoorMk[DOOR_FL_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))	// 마킹부 도어 센서 1 
+	{
+		*usInF &= ~(0x01 << 10);
+		Status.bDoorMk[DOOR_FL_MK] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))		// 마킹부 도어 센서 2 
+	{
+		*usInF |= (0x01 << 11);
+		Status.bDoorMk[DOOR_FR_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))	// 마킹부 도어 센서 2
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorMk[DOOR_FR_MK] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 마킹부 도어 센서 3 
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorMk[DOOR_BL_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 마킹부 도어 센서 3
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorMk[DOOR_BL_MK] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 마킹부 도어 센서 4 
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorMk[DOOR_BR_MK] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 마킹부 도어 센서 4
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorMk[DOOR_BR_MK] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[11];
+	usInF = &m_pMpe->m_pMpeIbF[11];
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))		// 검사부 상 도어 센서 1 
+	{
+		*usInF |= (0x01 << 10);
+		Status.bDoorMk[DOOR_FL_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))	// 검사부 상 도어 센서 1
+	{
+		*usInF &= ~(0x01 << 10);
+		Status.bDoorMk[DOOR_FL_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))		// 검사부 상 도어 센서 2 
+	{
+		*usInF |= (0x01 << 11);
+		Status.bDoorMk[DOOR_FR_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))	// 검사부 상 도어 센서 2
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorMk[DOOR_FR_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 검사부 상 도어 센서 3 
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorMk[DOOR_BL_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 검사부 상 도어 센서 3
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorMk[DOOR_BL_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 검사부 상 도어 센서 4 
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorMk[DOOR_BR_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 검사부 상 도어 센서 4
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorMk[DOOR_BR_AOI_UP] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[15];
+	usInF = &m_pMpe->m_pMpeIbF[15];
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))		// 검사부 상 도어 센서 1 
+	{
+		*usInF |= (0x01 << 10);
+		Status.bDoorAoi[DOOR_FL_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))	// 검사부 상 도어 센서 1
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorAoi[DOOR_FL_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))		// 검사부 상 도어 센서 2 
+	{
+		*usInF |= (0x01 << 11);
+		Status.bDoorAoi[DOOR_FR_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))	// 검사부 상 도어 센서 2
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorAoi[DOOR_FR_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 검사부 상 도어 센서 3 
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorAoi[DOOR_BL_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 검사부 상 도어 센서 3
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorAoi[DOOR_BL_AOI_UP] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 검사부 상 도어 센서 4 
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorAoi[DOOR_BR_AOI_UP] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 검사부 상 도어 센서 4
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorAoi[DOOR_BR_AOI_UP] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[15];
+	usInF = &m_pMpe->m_pMpeIbF[15];
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))		// 검사부 하 도어 센서 1 
+	{
+		*usInF |= (0x01 << 10);
+		Status.bDoorAoi[DOOR_FL_AOI_DN] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))	// 검사부 하 도어 센서 1
+	{
+		*usInF &= ~(0x01 << 10);
+		Status.bDoorAoi[DOOR_FL_AOI_DN] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))		// 검사부 하 도어 센서 2 
+	{
+		*usInF |= (0x01 << 11);
+		Status.bDoorAoi[DOOR_FR_AOI_DN] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))	// 검사부 하 도어 센서 2
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorAoi[DOOR_FR_AOI_DN] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 검사부 하 도어 센서 3 
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorAoi[DOOR_BL_AOI_DN] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 검사부 하 도어 센서 3
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorAoi[DOOR_BL_AOI_DN] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 검사부 하 도어 센서 4 
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorAoi[DOOR_BR_AOI_DN] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 검사부 하 도어 센서 4
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorAoi[DOOR_BR_AOI_DN] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[17];
+	usInF = &m_pMpe->m_pMpeIbF[17];
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 리코일러 전면 도어 센서
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorRe[DOOR_FL_RC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 리코일러 전면 도어 센서
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorRe[DOOR_FL_RC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 리코일러 측면 도어 센서
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorRe[DOOR_FR_RC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 리코일러 측면 도어 센서
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorRe[DOOR_FR_RC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 14)) && !(*usInF & (0x01 << 14)))		// 리코일러 후면 도어 센서
+	{
+		*usInF |= (0x01 << 14);
+		Status.bDoorRe[DOOR_BL_RC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 14)) && (*usInF & (0x01 << 14)))	// 리코일러 후면 도어 센서(좌)
+	{
+		*usInF &= ~(0x01 << 14);
+		Status.bDoorRe[DOOR_BL_RC] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 15)) && !(*usInF & (0x01 << 15)))		// 리코일러 후면 도어 센서(우)
+	{
+		*usInF |= (0x01 << 15);
+		Status.bDoorRe[DOOR_BR_RC] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 15)) && (*usInF & (0x01 << 15)))	// 리코일러 후면 도어 센서(우)
+	{
+		*usInF &= ~(0x01 << 15);
+		Status.bDoorRe[DOOR_BR_RC] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[27];
+	usInF = &m_pMpe->m_pMpeIbF[27];
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))		// 각인부 도어 센서 1
+	{
+		*usInF |= (0x01 << 10);
+		Status.bDoorEngv[DOOR_FL_ENGV] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))	// 각인부 도어 센서 1
+	{
+		*usInF &= ~(0x01 << 10);
+		Status.bDoorEngv[DOOR_FL_ENGV] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))		// 각인부 도어 센서 2
+	{
+		*usInF |= (0x01 << 11);
+		Status.bDoorEngv[DOOR_FR_ENGV] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))	// 각인부 도어 센서 2
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bDoorEngv[DOOR_FR_ENGV] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))		// 각인부 도어 센서 3
+	{
+		*usInF |= (0x01 << 12);
+		Status.bDoorEngv[DOOR_BL_ENGV] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))	// 각인부 도어 센서 3
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bDoorEngv[DOOR_BL_ENGV] = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))		// 각인부 도어 센서 4
+	{
+		*usInF |= (0x01 << 13);
+		Status.bDoorEngv[DOOR_BR_ENGV] = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))	// 각인부 도어 센서 4
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bDoorEngv[DOOR_BR_ENGV] = FALSE;
+	}
+
+	usIn = m_pMpe->m_pMpeIb[28];
+	usInF = &m_pMpe->m_pMpeIbF[28];
+
+
+	if ((usIn & (0x01 << 4)) && !(*usInF & (0x01 << 4)))
+	{
+		*usInF |= (0x01 << 4);								// 2D 리셋 스위치
+		//if (pView->m_pDlgMenu03)
+		//	pView->m_pDlgMenu03->SwReset();
+	}
+	else if (!(usIn & (0x01 << 4)) && (*usInF & (0x01 << 4)))
+	{
+		*usInF &= ~(0x01 << 4);
+	}
+
+#endif
+}
+
+void CManagerFeeding::DoModeSel()
+{
+#ifdef USE_MPE
+	if (!m_pMpe->m_pMpeIo)
+		return;
+
+	BOOL bMode;// [2];
+	bMode = m_pMpe->m_pMpeIo[36] & (0x01 << 5) ? TRUE : FALSE;	// 마킹부 자동 상태 스위치 램프
+	if (bMode)
+	{
+		Status.bAuto = TRUE;
+		Status.bManual = FALSE;
+		Status.bOneCycle = FALSE;
+	}
+	else
+	{
+		Status.bManual = TRUE;
+		Status.bAuto = FALSE;
+		Status.bOneCycle = FALSE;
+	}
+#else
+	Status.bAuto = FALSE;
+	Status.bManual = TRUE;
+	Status.bOneCycle = FALSE;
+#endif
+}
+
+void CManagerFeeding::DoMainSw()
+{
+#ifdef USE_MPE
+	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
+		return;
+
+	unsigned short usIn = m_pMpe->m_pMpeIb[4];
+	unsigned short *usInF = &m_pMpe->m_pMpeIbF[4];
+
+	if ((usIn & (0x01 << 0)) && !(*usInF & (0x01 << 0)))
+	{
+		*usInF |= (0x01 << 0);								// 마킹부 비상정지 스위치(모니터부)
+	}
+	else if (!(usIn & (0x01 << 0)) && (*usInF & (0x01 << 0)))
+	{
+		*usInF &= ~(0x01 << 0);
+	}
+
+	if ((usIn & (0x01 << 1)) && !(*usInF & (0x01 << 1)))
+	{
+		*usInF |= (0x01 << 1);								// 마킹부 운전 스위치
+		//if (pView->m_pDlgMenu03)
+		//	pView->m_pDlgMenu03->SwRun();
+	}
+	else if (!(usIn & (0x01 << 1)) && (*usInF & (0x01 << 1)))
+	{
+		*usInF &= ~(0x01 << 1);
+	}
+
+	if ((usIn & (0x01 << 2)) && !(*usInF & (0x01 << 2)))
+	{
+		*usInF |= (0x01 << 2);								// 마킹부 정지 스위치
+	}
+	else if (!(usIn & (0x01 << 2)) && (*usInF & (0x01 << 2)))
+	{
+		*usInF &= ~(0x01 << 2);
+	}
+
+	if ((usIn & (0x01 << 3)) && !(*usInF & (0x01 << 3)))
+	{
+		*usInF |= (0x01 << 3);								// 마킹부 운전준비 스위치
+		//if (pView->m_pDlgMenu03)
+		//	pView->m_pDlgMenu03->SwReady();
+	}
+	else if (!(usIn & (0x01 << 3)) && (*usInF & (0x01 << 3)))
+	{
+		*usInF &= ~(0x01 << 3);
+	}
+
+	if ((usIn & (0x01 << 4)) && !(*usInF & (0x01 << 4)))
+	{
+		*usInF |= (0x01 << 4);								// 마킹부 리셋 스위치
+		//if (pView->m_pDlgMenu03)
+		//	pView->m_pDlgMenu03->SwReset();
+	}
+	else if (!(usIn & (0x01 << 4)) && (*usInF & (0x01 << 4)))
+	{
+		*usInF &= ~(0x01 << 4);
+	}
+
+	if ((usIn & (0x01 << 7)) && !(*usInF & (0x01 << 7)))
+	{
+		*usInF |= (0x01 << 7);								// 마킹부 JOG 버튼(상)
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_Y0, M_CCW, TRUE);
+		//else
+		//	SwJog(AXIS_Y1, M_CCW, TRUE);
+	}
+	else if (!(usIn & (0x01 << 7)) && (*usInF & (0x01 << 7)))
+	{
+		*usInF &= ~(0x01 << 7);
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_Y0, M_CCW, FALSE);
+		//else
+		//	SwJog(AXIS_Y1, M_CCW, FALSE);
+	}
+
+	if ((usIn & (0x01 << 8)) && !(*usInF & (0x01 << 8)))
+	{
+		*usInF |= (0x01 << 8);								// 마킹부 JOG 버튼(하)
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_Y0, M_CW, TRUE);
+		//else
+		//	SwJog(AXIS_Y1, M_CW, TRUE);
+	}
+	else if (!(usIn & (0x01 << 8)) && (*usInF & (0x01 << 8)))
+	{
+		*usInF &= ~(0x01 << 8);
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_Y0, M_CW, FALSE);
+		//else
+		//	SwJog(AXIS_Y1, M_CW, FALSE);
+	}
+
+	if ((usIn & (0x01 << 9)) && !(*usInF & (0x01 << 9)))
+	{
+		*usInF |= (0x01 << 9);								// 마킹부 JOG 버튼(좌)
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_X0, M_CCW, TRUE);
+		//else
+		//	SwJog(AXIS_X1, M_CCW, TRUE);
+	}
+	else if (!(usIn & (0x01 << 9)) && (*usInF & (0x01 << 9)))
+	{
+		*usInF &= ~(0x01 << 9);
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_X0, M_CCW, FALSE);
+		//else
+		//	SwJog(AXIS_X1, M_CCW, FALSE);
+	}
+
+	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))
+	{
+		*usInF |= (0x01 << 10);								// 마킹부 JOG 버튼(우)
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_X0, M_CW, TRUE);
+		//else
+		//	SwJog(AXIS_X1, M_CW, TRUE);
+	}
+	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))
+	{
+		*usInF &= ~(0x01 << 10);
+		//if (Status.bSwJogLeft)
+		//	SwJog(AXIS_X0, M_CW, FALSE);
+		//else
+		//	SwJog(AXIS_X1, M_CW, FALSE);
+	}
+
+	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))
+	{
+		*usInF |= (0x01 << 11);								// 마킹부 모션 선택(LEFT)
+		Status.bSwJogLeft = TRUE;
+	}
+	else if (!(usIn & (0x01 << 11)) && (*usInF & (0x01 << 11)))
+	{
+		*usInF &= ~(0x01 << 11);
+		Status.bSwJogLeft = FALSE;
+	}
+
+	if ((usIn & (0x01 << 12)) && !(*usInF & (0x01 << 12)))
+	{
+		*usInF |= (0x01 << 12);								// 마킹부 속도 선택
+		Status.bSwJogFast = TRUE;
+	}
+	else if (!(usIn & (0x01 << 12)) && (*usInF & (0x01 << 12)))
+	{
+		*usInF &= ~(0x01 << 12);
+		Status.bSwJogFast = FALSE;
+	}
+
+	if ((usIn & (0x01 << 13)) && !(*usInF & (0x01 << 13)))
+	{
+		*usInF |= (0x01 << 13);								// 마킹부 운전 선택(INDEX)
+		Status.bSwJogStep = TRUE;
+	}
+	else if (!(usIn & (0x01 << 13)) && (*usInF & (0x01 << 13)))
+	{
+		*usInF &= ~(0x01 << 13);
+		Status.bSwJogStep = FALSE;
+	}
+
+	if ((usIn & (0x01 << 14)) && !(*usInF & (0x01 << 14)))
+	{
+		*usInF |= (0x01 << 14);								// SPARE	
+		// No Use....
+	}
+	else if (!(usIn & (0x01 << 14)) && (*usInF & (0x01 << 14)))
+	{
+		*usInF &= ~(0x01 << 14);
+		// No Use....
+	}
+
+	if ((usIn & (0x01 << 15)) && !(*usInF & (0x01 << 15)))
+	{
+		*usInF |= (0x01 << 15);								// SPARE	
+		// No Use....
+	}
+	else if (!(usIn & (0x01 << 15)) && (*usInF & (0x01 << 15)))
+	{
+		*usInF &= ~(0x01 << 15);
+		// No Use....
+	}
+
+	if (!m_pMpe->m_pMpeIo)
+		return;
+#endif
+}
+
+void CManagerFeeding::DoEngraveSens()
+{
+#ifdef USE_MPE
+	unsigned short usIn;
+	unsigned short *usInF;
+
+	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
+		return;
+
+	usIn = m_pMpe->m_pMpeIb[28];
+	usInF = &m_pMpe->m_pMpeIbF[28];
+
+
+	if ((usIn & (0x01 << 4)) && !(*usInF & (0x01 << 4)))
+	{
+		*usInF |= (0x01 << 4);								// 2D 리셋 스위치
+		//if (pView->m_pDlgMenu03)
+		//	pView->m_pDlgMenu03->SwReset();
+	}
+	else if (!(usIn & (0x01 << 4)) && (*usInF & (0x01 << 4)))
+	{
+		*usInF &= ~(0x01 << 4);
+	}
+#endif
+}
+
+void CManagerFeeding::MonPlcAlm()
+{
+	BOOL bMon, bClr;
+	long lOn = m_pMpe->Read(_T("ML60000"));
+
+	bMon = lOn & (0x01 << 0);
+	bClr = lOn & (0x01 << 1);
+	if (bMon)
+		PlcAlm(bMon, 0);
+	else if (bClr)
+		PlcAlm(0, bClr);
+	else
+		PlcAlm(bMon, bClr);
+
+	if (!pView->m_sAlmMsg.IsEmpty())
+	{
+		if (pView->m_sAlmMsg != pView->m_sPrevAlmMsg)
+		{
+			pView->m_sPrevAlmMsg = pView->m_sAlmMsg;
+			CycleStop();
+		}
+	}
+}
+
+void CManagerFeeding::MonDispMain()
+{
+	BOOL bDispStop = TRUE;
+	CString sDispMain = pView->GetDispMain();
+
+#ifdef USE_MPE
+	if (m_pMpe->m_pMpeSignal[2] & (0x01 << 0))		// 운전중(PLC가 PC에 알려주는 설비 상태) - 20141031
+	{
+		if (sDispMain != _T("운전중"))
+		{
+			pView->DispMain(_T("운전중"), RGB_GREEN);
+		}
+	}
+
+	if (m_pMpe->m_pMpeSignal[2] & (0x01 << 2))		// 운전준비(PLC가 PC에 알려주는 설비 상태) - 20141031
+	{
+		bDispStop = FALSE;
+		if (sDispMain != _T("운전준비"))
+		{
+			pView->DispMain(_T("운전준비"), RGB_GREEN);
+		}
+	}
+	else
+	{
+		if (m_pMpe->m_pMpeSignal[2] & (0x01 << 3))		// 초기운전(PLC가 PC에 알려주는 설비 상태) - 20141031
+		{
+			bDispStop = FALSE;
+			{
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (pDoc->WorkingInfo.LastJob.bDualTest)
+					{
+						if (sDispMain != _T("양면샘플"))
+						{
+							pView->DispMain(_T("양면샘플"), RGB_GREEN);
+						}
+					}
+					else
+					{
+						if (sDispMain != _T("단면샘플"))
+						{
+							pView->DispMain(_T("단면샘플"), RGB_GREEN);
+						}
+					}
+				}
+				else if (pDoc->GetTestMode() == MODE_INNER)
+				{
+					if (sDispMain != _T("내층검사"))
+						pView->DispMain(_T("내층검사"), RGB_GREEN);
+				}
+				else if (pDoc->GetTestMode() == MODE_OUTER)
+				{
+					if (sDispMain != _T("외층검사"))
+						pView->DispMain(_T("외층검사"), RGB_GREEN);
+				}
+				else if (pDoc->WorkingInfo.LastJob.bDualTest)
+				{
+					if (sDispMain != _T("양면검사"))
+					{
+						pView->DispMain(_T("양면검사"), RGB_GREEN);
+					}
+				}
+				else
+				{
+					if (sDispMain != _T("단면검사"))
+					{
+						pView->DispMain(_T("단면검사"), RGB_GREEN);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (sDispMain != _T("운전준비"))
+			{
+				bDispStop = TRUE;
+			}
+			else
+			{
+				bDispStop = FALSE;
+			}
+		}
+	}
+
+	if (m_pMpe->m_pMpeSignal[2] & (0x01 << 1))		// 정지(PLC가 PC에 알려주는 설비 상태) - 20141031
+	{
+		if (bDispStop)
+		{
+			if (sDispMain != _T("정 지"))
+			{
+				pView->DispMain(_T("정 지"), RGB_RED);
+			}
+		}
+	}
+#endif
+}
+
+void CManagerFeeding::MonPlcSignal()
+{
+#ifdef USE_MPE
+	if (m_pMpe->m_pMpeSignal[3] & (0x01 << 0))		// 각인부 2D Leading 작업완료(PLC가 ON/OFF) - MB440130
+	{
+			SetLed(0, TRUE);
+	}
+	else
+	{
+			SetLed(0, FALSE);
+	}
+
+	if (m_pMpe->m_pMpeSignal[3] & (0x01 << 2))		// 각인부 Laser 작업완료(PLC가 ON/OFF) - MB440132
+	{
+			SetLed(1, TRUE);
+	}
+	else
+	{
+			SetLed(1, FALSE);
+	}
+
+	if (m_pMpe->m_pMpeSignal[3] & (0x01 << 3))		// 검사부 상면 검사 작업완료(PLC가 ON/OFF) - MB440133
+	{
+			SetLed(2, TRUE);
+	}
+	else
+	{
+			SetLed(2, FALSE);
+	}
+
+	if (m_pMpe->m_pMpeSignal[3] & (0x01 << 4))		// 검사부 하면 검사 작업완료(PLC가 ON/OFF) - MB440134
+	{
+			SetLed(3, TRUE);
+	}
+	else
+	{
+			SetLed(3, FALSE);
+	}
+
+	if (m_pMpe->m_pMpeSignal[3] & (0x01 << 5))		// 마킹부 마킹 작업완료(PLC가 ON/OFF) - MB440135
+	{
+			SetLed(4, TRUE);
+	}
+	else
+	{
+			SetLed(4, FALSE);
+	}
+
+	if (m_pMpe->m_pMpeSignal[2] & (0x01 << 5))		// 내층 제품시 이어가기 상태 표시 - MB440125
+	{
+		pView->DispContRun(TRUE);
+	}
+	else
+	{
+		pView->DispContRun(FALSE);
+	}
+
+#endif
+}
+
+void CManagerFeeding::PlcAlm(BOOL bMon, BOOL bClr)
+{
+	if (bMon && !m_nMonAlmF)
+	{
+		m_nMonAlmF = 1;
+		FindAlarm();
+		pView->m_sIsAlmMsg = _T("");
+		pView->SetAlarm(pView->m_sAlmMsg);
+		Sleep(300);
+		m_pMpe->Write(_T("MB600008"), 1);
+	}
+	else if (!bMon && m_nMonAlmF)
+	{
+		m_nMonAlmF = 0;
+		ResetMonAlm();
+	}
+	else
+	{
+		if (pView->m_sIsAlmMsg != pView->m_sAlmMsg)
+		{
+			pView->SetAlarm(pView->m_sAlmMsg);
+		}
+	}
+
+
+	if (bClr && !m_nClrAlmF)
+	{
+		m_nClrAlmF = 1;
+		ClrAlarm();
+		pView->SetAlarm(pView->m_sAlmMsg);
+		Sleep(300);
+		m_pMpe->Write(_T("MB600009"), 1); // ResetAlarm
+
+	}
+	else if (!bClr && m_nClrAlmF)
+	{
+		m_nClrAlmF = 0;
+		m_pMpe->Write(_T("MB600009"), 0); // ResetAlarm
+	}
+	else
+	{
+		if (pView->m_sIsAlmMsg != pView->m_sAlmMsg)
+		{
+			pView->SetAlarm(pView->m_sAlmMsg);
+		}
+	}
+}
+
+void CManagerFeeding::FindAlarm()
+{
+	// 알람이 발생한 페이지
+	long lAlmPage = -1;
+	lAlmPage = m_pMpe->Read(_T("ML60002"));
+
+	TCHAR szData[200];
+	CString str1, str2, str3, strM, str, strH = _T("");
+
+	str1.Format(_T("%d"), lAlmPage);
+	str2 = _T("Address");
+	if (0 < ::GetPrivateProfileString(str1, str2, NULL, szData, sizeof(szData), PATH_ALARM))
+		strM = CString(szData);
+	else
+		strM = _T("");
+
+	if (strM.IsEmpty())
+		return;
+
+	long lAlm = m_pMpe->Read(strM); // lAlm : (32Bits << Row)
+	for (int i = 0; i < 32; i++)
+	{
+		if (lAlm & (0x01 << i))
+		{
+			str3.Format(_T("%d"), i);
+			if (0 < ::GetPrivateProfileString(str1, str3, NULL, szData, sizeof(szData), PATH_ALARM))
+				strH = CString(szData);
+			else
+				strH.Format(_T("%s = %d"), strM, lAlm);
+			//strH = _T("");
+
+			if (str.IsEmpty())
+				str = strH;
+			else
+			{
+				str += _T("\r\n");
+				str += strH;
+			}
+		}
+	}
+
+	pView->m_sAlmMsg = strH;
+}
+
+void CManagerFeeding::ResetMonAlm()
+{
+	m_pMpe->Write(_T("MB600008"), 0);
+}
+
+void CManagerFeeding::ClrAlarm()
+{
+	pView->ClrAlarm();
+}
+
+void CManagerFeeding::CycleStop()
+{
+	m_bCycleStop = TRUE;
+}
+
+void CManagerFeeding::ChkReTestAlarmOnAoiUp()
+{
+	CString sMsg;
+	sMsg.Format(_T("U%03d"), GetAoiUpAutoSerial());
+	DispStsBar(sMsg, 0);
+
+	int nSerial = m_pBufSerial[0][m_nBufTot[0] - 1];
+
+	if (pView->m_bSerialDecrese)
+	{
+		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+		{
+			SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
+		{
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+		}
+	}
+	else
+	{
+		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+		{
+			SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
+		{
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) PCR파일 Received : PC가 On시키고 PLC가 Off"));
+		}
+	}
+
+}
+
+void CManagerFeeding::ChkReTestAlarmOnAoiDn()
+{
+	CString sMsg;
+	sMsg.Format(_T("D%03d"), GetAoiDnAutoSerial());
+	DispStsBar(sMsg, 0);
+
+	int nSerial = m_pBufSerial[1][m_nBufTot[1] - 1];
+
+	if (pView->m_bSerialDecrese)
+	{
+		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+		{
+			SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+												  //pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
+		{
+			//if (m_pMpe)
+			//	m_pMpe->Write(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+		}
+	}
+	else
+	{
+		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+		{
+			SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			if (m_pMpe)
+				m_pMpe->Write(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+												  //pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
+		{
+			//if (m_pMpe)
+			//	m_pMpe->Write(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+		}
+	}
+
+}
 
 void CManagerFeeding::Buzzer(BOOL bOn, int nCh)
 {
@@ -1438,6 +2416,12 @@ void CManagerFeeding::Buzzer(BOOL bOn, int nCh)
 			break;
 		}
 	}
+}
+
+void CManagerFeeding::SetLed(int nIdx, BOOL bOn)
+{
+	if (pView->m_pDlgMenu03)
+		pView->m_pDlgMenu03->SetLed(nIdx, bOn);
 }
 
 void CManagerFeeding::Stop()

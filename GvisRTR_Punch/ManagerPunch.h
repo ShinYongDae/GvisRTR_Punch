@@ -12,13 +12,24 @@
 #include "Device/Light.h"
 
 #define TIM_INIT_PUNCH			0
+#define TIM_SCAN_STATUS			10
+
+struct stStatusPunch
+{
+	BOOL bStopFeeding;
+
+	stStatusPunch()
+	{
+		bStopFeeding = FALSE;
+	}
+};
 
 class CManagerPunch : public CWnd
 {
 	CWnd* m_pParent;
 	BOOL m_bCreated;
 
-	BOOL m_bTIM_INIT_PUNCH;
+	BOOL m_bTIM_INIT_PUNCH, m_bTIM_SCAN_STATUS;
 	int m_nStepInitPunch;
 
 	CMotion* m_pMotion;
@@ -27,10 +38,13 @@ class CManagerPunch : public CWnd
 	CVision* m_pVisionInner[2];	// [0] : LeftCam , [1] : RightCam
 	CLight* m_pLight;
 
-	void Init();
+	double m_dEnc[MAX_AXIS];
+
+	BOOL Init();
 	BOOL Create();
 	void InitDevices();
 	BOOL CreateDevices();
+	void DoInterlock();
 
 public:
 	CManagerPunch(CWnd* pParent = NULL);
@@ -61,6 +75,8 @@ public:
 
 	//=============================================================================================
 
+	stStatusPunch Status;
+
 
 	// 작업입니다.
 public:
@@ -75,6 +91,7 @@ public:
 
 	void ResetMotion();
 	void ResetMotion(int nMsId);
+	void StopFeeding(BOOL bStop = TRUE);
 
 	// 보조작업입니다.
 public:
