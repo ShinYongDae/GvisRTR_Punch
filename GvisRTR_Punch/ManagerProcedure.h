@@ -34,6 +34,9 @@ class CManagerProcedure : public CWnd
 	int m_nStepInitProcedure;
 	BOOL m_bMkSt, m_bMkStSw;
 	int m_nMkStAuto;
+	BOOL m_bLotEnd;
+	int m_nLotEndAuto;
+
 
 	void Init();
 	BOOL Create();

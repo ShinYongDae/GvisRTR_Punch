@@ -75,7 +75,9 @@ void CManagerProcedure::Init()
 {
 	m_bMkSt = FALSE;
 	m_bMkStSw = FALSE;
+	m_bLotEnd = FALSE;
 	m_nMkStAuto = 0;
+	m_nLotEndAuto = 0;
 }
 
 BOOL CManagerProcedure::InitAct()
@@ -617,9 +619,10 @@ void CManagerProcedure::DoAuto()
 {
 	//if (!pView->IsAuto())
 	//	return;
+	stThread* StTh = &(pView->m_mgrStatus->Thread);
 
 	CString str;
-	str.Format(_T("%d : %d"), m_nStepTHREAD_DISP_DEF, m_bTHREAD_DISP_DEF ? 1 : 0);
+	str.Format(_T("%d : %d"), StTh->nStepTHREAD_DISP_DEF, StTh->bTHREAD_DISP_DEF ? 1 : 0);
 	pView->DispStsBar(str, 6);
 
 	// LotEnd Start
@@ -664,15 +667,14 @@ void CManagerProcedure::DoAuto()
 
 BOOL CManagerProcedure::DoAutoGetLotEndSignal()
 {
+	stGeneral* StGn = &(pView->m_mgrStatus->General);
+
 	int nSerial;
 
-	if (m_pDlgMenu01)
+	if(StGn->bLotEnd && StGn->nStepAuto < LOT_END)
 	{
-		if (m_pDlgMenu01->m_bLotEnd && m_nStepAuto < LOT_END)
-		{
-			m_bLotEnd = TRUE;
-			m_nLotEndAuto = LOT_END;
-		}
+		m_bLotEnd = TRUE;
+		m_nLotEndAuto = LOT_END;
 	}
 
 	if (!IsBuffer(0) && m_bLastProc && m_nLotEndAuto < LOT_END)
