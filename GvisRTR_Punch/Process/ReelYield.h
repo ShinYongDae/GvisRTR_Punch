@@ -47,7 +47,6 @@ struct stResult
 
 class CReelYield : public CWnd
 {
-	CWnd* m_pParent;
 	CString m_sPathYield;
 
 	int m_nStartSerial;
@@ -59,7 +58,7 @@ class CReelYield : public CWnd
 	void StrToChar(CString str, char* pCh);
 
 public:
-	CReelYield(int nLayer, int nPnl = 0, int nPcs = 0, int nDir = 0, CWnd* pParent = NULL);
+	CReelYield(int nLayer, int nPnl = 0, int nPcs = 0, CWnd* pParent = NULL);
 	~CReelYield();
 
 	// 특성입니다.
@@ -67,6 +66,7 @@ public:
 	stResult m_stResult;
 	stYield m_stYield;
 
+	CWnd* m_pParent;
 	int m_nLayer;
 	int nTotPnl;
 	int nTotPcs;

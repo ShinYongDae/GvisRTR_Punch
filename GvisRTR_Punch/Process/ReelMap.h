@@ -91,10 +91,10 @@ class CReelMap : public CReelYield //public CWnd
 	//double m_dAdjRatio; // Master Image의 Pixel 해상도에 따른 Reelmap에서의 식별용 간격 비율.
 	int m_nIdxDefInfo;	// MAX_DEFINFO에 들어가는 정보의 Index.
 	BOOL m_bContFixDef;
-	int m_nBeforeSerial;
+	//int m_nBeforeSerial;
 
 	CPcsRgn* m_pPcsRgn;
-	CDataMarking* m_pPcr[MAX_PCR][MAX_PCR_PNL];	//릴맵화면표시를 위한 데이터	// [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+	CDataMarking* m_pPcr[MAX_PCR_PNL];	//릴맵화면표시를 위한 데이터	// [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	stMasterInfo MasterInfo;
 	DWORD m_dwLotSt, m_dwLotEd;
 	//int m_nStartSerial;
@@ -124,7 +124,7 @@ class CReelMap : public CReelYield //public CWnd
 
 // Construction
 public:
-	CReelMap(int nLayer, int nPnl=0, int nPcs=0, int nDir=0);
+	CReelMap(int nLayer, int nPnl=0, int nPcs=0, CWnd* pParent = NULL);
 
 // Attributes
 public:
@@ -163,6 +163,7 @@ public:
 
 // Operations
 public:
+	int LoadPCR(int nSerial);
 	void SetLotStartTime(DWORD dwTime);
 	void SetLotEndTime(DWORD dwTime);
 

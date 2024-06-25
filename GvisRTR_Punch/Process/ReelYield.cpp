@@ -7,7 +7,7 @@
 extern CGvisRTR_PunchDoc* pDoc;
 extern CGvisRTR_PunchView* pView;
 
-CReelYield::CReelYield(int nLayer, int nPnl, int nPcs, int nDir, CWnd* pParent)
+CReelYield::CReelYield(int nLayer, int nPnl, int nPcs, CWnd* pParent)
 {
 	m_pParent = pParent;
 	m_nLayer = -1;
@@ -27,7 +27,12 @@ CReelYield::~CReelYield()
 void CReelYield::Init()
 {
 	m_nBeforeSerial = 0;
-	m_nStartSerial = 0;
+
+	TCHAR szData[MAX_PATH];
+	if (0 < ::GetPrivateProfileString(_T("Info"), _T("Start Shot"), NULL, szData, sizeof(szData), m_sPathYield))
+		m_nStartSerial = _tstoi(szData);
+	else
+		m_nStartSerial = 0;
 }
 
 BOOL CReelYield::DirectoryExists(LPCTSTR szPath)
@@ -157,23 +162,20 @@ BOOL CReelYield::Update(int nSerial)
 	if (findfile.FindFile(sPath))
 		bExist = TRUE;
 
+	if (bExist)
+	{
+		TCHAR szData[MAX_PATH];
+		if (0 < ::GetPrivateProfileString(_T("Info"), _T("Start Shot"), NULL, szData, sizeof(szData), sPath))
+			m_nBeforeSerial = _tstoi(szData);
+	}
+
 	int nPnl = m_nBeforeSerial;//nSerial - 1;
 
-	if (bExist && nPnl) // After first shot
-	{
-		if (Read(nPnl, sPath))
-			Write(nSerial, sPath);
-		else
-		{
-			Reset();
-			Write(nSerial, sPath);
-		}
-	}
-	else // First Shot
-	{
-		Reset();
-		Write(nSerial, sPath);
-	}
+	if (bExist && nPnl > 0)
+		Read(nPnl, sPath);
+
+	Write(nSerial, sPath);
+
 	Sleep(10);
 
 	return TRUE;
