@@ -698,5 +698,22 @@ void CDlgMenu02::ResetLight2()
 	//}
 }
 
+void CDlgMenu02::SetAoiUpOffset(CfPoint &OfSt)
+{
+	m_dAoiUpFdOffsetX = OfSt.x;
+	m_dAoiUpFdOffsetY = OfSt.y;
+}
+
+void CDlgMenu02::SetAoiDnOffset(CfPoint &OfSt)
+{
+	m_dAoiDnFdOffsetX = OfSt.x;
+	m_dAoiDnFdOffsetY = OfSt.y;
+}
+
+void CDlgMenu02::SetEngOffset(CfPoint &OfSt)
+{
+	m_dEngFdOffsetX = OfSt.x;
+	m_dEngFdOffsetY = OfSt.y;
+}
 
 

@@ -48,6 +48,8 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	m_sDispMain = _T("");
 	m_sDispTime = _T("");
 	m_dwLotSt = 0; m_dwLotEd = 0;
+	m_bSerialDecrese = FALSE;
+	m_nLotEndSerial = 0;
 
 	for (int i = 0; i < 10; i++)
 		m_sDispStatusBar[i] = _T("");
@@ -891,6 +893,317 @@ void CGvisRTR_PunchView::SetListBuf()	// m_mgrStatus->ListBuf에 버퍼 폴더의 시리
 	}
 }
 
+BOOL CGvisRTR_PunchView::IsBuffer(int nNum)
+{
+	if (!m_mgrStatus)
+		return FALSE;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	stGeneral& General = (m_mgrStatus->General);
+
+	if (pDoc->GetAoiUpVsStatus())
+	{
+		if (!m_mgrProcedure->IsLotEnd()) // m_bLotEnd
+			nNum = 1;
+
+		if (General.bLastProc) // m_bLastProc
+		{
+			int nLastShot = GetLotEndSerial();
+			if (bDualTest)
+			{
+				if (m_mgrStatus->ListBuf[0].GetLast() == nLastShot && m_mgrStatus->ListBuf[1].GetLast() == nLastShot)
+				{
+					nNum = 0;
+					if (!m_mgrProcedure->IsLotEnd())
+						General.bLotEndF = TRUE;
+				}
+				else
+					nNum = 1;
+			}
+			else
+			{
+				if (m_mgrStatus->ListBuf[0].GetLast() == nLastShot)
+				{
+					nNum = 0;
+					if (!m_mgrProcedure->IsLotEnd())
+						General.bLotEndF = TRUE;
+				}
+				else
+					nNum = 1;
+			}
+		}
+	}
+
+	if (bDualTest)
+	{
+		if (m_nBufTot[0] > nNum && m_nBufTot[1] > nNum) // [0]: AOI-Up , [1]: AOI-Dn
+			return TRUE;
+
+		if (General.bLastProc)
+		{
+			if ((m_nBufTot[0] > nNum || General.bBufEmpty[0]) && (m_nBufTot[1] > nNum || General.bBufEmpty[1])) // [0]: AOI-Up , [1]: AOI-Dn
+				return TRUE;
+		}
+	}
+	else
+	{
+		if (m_nBufTot[0] > nNum) // [0]: AOI-Up
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferUp()
+{
+	if (m_nBufTot[0] > 0)
+		return TRUE;
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferDn()
+{
+	if (m_nBufTot[1] > 0)
+		return TRUE;
+	return FALSE;
+}
+
+int CGvisRTR_PunchView::GetBuffer(int *pPrevSerial)
+{
+	int nS0 = GetBufferUp(pPrevSerial);
+	int nS1 = GetBufferDn(pPrevSerial);
+	if (nS0 != nS1)
+		return 0;
+	return nS0;
+}
+
+int CGvisRTR_PunchView::GetBufferUp(int *pPrevSerial)
+{
+	if (IsBufferUp())
+		return m_pBufSerial[0][0];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[0][0];
+	return 0;
+}
+
+int CGvisRTR_PunchView::GetBufferDn(int *pPrevSerial)
+{
+	if (IsBufferDn())
+		return m_pBufSerial[1][0];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[1][0];
+	return 0;
+}
+
+BOOL CGvisRTR_PunchView::IsBuffer0()
+{
+	if (m_nBufTot[0] > 0 && m_nBufTot[1] > 0)
+		return TRUE;
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferUp0()
+{
+	if (m_nBufTot[0] > 0)
+		return TRUE;
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferDn0()
+{
+	if (m_nBufTot[1] > 0)
+		return TRUE;
+	return FALSE;
+}
+
+int CGvisRTR_PunchView::GetBuffer0(int *pPrevSerial)
+{
+	int nS0 = GetBufferUp0(pPrevSerial);
+	int nS1 = GetBufferDn0(pPrevSerial);
+	if (nS0 != nS1)
+		return 0;
+	return nS0;
+}
+
+int CGvisRTR_PunchView::GetBufferUp0(int *pPrevSerial)
+{
+	if (IsBufferUp0())
+		return m_pBufSerial[0][0];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[0][0];
+	return 0;
+}
+
+int CGvisRTR_PunchView::GetBufferDn0(int *pPrevSerial)
+{
+	if (IsBufferDn0())
+		return m_pBufSerial[1][0];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[1][0];
+	return 0;
+}
+
+BOOL CGvisRTR_PunchView::IsBuffer1()
+{
+	if (m_nBufTot[0] > 1 && m_nBufTot[1] > 1)
+		return TRUE;
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferUp1()
+{
+	if (m_nBufTot[0] > 1)
+		return TRUE;
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsBufferDn1()
+{
+	if (m_nBufTot[1] > 1)
+		return TRUE;
+	return FALSE;
+}
+
+int CGvisRTR_PunchView::GetBuffer1(int *pPrevSerial)
+{
+	int nS0 = GetBufferUp1(pPrevSerial);
+	int nS1 = GetBufferDn1(pPrevSerial);
+	if (nS0 != nS1)
+		return 0;
+	return nS0;
+}
+
+int CGvisRTR_PunchView::GetBufferUp1(int *pPrevSerial)
+{
+	if (IsBufferUp1())
+		return m_pBufSerial[0][1];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[0][1];
+	return 0;
+}
+
+int CGvisRTR_PunchView::GetBufferDn1(int *pPrevSerial)
+{
+	if (IsBufferDn1())
+		return m_pBufSerial[1][1];
+	else if (pPrevSerial)
+		*pPrevSerial = m_pBufSerial[1][1];
+	return 0;
+}
+
+BOOL CGvisRTR_PunchView::IsShare()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (bDualTest)
+	{
+		if (m_bWaitPcr[0] && m_bWaitPcr[1])
+		{
+			if (IsShareUp() && IsShareDn())
+			{
+				m_bWaitPcr[0] = FALSE;
+				m_bWaitPcr[1] = FALSE;
+				return TRUE;
+			}
+		}
+		else if (m_bWaitPcr[0] && !m_bWaitPcr[1])
+		{
+			if (IsShareUp())
+			{
+				m_bWaitPcr[0] = FALSE;
+				return TRUE;
+			}
+		}
+		else if (!m_bWaitPcr[0] && m_bWaitPcr[1])
+		{
+			if (IsShareDn())
+			{
+				m_bWaitPcr[1] = FALSE;
+				return TRUE;
+			}
+		}
+		else
+		{
+			if (IsShareUp() || IsShareDn())
+				return TRUE;
+		}
+	}
+	else
+	{
+		if (m_bWaitPcr[0])
+		{
+			if (IsShareUp())
+			{
+				m_bWaitPcr[0] = FALSE;
+				return TRUE;
+			}
+		}
+		else
+		{
+			if (IsShareUp())
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsShareUp()
+{
+	return pDoc->Status.PcrShare[0].bExist;
+}
+
+BOOL CGvisRTR_PunchView::IsShareDn()
+{
+	return pDoc->Status.PcrShare[1].bExist;
+}
+
+int CGvisRTR_PunchView::GetShareUp()
+{
+	return pDoc->Status.PcrShare[0].nSerial;
+}
+
+int CGvisRTR_PunchView::GetShareDn()
+{
+	return pDoc->Status.PcrShare[1].nSerial;
+}
+
+BOOL CGvisRTR_PunchView::IsShareVs()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (bDualTest)
+	{
+		if (IsShareVsUp() || IsShareVsDn())
+			return TRUE;
+	}
+	else
+	{
+		if (IsShareVsUp())
+			return TRUE;
+	}
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchView::IsShareVsUp()
+{
+	return pDoc->Status.PcrShareVs[0].bExist;
+}
+
+BOOL CGvisRTR_PunchView::IsShareVsDn()
+{
+	return pDoc->Status.PcrShareVs[1].bExist;
+}
+
+int CGvisRTR_PunchView::GetShareVsUp()
+{
+	return pDoc->Status.PcrShareVs[0].nSerial;
+}
+
+int CGvisRTR_PunchView::GetShareVsDn()
+{
+	return pDoc->Status.PcrShareVs[1].nSerial;
+}
+
 void CGvisRTR_PunchView::DelOverLotEndSerialUp(int nSerial)
 {
 	CString sSrc;
@@ -942,6 +1255,87 @@ void CGvisRTR_PunchView::DelOverLotEndSerialDn(int nSerial)
 				// Delete PCR File
 				pDoc->m_pFile->DeleteFolerOrFile(sSrc);
 			}
+		}
+	}
+
+}
+
+void CGvisRTR_PunchView::ChkReTestAlarmOnAoiUp()
+{
+	CString sMsg;
+	sMsg.Format(_T("U%03d"), pDoc->GetAoiUpAutoSerial());
+	pView->DispStsBar(sMsg, 0);
+
+	int nSerial = m_pBufSerial[0][m_nBufTot[0] - 1];
+
+	if (m_bSerialDecrese)
+	{
+		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+		{
+			pDoc->SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			MpeWrite(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
+		{
+			MpeWrite(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+		}
+	}
+	else
+	{
+		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+		{
+			pDoc->SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			MpeWrite(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
+		{
+			MpeWrite(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
+			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) PCR파일 Received : PC가 On시키고 PLC가 Off"));
+		}
+	}
+
+}
+
+void CGvisRTR_PunchView::ChkReTestAlarmOnAoiDn()
+{
+	CString sMsg;
+	sMsg.Format(_T("D%03d"), pDoc->GetAoiDnAutoSerial());
+	pView->DispStsBar(sMsg, 0);
+
+	int nSerial = m_pBufSerial[1][m_nBufTot[1] - 1];
+
+	if (m_bSerialDecrese)
+	{
+		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+		{
+			pDoc->SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			MpeWrite(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+			//pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
+		{
+			//if (m_pMpe)
+			//	MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+		}
+	}
+	else
+	{
+		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+		{
+			pDoc->SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
+			Sleep(300);
+			MpeWrite(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
+			//pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
+		}
+		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
+		{
+			//if (m_pMpe)
+			//	MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
 		}
 	}
 
@@ -1401,11 +1795,14 @@ void CGvisRTR_PunchView::DelAllDlg()
 
 BOOL CGvisRTR_PunchView::IsRun()
 {
-	if (m_sDispMain == _T("운전중") || m_sDispMain == _T("초기운전") || m_sDispMain == _T("단면샘플")
-		|| m_sDispMain == _T("단면검사") || m_sDispMain == _T("내층검사") || m_sDispMain == _T("외층검사")
-		|| m_sDispMain == _T("중층검사") || m_sDispMain == _T("양면검사") || m_sDispMain == _T("양면샘플"))
-		return TRUE;
+	if (m_mgrFeeding)
+		return m_mgrFeeding->IsRun();
 	return FALSE;
+	//if (m_sDispMain == _T("운전중") || m_sDispMain == _T("초기운전") || m_sDispMain == _T("단면샘플")
+	//	|| m_sDispMain == _T("단면검사") || m_sDispMain == _T("내층검사") || m_sDispMain == _T("외층검사")
+	//	|| m_sDispMain == _T("중층검사") || m_sDispMain == _T("양면검사") || m_sDispMain == _T("양면샘플"))
+	//	return TRUE;
+	//return FALSE;
 }
 
 CString CGvisRTR_PunchView::GetDispMain()
@@ -1739,4 +2136,126 @@ void CGvisRTR_PunchView::SetMkMenu03(CString sMenu, CString sItem, BOOL bOn)
 {
 	if (m_mgrProcedure)
 		m_mgrProcedure->SetMkMenu03(sMenu, sItem, bOn);
+}
+
+BOOL CGvisRTR_PunchView::IsEnableBtn(int nId)
+{
+	BOOL bRtn = FALSE;
+
+	switch (nId)
+	{
+	case IDD_DLG_INFO:
+		break;
+
+	case IDD_DLG_FRAME_HIGH:
+		break;
+
+	case IDD_DLG_MENU_01:
+		if (m_pDlgMenu01)
+			bRtn = m_pDlgMenu01->IsEnableBtn();
+		break;
+
+	case IDD_DLG_MENU_02:
+		break;
+
+	case IDD_DLG_MENU_03:
+		break;
+
+	case IDD_DLG_MENU_04:
+		break;
+
+	case IDD_DLG_MENU_05:
+		break;
+
+	case IDD_DLG_MENU_06:
+		break;
+	}
+
+	return bRtn;
+}
+
+void CGvisRTR_PunchView::EnableBtn(int nId, BOOL bEnable)
+{
+	switch (nId)
+	{
+	case IDD_DLG_INFO:
+		break;
+
+	case IDD_DLG_FRAME_HIGH:
+		break;
+
+	case IDD_DLG_MENU_01:
+		if (m_pDlgMenu01)
+		{
+			if (m_pDlgMenu01->IsEnableBtn() != bEnable)
+				m_pDlgMenu01->EnableBtn(bEnable);
+		}
+		break;
+
+	case IDD_DLG_MENU_02:
+		break;
+
+	case IDD_DLG_MENU_03:
+		break;
+
+	case IDD_DLG_MENU_04:
+		break;
+
+	case IDD_DLG_MENU_05:
+		break;
+
+	case IDD_DLG_MENU_06:
+		break;
+	}
+}
+
+void CGvisRTR_PunchView::SetLed(int nIdx, BOOL bOn)
+{
+	if (m_pDlgMenu03)
+		m_pDlgMenu03->SetLed(nIdx, bOn);
+}
+
+int CGvisRTR_PunchView::GetLotEndSerial()
+{
+	if(!m_mgrStatus)
+		return 0;
+
+	stGeneral& General = (m_mgrStatus->General);
+	return General.nLotEndSerial; //m_nLotEndSerial; // 테이블상에 정지하는 Serial.
+}
+
+void CGvisRTR_PunchView::UpdateRst()
+{
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->UpdateRst();
+}
+
+void CGvisRTR_PunchView::Buzzer(BOOL bOn, int nCh = 0)
+{
+	if (m_mgrFeeding)
+		m_mgrFeeding->Buzzer(bOn, nCh);
+}
+
+void CGvisRTR_PunchView::Stop()
+{
+	DispMain(_T("정 지"), RGB_RED);
+	MpeWrite(_T("MB440162"), 1);
+}
+
+void CGvisRTR_PunchView::SetAoiUpOffset(CfPoint &OfSt)
+{
+	if (m_pDlgMenu02)
+		m_pDlgMenu02->SetAoiUpOffset(OfSt);
+}
+
+void CGvisRTR_PunchView::SetAoiDnOffset(CfPoint &OfSt)
+{
+	if (m_pDlgMenu02)
+		m_pDlgMenu02->SetAoiDnOffset(OfSt);
+}
+
+void CGvisRTR_PunchView::SetEngOffset(CfPoint &OfSt)
+{
+	if (m_pDlgMenu02)
+		m_pDlgMenu02->SetEngOffset(OfSt);
 }

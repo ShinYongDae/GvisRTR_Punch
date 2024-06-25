@@ -15,11 +15,10 @@ CManagerFeeding::CManagerFeeding(CWnd* pParent)
 	m_pParent = pParent;
 	m_bTIM_INIT_FEEDING = FALSE;
 	m_bTIM_SCAN_MPE = FALSE;
-	m_bCycleStop = FALSE;
 	m_sAoiUpAlarmReStartMsg = _T(""); m_sAoiDnAlarmReStartMsg = _T("");
 	m_sAoiUpAlarmReTestMsg = _T(""); m_sAoiDnAlarmReTestMsg = _T("");
-	m_nMonAlmF = 0;
-	m_nClrAlmF = 0;
+
+	Reset();
 
 	if (!Create())
 	{
@@ -66,10 +65,13 @@ void CManagerFeeding::OnTimer(UINT_PTR nIDEvent)
 			// Read
 			GetMpeIO();
 			GetMpeSignal();
+
 			ChkEmg();
 			ChkSaftySen();
 			ChkDoor();
 			ChkRcvSig();
+			ChkReadyDone();
+
 			DoIO();
 
 			// Write
@@ -94,7 +96,22 @@ BOOL CManagerFeeding::Init()
 		return FALSE;
 	}
 #endif
+
 	return TRUE;
+}
+
+void CManagerFeeding::Reset()
+{
+	m_bCycleStopF = FALSE;
+	m_nMonAlmF = 0;
+	m_nClrAlmF = 0;
+	m_bEngStSw = FALSE;
+	m_bEng2dStSw = FALSE;
+
+	m_sAoiUpAlarmReStartMsg = pDoc->GetAoiUpAlarmRestartMsg();
+	m_sAoiDnAlarmReStartMsg = pDoc->GetAoiDnAlarmRestartMsg();
+	m_sAoiUpAlarmReTestMsg = pDoc->GetAoiUpAlarmReTestMsg();
+	m_sAoiDnAlarmReTestMsg = pDoc->GetAoiDnAlarmReTestMsg();
 }
 
 void CManagerFeeding::Free()
@@ -125,33 +142,35 @@ BOOL CManagerFeeding::InitAct()
 	return TRUE;
 }
 
-
 void CManagerFeeding::CntMk()
 {
-	stGeneral* pGeneral = &(pView->m_mgrStatus->General);
-	if (pGeneral->nPrevTotMk[0] != pGeneral->nTotMk[0])
+	if (!pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	if (General.nPrevTotMk[0] != General.nTotMk[0])
 	{
-		pGeneral->nPrevTotMk[0] = pGeneral->nTotMk[0];
-		MpeWrite(_T("ML45096"), (long)pGeneral->nTotMk[0]);	// 마킹부 (좌) 총 마킹수 
+		General.nPrevTotMk[0] = General.nTotMk[0];
+		MpeWrite(_T("ML45096"), (long)General.nTotMk[0]);	// 마킹부 (좌) 총 마킹수 
 	}
-	if (pGeneral->nPrevMkPcs[0] != pGeneral->nMkPcs[0])//m_nCurMk[0])
+	if (General.nPrevMkPcs[0] != General.nMkPcs[0])//m_nCurMk[0])
 	{
-		pGeneral->nPrevMkPcs[0] = pGeneral->nMkPcs[0];//m_nCurMk[0];
-		MpeWrite(_T("ML45098"), (long)pGeneral->nMkPcs[0]);	// 마킹부 (좌) 현재 마킹한 수
+		General.nPrevMkPcs[0] = General.nMkPcs[0];//m_nCurMk[0];
+		MpeWrite(_T("ML45098"), (long)General.nMkPcs[0]);	// 마킹부 (좌) 현재 마킹한 수
 	}
 
-	if (pGeneral->nPrevTotMk[1] != pGeneral->nTotMk[1])
+	if (General.nPrevTotMk[1] != General.nTotMk[1])
 	{
-		pGeneral->nPrevTotMk[1] = pGeneral->nTotMk[1];
-		MpeWrite(_T("ML45100"), (long)pGeneral->nTotMk[1]);	// 마킹부 (우) 총 마킹수 
+		General.nPrevTotMk[1] = General.nTotMk[1];
+		MpeWrite(_T("ML45100"), (long)General.nTotMk[1]);	// 마킹부 (우) 총 마킹수 
 	}
-	if (pGeneral->nPrevMkPcs[1] != pGeneral->nMkPcs[1])//m_nCurMk[1])
+	if (General.nPrevMkPcs[1] != General.nMkPcs[1])//m_nCurMk[1])
 	{
-		pGeneral->nPrevMkPcs[1] = pGeneral->nMkPcs[1];//m_nCurMk[1];
-		MpeWrite(_T("ML45102"), (long)pGeneral->nMkPcs[1]);	// 마킹부 (우) 현재 마킹한 수
+		General.nPrevMkPcs[1] = General.nMkPcs[1];//m_nCurMk[1];
+		MpeWrite(_T("ML45102"), (long)General.nMkPcs[1]);	// 마킹부 (우) 현재 마킹한 수
 	}
 }
-
 
 long CManagerFeeding::GetMpeData(int nSection, int nName)
 {
@@ -171,7 +190,7 @@ BOOL CManagerFeeding::MpeWrite(CString strRegAddr, long lData, BOOL bCheck)
 {
 	if (!m_pMpe)
 		return FALSE;
-	return m_pMpe->Write(strRegAddr, lData, bCheck);
+	return MpeWrite(strRegAddr, lData, bCheck);
 }
 
 BOOL CManagerFeeding::IsAuto()
@@ -1216,8 +1235,36 @@ void CManagerFeeding::ChkRcvSig()
 	}
 }
 
+void CManagerFeeding::ChkReadyDone()
+{
+	if (!pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+	CString strMsg, strTitle;
+
+	if (m_pMpe->m_pMpeSignal[0] & (0x01 << 0) && !General.bReadyDone)	// PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
+	{
+		General.bReadyDone = TRUE;
+		MpeWrite(_T("MB440100"), 0);	// PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
+	}
+	else
+	{
+		pView->GetDispMsg(strMsg, strTitle);
+		if (strMsg != _T("Searching Buffer Home Position...") || strTitle != _T("Homming"))
+		{
+			General.bReadyDone = FALSE;
+		}
+	}
+}
+
 void CManagerFeeding::DoIO()
 {
+	if (!pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
 	DoEmgSens();
 	DoSaftySens();
 	DoDoorSens();
@@ -1230,9 +1277,9 @@ void CManagerFeeding::DoIO()
 	MonDispMain();
 	MonPlcSignal();
 
-	if (m_bCycleStop)
+	if (General.bCycleStop && !m_bCycleStopF)
 	{
-		m_bCycleStop = FALSE;
+		m_bCycleStopF = TRUE;
 		Buzzer(TRUE);
 
 		if (!pView->m_sAlmMsg.IsEmpty())
@@ -1251,6 +1298,10 @@ void CManagerFeeding::DoIO()
 		}
 		ClrAlarm();
 	}
+	else if (!General.bCycleStop && m_bCycleStopF)
+	{
+		m_bCycleStopF = FALSE;
+	}
 
 	if (Status.bAuto)
 	{
@@ -1258,22 +1309,10 @@ void CManagerFeeding::DoIO()
 		pView->Auto();
 	}
 
-	if (pView->IsRun())
-	{
-		if (m_pDlgMenu01)
-		{
-			if (m_pDlgMenu01->IsEnableBtn())
-				m_pDlgMenu01->EnableBtn(FALSE);
-		}
-	}
+	if (IsRun())
+		pView->EnableBtn(IDD_DLG_MENU_01, FALSE);
 	else
-	{
-		if (m_pDlgMenu01)
-		{
-			if (!m_pDlgMenu01->IsEnableBtn())
-				m_pDlgMenu01->EnableBtn(TRUE);
-		}
-	}
+		pView->EnableBtn(IDD_DLG_MENU_01, TRUE);
 }
 
 void CManagerFeeding::DoAutoEng()
@@ -1388,7 +1427,7 @@ void CManagerFeeding::DoSaftySens()
 	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
 		return;
 
-	if (!pView->IsRun())
+	if (!IsRun())
 		return;
 
 	unsigned short usIn = m_pMpe->m_pMpeIb[7];
@@ -1417,7 +1456,7 @@ void CManagerFeeding::DoDoorSens()
 	if (!m_pMpe->m_pMpeIb || !m_pMpe->m_pMpeIbF)
 		return;
 
-	if (!pView->IsRun())
+	if (!IsRun())
 		return;
 
 	usIn = m_pMpe->m_pMpeIb[1];
@@ -1835,8 +1874,6 @@ void CManagerFeeding::DoMainSw()
 	if ((usIn & (0x01 << 3)) && !(*usInF & (0x01 << 3)))
 	{
 		*usInF |= (0x01 << 3);								// 마킹부 운전준비 스위치
-		//if (pView->m_pDlgMenu03)
-		//	pView->m_pDlgMenu03->SwReady();
 	}
 	else if (!(usIn & (0x01 << 3)) && (*usInF & (0x01 << 3)))
 	{
@@ -1846,8 +1883,6 @@ void CManagerFeeding::DoMainSw()
 	if ((usIn & (0x01 << 4)) && !(*usInF & (0x01 << 4)))
 	{
 		*usInF |= (0x01 << 4);								// 마킹부 리셋 스위치
-		//if (pView->m_pDlgMenu03)
-		//	pView->m_pDlgMenu03->SwReset();
 	}
 	else if (!(usIn & (0x01 << 4)) && (*usInF & (0x01 << 4)))
 	{
@@ -1857,69 +1892,37 @@ void CManagerFeeding::DoMainSw()
 	if ((usIn & (0x01 << 7)) && !(*usInF & (0x01 << 7)))
 	{
 		*usInF |= (0x01 << 7);								// 마킹부 JOG 버튼(상)
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_Y0, M_CCW, TRUE);
-		//else
-		//	SwJog(AXIS_Y1, M_CCW, TRUE);
 	}
 	else if (!(usIn & (0x01 << 7)) && (*usInF & (0x01 << 7)))
 	{
 		*usInF &= ~(0x01 << 7);
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_Y0, M_CCW, FALSE);
-		//else
-		//	SwJog(AXIS_Y1, M_CCW, FALSE);
 	}
 
 	if ((usIn & (0x01 << 8)) && !(*usInF & (0x01 << 8)))
 	{
 		*usInF |= (0x01 << 8);								// 마킹부 JOG 버튼(하)
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_Y0, M_CW, TRUE);
-		//else
-		//	SwJog(AXIS_Y1, M_CW, TRUE);
 	}
 	else if (!(usIn & (0x01 << 8)) && (*usInF & (0x01 << 8)))
 	{
 		*usInF &= ~(0x01 << 8);
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_Y0, M_CW, FALSE);
-		//else
-		//	SwJog(AXIS_Y1, M_CW, FALSE);
 	}
 
 	if ((usIn & (0x01 << 9)) && !(*usInF & (0x01 << 9)))
 	{
 		*usInF |= (0x01 << 9);								// 마킹부 JOG 버튼(좌)
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_X0, M_CCW, TRUE);
-		//else
-		//	SwJog(AXIS_X1, M_CCW, TRUE);
 	}
 	else if (!(usIn & (0x01 << 9)) && (*usInF & (0x01 << 9)))
 	{
 		*usInF &= ~(0x01 << 9);
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_X0, M_CCW, FALSE);
-		//else
-		//	SwJog(AXIS_X1, M_CCW, FALSE);
 	}
 
 	if ((usIn & (0x01 << 10)) && !(*usInF & (0x01 << 10)))
 	{
 		*usInF |= (0x01 << 10);								// 마킹부 JOG 버튼(우)
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_X0, M_CW, TRUE);
-		//else
-		//	SwJog(AXIS_X1, M_CW, TRUE);
 	}
 	else if (!(usIn & (0x01 << 10)) && (*usInF & (0x01 << 10)))
 	{
 		*usInF &= ~(0x01 << 10);
-		//if (Status.bSwJogLeft)
-		//	SwJog(AXIS_X0, M_CW, FALSE);
-		//else
-		//	SwJog(AXIS_X1, M_CW, FALSE);
 	}
 
 	if ((usIn & (0x01 << 11)) && !(*usInF & (0x01 << 11)))
@@ -1998,8 +2001,6 @@ void CManagerFeeding::DoEngraveSens()
 	if ((usIn & (0x01 << 4)) && !(*usInF & (0x01 << 4)))
 	{
 		*usInF |= (0x01 << 4);								// 2D 리셋 스위치
-		//if (pView->m_pDlgMenu03)
-		//	pView->m_pDlgMenu03->SwReset();
 	}
 	else if (!(usIn & (0x01 << 4)) && (*usInF & (0x01 << 4)))
 	{
@@ -2198,7 +2199,7 @@ void CManagerFeeding::PlcAlm(BOOL bMon, BOOL bClr)
 		pView->m_sIsAlmMsg = _T("");
 		pView->SetAlarm(pView->m_sAlmMsg);
 		Sleep(300);
-		m_pMpe->Write(_T("MB600008"), 1);
+		MpeWrite(_T("MB600008"), 1);
 	}
 	else if (!bMon && m_nMonAlmF)
 	{
@@ -2220,13 +2221,13 @@ void CManagerFeeding::PlcAlm(BOOL bMon, BOOL bClr)
 		ClrAlarm();
 		pView->SetAlarm(pView->m_sAlmMsg);
 		Sleep(300);
-		m_pMpe->Write(_T("MB600009"), 1); // ResetAlarm
+		MpeWrite(_T("MB600009"), 1); // ResetAlarm
 
 	}
 	else if (!bClr && m_nClrAlmF)
 	{
 		m_nClrAlmF = 0;
-		m_pMpe->Write(_T("MB600009"), 0); // ResetAlarm
+		MpeWrite(_T("MB600009"), 0); // ResetAlarm
 	}
 	else
 	{
@@ -2283,7 +2284,7 @@ void CManagerFeeding::FindAlarm()
 
 void CManagerFeeding::ResetMonAlm()
 {
-	m_pMpe->Write(_T("MB600008"), 0);
+	MpeWrite(_T("MB600008"), 0);
 }
 
 void CManagerFeeding::ClrAlarm()
@@ -2291,103 +2292,18 @@ void CManagerFeeding::ClrAlarm()
 	pView->ClrAlarm();
 }
 
-void CManagerFeeding::CycleStop()
-{
-	m_bCycleStop = TRUE;
-}
-
 void CManagerFeeding::ChkReTestAlarmOnAoiUp()
 {
-	CString sMsg;
-	sMsg.Format(_T("U%03d"), GetAoiUpAutoSerial());
-	DispStsBar(sMsg, 0);
-
-	int nSerial = m_pBufSerial[0][m_nBufTot[0] - 1];
-
-	if (pView->m_bSerialDecrese)
-	{
-		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-		{
-			SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
-			Sleep(300);
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
-		}
-		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
-		{
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
-		}
-	}
-	else
-	{
-		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-		{
-			SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
-			Sleep(300);
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
-		}
-		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
-		{
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
-												  //pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) PCR파일 Received : PC가 On시키고 PLC가 Off"));
-		}
-	}
-
+	pView->ChkReTestAlarmOnAoiUp();
 }
 
 void CManagerFeeding::ChkReTestAlarmOnAoiDn()
 {
-	CString sMsg;
-	sMsg.Format(_T("D%03d"), GetAoiDnAutoSerial());
-	DispStsBar(sMsg, 0);
-
-	int nSerial = m_pBufSerial[1][m_nBufTot[1] - 1];
-
-	if (pView->m_bSerialDecrese)
-	{
-		if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-		{
-			SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
-			Sleep(300);
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-												  //pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
-		}
-		else if (m_nLotEndSerial > 0 && nSerial <= m_nLotEndSerial)
-		{
-			//if (m_pMpe)
-			//	m_pMpe->Write(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
-		}
-	}
-	else
-	{
-		if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-		{
-			SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
-			Sleep(300);
-			if (m_pMpe)
-				m_pMpe->Write(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-												  //pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
-		}
-		else if (m_nLotEndSerial > 0 && nSerial >= m_nLotEndSerial)
-		{
-			//if (m_pMpe)
-			//	m_pMpe->Write(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
-		}
-	}
-
+	pView->ChkReTestAlarmOnAoiDn();
 }
 
 void CManagerFeeding::Buzzer(BOOL bOn, int nCh)
 {
-	if (!m_pMpe)
-		return;
-
 	if (!bOn)
 	{
 		switch (nCh)
@@ -2420,13 +2336,188 @@ void CManagerFeeding::Buzzer(BOOL bOn, int nCh)
 
 void CManagerFeeding::SetLed(int nIdx, BOOL bOn)
 {
-	if (pView->m_pDlgMenu03)
-		pView->m_pDlgMenu03->SetLed(nIdx, bOn);
+	pView->SetLed(nIdx, bOn);
 }
 
 void CManagerFeeding::Stop()
 {
-	if (!pView)	return;
 	pView->DispMain(_T("정 지"), RGB_RED);
 	MpeWrite(_T("MB440162"), 1);
+}
+
+void CManagerFeeding::CycleStop()
+{
+	if (!pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	General.bCycleStop = TRUE;
+}
+
+BOOL CManagerFeeding::IsRun()
+{
+	if (!m_pMpe)
+		return FALSE;
+
+	return (m_pMpe->m_pMpeSignal[2] & (0x01 << 0)); // 운전중(PLC가 PC에 알려주는 설비 상태)
+}
+
+BOOL CManagerFeeding::IsStop()
+{
+	if (!m_pMpe)
+		return FALSE;
+
+	return (m_pMpe->m_pMpeSignal[2] & (0x01 << 1)); // 정지(PLC가 PC에 알려주는 설비 상태)
+}
+
+BOOL CManagerFeeding::IsReady()
+{
+	if (!m_pMpe)
+		return FALSE;
+
+	return (m_pMpe->m_pMpeSignal[2] & (0x01 << 2)); // PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
+}
+
+BOOL CManagerFeeding::IsInitRun()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[2] & (0x01 << 3)); // 초기운전(PLC가 PC에 알려주는 설비 상태)
+}
+
+void CManagerFeeding::ResetReady()
+{
+	MpeWrite(_T("MB440100"), 0);	// PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
+}
+
+void CManagerFeeding::DoAtuoGetEngStSignal()
+{
+	if (!m_pMpe || !pView->m_mgrProcedure) return;
+	stBtnStatus& BtnStatus = (pView->m_mgrProcedure->m_pEngrave->BtnStatus);
+
+	if ((m_pMpe->m_pMpeSignal[0] & (0x01 << 3) || m_bEngStSw) && !BtnStatus.EngAuto.MkStF)// 2D(GUI) 각인 동작 Start신호(PLC On->PC Off)
+	{
+		BtnStatus.EngAuto.MkStF = TRUE;
+		m_bEngStSw = FALSE;
+
+		BtnStatus.EngAuto.IsMkSt = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkSt, TRUE);
+	}
+	else if (BtnStatus.EngAuto.IsMkSt && BtnStatus.EngAuto.MkStF)
+	{
+		BtnStatus.EngAuto.MkStF = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkSt, FALSE);
+		MpeWrite(_T("MB440103"), 0);			// 2D(GUI) 각인 동작 Start신호(PLC On->PC Off)
+	}
+
+	if (m_pMpe->m_pMpeSignal[0] & (0x01 << 2) && !BtnStatus.EngAuto.FdDoneF)	// 각인부 Feeding완료(PLC가 On시키고 PC가 확인하고 Reset시킴.)
+	{
+		BtnStatus.EngAuto.FdDoneF = TRUE;
+
+		BtnStatus.EngAuto.IsFdDone = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqFdDone, TRUE);
+	}
+	else if (BtnStatus.EngAuto.IsFdDone && BtnStatus.EngAuto.FdDoneF)
+	{
+		BtnStatus.EngAuto.FdDoneF = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqFdDone, FALSE);
+		MpeWrite(_T("MB440102"), 0);		// 각인부 Feeding완료(PLC가 On시키고 PC가 확인하고 Reset시킴.)
+	}
+}
+
+void CManagerFeeding::DoAtuoGet2dReadStSignal()
+{
+	if (!m_pMpe || !pView->m_mgrProcedure) return;
+	stBtnStatus& BtnStatus = (pView->m_mgrProcedure->m_pEngrave->BtnStatus);
+
+	if ((m_pMpe->m_pMpeSignal[0] & (0x01 << 5) || m_bEng2dStSw) && !BtnStatus.EngAuto.Read2dStF)// 각인부 2D 리더 시작신호(PLC On->PC Off)
+	{
+		BtnStatus.EngAuto.Read2dStF = TRUE;
+		m_bEng2dStSw = FALSE;
+
+		BtnStatus.EngAuto.IsRead2dSt = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadSt, TRUE);
+	}
+	else if (BtnStatus.EngAuto.IsRead2dSt && BtnStatus.EngAuto.Read2dStF)
+	{
+		BtnStatus.EngAuto.Read2dStF = FALSE;
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadSt, FALSE);
+		MpeWrite(_T("MB440105"), 0);			// 각인부 2D 리더 시작신호(PLC On->PC Off)
+	}
+}
+
+BOOL CManagerFeeding::IsLoaderOnAoiUp()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeIb[10] & (0x01 << 11)) ? TRUE : FALSE;		// 검사부 상 자동 운전 <-> X432B I/F
+}
+
+BOOL CManagerFeeding::IsLoaderOnAoiDn()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeIb[14] & (0x01 << 11)) ? TRUE : FALSE;		// 검사부 하 자동 운전 <-> X442B I/F
+}
+
+BOOL CManagerFeeding::IsTestingAoiUp()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[1] & (0x01 << 3)) ? TRUE : FALSE;		// 검사부(상) 검사중
+}
+
+BOOL CManagerFeeding::IsTestingAoiDn()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[1] & (0x01 << 4)) ? TRUE : FALSE;		// 검사부(하) 검사중
+}
+
+BOOL CManagerFeeding::IsDoneWriteFdOffsetAoiUp()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[1] & (0x01 << 1)) ? TRUE : FALSE;		// 검사부(상) Feeding Offset Write 완료
+}
+
+BOOL CManagerFeeding::IsDoneWriteFdOffsetAoiDn()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[1] & (0x01 << 2)) ? TRUE : FALSE;		// 검사부(하) Feeding Offset Write 완료
+}
+
+BOOL CManagerFeeding::IsDoneWriteFdOffsetEng()
+{
+	if (!m_pMpe) return FALSE;
+	return (m_pMpe->m_pMpeSignal[1] & (0x01 << 10)) ? TRUE : FALSE;		// 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+}
+
+CString CManagerFeeding::GetAoiAlarmReStartMsg(int nId)
+{
+	CString str = _T("");
+
+	switch (nId)
+	{
+	case 0:
+		str = m_sAoiUpAlarmReStartMsg;
+		break;
+	case 1:
+		str = m_sAoiDnAlarmReStartMsg;
+		break;
+	}
+
+	return str;
+}
+
+CString CManagerFeeding::GetAoiAlarmReTestMsg(int nId)
+{
+	CString str = _T("");
+
+	switch (nId)
+	{
+	case 0:
+		str = m_sAoiUpAlarmReTestMsg;
+		break;
+	case 1:
+		str = m_sAoiDnAlarmReTestMsg;
+		break;
+	}
+
+	return str;
 }

@@ -86,10 +86,11 @@ class CManagerFeeding : public CWnd
 	BOOL m_bTIM_INIT_FEEDING;
 	BOOL m_bTIM_SCAN_MPE;
 	int m_nStepInitFeeding;
-	BOOL m_bCycleStop;
+	BOOL m_bCycleStopF;
 	CString m_sAoiUpAlarmReStartMsg, m_sAoiDnAlarmReStartMsg;
 	CString m_sAoiUpAlarmReTestMsg, m_sAoiDnAlarmReTestMsg;
 	int m_nMonAlmF, m_nClrAlmF;
+	BOOL m_bEngStSw, m_bEng2dStSw;
 
 	BOOL Init();
 	BOOL Create();
@@ -101,6 +102,7 @@ class CManagerFeeding : public CWnd
 	BOOL ChkSaftySen();
 	unsigned long ChkDoor();
 	void ChkRcvSig();
+	void ChkReadyDone();
 
 	void MonDispMain();
 
@@ -121,6 +123,9 @@ class CManagerFeeding : public CWnd
 	void ChkReTestAlarmOnAoiDn();
 
 	void DoAutoEng();
+	void DoAtuoGetEngStSignal();
+	void DoAtuoGet2dReadStSignal();
+
 
 public:
 	CManagerFeeding(CWnd* pParent = NULL);
@@ -134,18 +139,35 @@ public:
 
 	// 작업입니다.
 public:
+	void Reset();
 	BOOL InitAct();
+	BOOL IsAuto();
 	long GetMpeData(int nSection, int nName);
 	BOOL GetMpeSignal(int nSection, int nName);
 	BOOL MpeWrite(CString strRegAddr, long lData, BOOL bCheck = FALSE);
-	BOOL IsAuto();
 	void Buzzer(BOOL bOn, int nCh = 0);
-	void Stop();
-	void CycleStop();
 	void SetLed(int nIdx, BOOL bOn = TRUE);
 
 	void SetBufInitPos(double dPos);
 	void SetBufHomeParam(double dVel, double dAcc);
+
+	BOOL IsRun();
+	BOOL IsStop();
+	BOOL IsReady();
+	BOOL IsInitRun();
+	void ResetReady();
+	void Stop();
+	void CycleStop();
+
+	BOOL IsLoaderOnAoiUp();
+	BOOL IsLoaderOnAoiDn();
+	BOOL IsTestingAoiUp();
+	BOOL IsTestingAoiDn();
+	BOOL IsDoneWriteFdOffsetAoiUp();
+	BOOL IsDoneWriteFdOffsetAoiDn();
+	BOOL IsDoneWriteFdOffsetEng();
+	CString GetAoiAlarmReStartMsg(int nId);	// Up, Dn
+	CString GetAoiAlarmReTestMsg(int nId);	// Up, Dn
 
 	// 생성된 메시지 맵 함수
 protected:

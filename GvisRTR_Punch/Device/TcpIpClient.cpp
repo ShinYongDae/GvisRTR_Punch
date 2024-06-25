@@ -1,9 +1,9 @@
-﻿#include "stdafx.h"
+﻿#include "../stdafx.h"
 #include "TcpIpClient.h"
 #include "../Global/GlobalDefine.h"
 
-#include "../GvisR2R_PunchView.h"
-extern CGvisR2R_PunchView* pView;
+#include "../GvisRTR_PunchView.h"
+extern CGvisRTR_PunchView* pView;
 
 CTcpIpClient::CTcpIpClient(CWnd* pParent/*=NULL*/)
 {

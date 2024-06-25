@@ -67,6 +67,8 @@ class CGvisRTR_PunchView : public CFormView
 	__int64 m_nBufSerialSorting[2][100];	// [0]: AOI-Up , [1]: AOI-Dn
 
 	DWORD m_dwLotSt, m_dwLotEd;
+	BOOL m_bSerialDecrese;
+	int m_nLotEndSerial;
 
 	void InitMgr();
 	void CreateMgr();
@@ -124,7 +126,6 @@ class CGvisRTR_PunchView : public CFormView
 
 	void DispLotTime();
 
-
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchView();
 	DECLARE_DYNCREATE(CGvisRTR_PunchView)
@@ -155,7 +156,6 @@ public:
 	void DestroyView();
 
 	BOOL m_bDispMsg, m_bWaitClrDispMsg;
-	BOOL m_bDispMsgDoAuto[10];
 	int m_nStepDispMsg[10];
 	void ClrDispMsg();
 	LONG OnQuitDispMsg(UINT wParam, LONG lParam);
@@ -195,6 +195,7 @@ public:
 
 	void SetDualTest(BOOL bOn);
 	void SetTestMode(int nMode);
+	int GetLotEndSerial();
 
 	void SetLotSt();
 	void SetLotEd();
@@ -203,6 +204,40 @@ public:
 
 	void SetMkMenu01(CString sMenu, CString sItem, CString sData);
 	void SetMkMenu03(CString sMenu, CString sItem, BOOL bOn);
+	void ChkReTestAlarmOnAoiUp();
+	void ChkReTestAlarmOnAoiDn();
+
+	BOOL IsBuffer(int nNum = 0);
+	BOOL IsBufferUp();
+	BOOL IsBufferDn();
+	int GetBuffer(int *pPrevSerial);
+	int GetBufferUp(int *pPrevSerial);
+	int GetBufferDn(int *pPrevSerial);
+
+	BOOL IsBuffer0();
+	BOOL IsBufferUp0();
+	BOOL IsBufferDn0();
+	int GetBuffer0(int *pPrevSerial);
+	int GetBufferUp0(int *pPrevSerial);
+	int GetBufferDn0(int *pPrevSerial);
+
+	BOOL IsBuffer1();
+	BOOL IsBufferUp1();
+	BOOL IsBufferDn1();
+	int GetBuffer1(int *pPrevSerial);
+	int GetBufferUp1(int *pPrevSerial);
+	int GetBufferDn1(int *pPrevSerial);
+
+	BOOL IsShare();
+	BOOL IsShareUp();
+	BOOL IsShareDn();
+	BOOL GetShareUp();
+	BOOL GetShareDn();
+	BOOL IsShareVs();
+	BOOL IsShareVsUp();
+	BOOL IsShareVsDn();
+	BOOL GetShareVsUp();
+	BOOL GetShareVsDn();
 
 	// ManagerFeeding
 	BOOL GetMpeSignal(int nSection, int nName);
@@ -213,6 +248,16 @@ public:
 	BOOL GetMkStSignal();
 	void ResetMkStSignal();
 	int GetLastShotMk();
+
+	BOOL IsEnableBtn(int nId);
+	void EnableBtn(int nId, BOOL bEnable);
+	void SetLed(int nIdx, BOOL bOn);
+	void UpdateRst();
+	void Buzzer(BOOL bOn, int nCh = 0);
+	void Stop();
+	void SetAoiUpOffset(CfPoint &OfSt);
+	void SetAoiDnOffset(CfPoint &OfSt);
+	void SetEngOffset(CfPoint &OfSt);
 
 	// ManagerProcedure
 	void Auto();

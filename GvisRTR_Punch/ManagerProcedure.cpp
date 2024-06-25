@@ -15,6 +15,7 @@ CManagerProcedure::CManagerProcedure(CWnd* pParent)
 	m_pParent = pParent;
 	m_bTIM_INIT_PROCEDURE = FALSE;
 
+	Reset();
 	Init();
 
 	if (!Create())
@@ -71,13 +72,38 @@ void CManagerProcedure::OnTimer(UINT_PTR nIDEvent)
 	CWnd::OnTimer(nIDEvent);
 }
 
-void CManagerProcedure::Init()
+BOOL CManagerProcedure::Init()
 {
+	return TRUE;
+}
+
+void CManagerProcedure::Reset()
+{
+	int i = 0;
+
 	m_bMkSt = FALSE;
 	m_bMkStSw = FALSE;
 	m_bLotEnd = FALSE;
+	m_bLastProc = FALSE;
 	m_nMkStAuto = 0;
 	m_nLotEndAuto = 0;
+	m_nLastProcAuto = 0;
+	m_Flag = 0L;
+	m_bAoiTestF[0] = FALSE;
+	m_bAoiTestF[1] = FALSE;
+	m_bAoiFdWriteF[0] = FALSE;
+	m_bAoiFdWriteF[1] = FALSE;
+	m_bEngTestF = FALSE;
+	m_bEngFdWriteF = FALSE;
+	m_bCycleStopF = FALSE;
+	m_sFixMsg[0] = _T("");
+	m_sFixMsg[1] = _T("");
+
+	for (i = 0; i < 10; i++)
+	{
+		m_bDispMsgDoAuto[i] = FALSE;
+		m_nStepDispMsg[i] = 0;
+	}
 }
 
 BOOL CManagerProcedure::InitAct()
@@ -200,8 +226,20 @@ void CManagerProcedure::SetMkMenu03(CString sMenu, CString sItem, BOOL bOn)
 	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
 }
 
+BOOL CManagerProcedure::IsRun()
+{
+	return pView->IsRun();
+	//return TRUE; // AlignTest
+	//if (m_sDispMain == _T("운전중") || m_sDispMain == _T("초기운전") || m_sDispMain == _T("단면샘플")
+	//	|| m_sDispMain == _T("단면검사") || m_sDispMain == _T("내층검사") || m_sDispMain == _T("외층검사")
+	//	|| m_sDispMain == _T("양면검사") || m_sDispMain == _T("양면샘플"))
+	//	return TRUE;
+	//return FALSE;
+	//return m_bSwRun;
+}
+
 void CManagerProcedure::InitAuto(BOOL bInit)
-{/*
+{
 	if (!pDoc->WorkingInfo.LastJob.bSampleTest)
 	{
 		::WritePrivateProfileString(_T("Infomation"), _T("Lot End"), _T("0"), pDoc->WorkingInfo.System.sPathMkCurrInfo);
@@ -239,7 +277,7 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	m_nDummy[1] = 0;
 	m_nAoiLastSerial[0] = 0;
 	m_nAoiLastSerial[1] = 0;
-	m_nStepAuto = 0;
+	General.nStepAuto = 0;
 	m_nPrevStepAuto = 0;
 	m_nPrevMkStAuto = 0;
 	m_bAoiLdRun = TRUE;
@@ -401,10 +439,10 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	}
 
 	pView->m_nDebugStep = 12; pView->DispThreadTick();
-	m_pMpe->Write(_T("MB440100"), 0); // PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
-	m_pMpe->Write(_T("MB440110"), 0); // 마킹시작(PC가 확인하고 Reset시킴.)-20141029
-	m_pMpe->Write(_T("MB440150"), 0); // 마킹부 마킹중 ON (PC가 ON, OFF)
-	m_pMpe->Write(_T("MB440170"), 0); // 마킹완료(PLC가 확인하고 Reset시킴.)-20141029
+	MpeWrite(_T("MB440100"), 0); // PLC 운전준비 완료(PC가 확인하고 Reset시킴.)
+	MpeWrite(_T("MB440110"), 0); // 마킹시작(PC가 확인하고 Reset시킴.)-20141029
+	MpeWrite(_T("MB440150"), 0); // 마킹부 마킹중 ON (PC가 ON, OFF)
+	MpeWrite(_T("MB440170"), 0); // 마킹완료(PLC가 확인하고 Reset시킴.)-20141029
 
 	InitAutoEngSignal();
 
@@ -469,7 +507,7 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 
 	if (bInit) // 이어가기가 아닌경우.
 	{
-		m_pMpe->Write(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-20141121
+		MpeWrite(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-20141121
 		DispLotEnd(FALSE);
 
 		m_nRstNum = 0;
@@ -526,17 +564,17 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 		{
 			if (IDYES == pView->MsgBox(_T("각인부에서 레이저 각인부터 시작하시겠습니까?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 			{
-				m_pMpe->Write(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
+				MpeWrite(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
 			}
 			else
 			{
 				if (IDYES == pView->MsgBox(_T("각인부에서 2D 코드를 읽고 난 후 Last Shot을 확인하시겠습니까?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 				{
-					m_pMpe->Write(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
+					MpeWrite(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
 				}
 				else
 				{
-					m_pMpe->Write(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
+					MpeWrite(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
 				}
 			}
 		}
@@ -544,24 +582,24 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 		{
 			if (IDYES == pView->MsgBox(_T("각인부에서 2D 코드를 읽고 난 후 Last Shot을 확인하시겠습니까?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 			{
-				m_pMpe->Write(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
+				MpeWrite(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
 			}
 			else
 			{
 				if (IDYES == pView->MsgBox(_T("각인부에서 레이저 각인부터 시작하시겠습니까?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 				{
-					m_pMpe->Write(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
+					MpeWrite(_T("MB440187"), 0); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-레이저 가공부터 시작
 				}
 				else
 				{
-					m_pMpe->Write(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
+					MpeWrite(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-2D 코드 읽기부터 시작
 				}
 			}
 
 		}
 		else
 		{
-			m_pMpe->Write(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-20141121
+			MpeWrite(_T("MB440187"), 1); // 이어가기(PC가 On시키고, PLC가 확인하고 Off시킴)-20141121
 		}
 		//DispStsBar("이어가기");
 
@@ -607,7 +645,6 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	}
 
 	pView->m_nDebugStep = 30; pView->DispThreadTick();
-*/
 }
 
 void CManagerProcedure::Auto()
@@ -617,12 +654,13 @@ void CManagerProcedure::Auto()
 
 void CManagerProcedure::DoAuto()
 {
-	//if (!pView->IsAuto())
-	//	return;
-	stThread* StTh = &(pView->m_mgrStatus->Thread);
+	if (!pView->m_mgrStatus)
+		return;
+
+	stThread& Thread = (pView->m_mgrStatus->Thread);
 
 	CString str;
-	str.Format(_T("%d : %d"), StTh->nStepTHREAD_DISP_DEF, StTh->bTHREAD_DISP_DEF ? 1 : 0);
+	str.Format(_T("%d : %d"), Thread.nStepTHREAD_DISP_DEF, Thread.bTHREAD_DISP_DEF ? 1 : 0);
 	pView->DispStsBar(str, 6);
 
 	// LotEnd Start
@@ -653,7 +691,7 @@ void CManagerProcedure::DoAuto()
 	DoAutoDispMsg();
 
 	// Check Share Folder Start
-	if (GetAoiUpVsStatus())
+	if (pDoc->GetAoiUpVsStatus())
 		DoAutoChkShareVsFolder();
 	else
 		DoAutoChkShareFolder();
@@ -667,22 +705,26 @@ void CManagerProcedure::DoAuto()
 
 BOOL CManagerProcedure::DoAutoGetLotEndSignal()
 {
-	stGeneral* StGn = &(pView->m_mgrStatus->General);
+	if (!pView->m_mgrStatus)
+		return FALSE;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+	stThread& Thread = (pView->m_mgrStatus->Thread);
 
 	int nSerial;
 
-	if(StGn->bLotEnd && StGn->nStepAuto < LOT_END)
+	if(General.bLotEnd && General.nStepAuto < LOT_END)
 	{
 		m_bLotEnd = TRUE;
 		m_nLotEndAuto = LOT_END;
 	}
 
-	if (!IsBuffer(0) && m_bLastProc && m_nLotEndAuto < LOT_END)
+	if (!pView->IsBuffer(0) && m_bLastProc && m_nLotEndAuto < LOT_END)
 	{
 		m_bLotEnd = TRUE;
 		m_nLotEndAuto = LOT_END;
 	}
-	else if (!IsBuffer(0) && m_nMkStAuto > MK_ST + (Mk2PtIdx::DoneMk) + 4)
+	else if (!pView->IsBuffer(0) && m_nMkStAuto > MK_ST + (Mk2PtIdx::DoneMk) + 4)
 	{
 		m_nMkStAuto = 0;
 		m_bLotEnd = TRUE;
@@ -697,32 +739,28 @@ BOOL CManagerProcedure::DoAutoGetLotEndSignal()
 		switch (m_nLotEndAuto)
 		{
 		case LOT_END:
-			if (!m_bTHREAD_REELMAP_YIELD_UP && !m_bTHREAD_REELMAP_YIELD_DN && !m_bTHREAD_REELMAP_YIELD_ALLUP && !m_bTHREAD_REELMAP_YIELD_ALLDN) // Yield Reelmap
+			if (!Thread.bTHREAD_REELMAP_YIELD_UP && !Thread.bTHREAD_REELMAP_YIELD_DN && !Thread.bTHREAD_REELMAP_YIELD_ALLUP && !Thread.bTHREAD_REELMAP_YIELD_ALLDN) // Yield Reelmap
 			{
 				ReloadReelmap(nSerial);
 				UpdateRst();
-				//pDoc->UpdateYieldOnRmap(); // 20230614
 				m_nLotEndAuto++;
 			}
 			break;
 		case LOT_END + 1:
-			m_pMpe->Write(_T("MB440180"), 1);			// 작업종료(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
-			DispMain(_T("작업종료"), RGB_RED);
+			pView->MpeWrite(_T("MB440180"), 1);			// 작업종료(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
+			pView->DispMain(_T("작업종료"), RGB_RED);
 			m_nLotEndAuto++;
 			break;
 		case LOT_END + 2:
-			Buzzer(TRUE, 0);
-			TowerLamp(RGB_YELLOW, TRUE);
-			Stop();
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
 			LotEnd();									// MakeResultMDS
 			m_nLotEndAuto++;
 			break;
 
 		case LOT_END + 3:
-			MsgBox(_T("작업이 종료되었습니다."));
-			//m_nStepAuto = 0; // 자동종료
+			pView->MsgBox(_T("작업이 종료되었습니다."));
 			m_nLotEndAuto++;
-			//m_bLotEnd = FALSE;
 			m_bLastProc = FALSE;
 			m_bMkSt = FALSE;
 			::WritePrivateProfileString(_T("Last Job"), _T("MkSt"), _T("0"), PATH_WORKING_INFO);
@@ -737,10 +775,9 @@ BOOL CManagerProcedure::DoAutoGetLotEndSignal()
 
 BOOL CManagerProcedure::DoAtuoGetMkStSignal()
 {
-#ifdef USE_MPE
 	if (!m_bMkSt)
 	{
-		if (pView->IsRun())
+		if (IsRun())
 		{
 			if (pView->GetMkStSignal() || m_bMkStSw) // AlignTest		// 마킹시작(PC가 확인하고 Reset시킴.)-20141029
 			{
@@ -765,6 +802,2718 @@ BOOL CManagerProcedure::DoAtuoGetMkStSignal()
 			}
 		}
 	}
-#endif
 	return FALSE;
+}
+
+void CManagerProcedure::DoAutoSetLastProcAtPlc()
+{
+	if (m_bLastProc)
+	{
+		switch (m_nLastProcAuto)
+		{
+		case LAST_PROC:	// 잔량처리 1
+			if (IsRun())
+			{
+				if (MODE_INNER != pDoc->GetTestMode())
+				{
+					if (ChkLastProcFromUp())
+					{
+						pDoc->LogAuto(_T("PC: 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+						pView->MpeWrite(_T("MB440185"), 1);			// 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+						Sleep(300);
+						pView->MpeWrite(_T("MB44012B"), 1);			// AOI 상 : PCR파일 Received
+					}
+					else
+					{
+						pDoc->LogAuto(_T("PC: 잔량처리 AOI(하) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+						pView->MpeWrite(_T("MB440186"), 1);			// 잔량처리 AOI(하) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+					}
+				}
+				else
+				{
+					if (ChkLastProcFromEng())
+					{
+						pDoc->LogAuto(_T("PC: 잔량처리 각인부 부터(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+						pView->MpeWrite(_T("MB44019D"), 1);			// 잔량처리 각인부 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+					}
+					else if (ChkLastProcFromUp())
+					{
+						pDoc->LogAuto(_T("PC: 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+						pView->MpeWrite(_T("MB440185"), 1);			// 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+						Sleep(300);
+						pView->MpeWrite(_T("MB44012B"), 1);			// AOI 상 : PCR파일 Received
+					}
+					else
+					{
+						pDoc->LogAuto(_T("PC: 잔량처리 AOI(하) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+						pView->MpeWrite(_T("MB440186"), 1);			// 잔량처리 AOI(하) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+					}
+				}
+
+				m_nLastProcAuto++;
+			}
+			break;
+		case LAST_PROC + 1:
+			pDoc->LogAuto(_T("PC: 잔량처리(PC가 On시키고, PLC가 확인하고 Off시킴)"));
+			pView->MpeWrite(_T("MB440181"), 1);			// 잔량처리(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
+			m_nLastProcAuto++;
+			break;
+		case LAST_PROC + 2:
+			;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::DoAutoSetFdOffsetLastProc()
+{
+	if (!pView->m_mgrFeeding || !pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	BOOL bOn0 = pView->m_mgrFeeding->IsLoaderOnAoiUp();		// 검사부 상 자동 운전 <-> X432B I/F
+	BOOL bOn1 = pView->m_mgrFeeding->IsLoaderOnAoiDn();		// 검사부 하 자동 운전 <-> X442B I/F
+
+	if (bOn0 && !(m_Flag & (0x01 << 2)))
+	{
+		m_Flag |= (0x01 << 2);
+	}
+	else if (!bOn0 && (m_Flag & (0x01 << 2)))
+	{
+		m_Flag &= ~(0x01 << 2);
+
+		General.bAoiTest[0] = FALSE;
+		General.bWaitPcr[0] = FALSE;
+		m_bAoiTestF[0] = FALSE;
+		m_bAoiFdWriteF[0] = FALSE;
+		pView->MpeWrite(_T("MB440111"), 0); // 검사부(상) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103
+		pDoc->LogAuto(_T("PLC: 검사부(상) Feeding Offset Write 완료(PC가 확인하고 MB440111 Reset시킴.)"));
+	}
+
+	if (bOn1 && !(m_Flag & (0x01 << 3)))
+	{
+		m_Flag |= (0x01 << 3);
+	}
+	else if (!bOn1 && (m_Flag & (0x01 << 3)))
+	{
+		m_Flag &= ~(0x01 << 3);
+
+		General.bAoiTest[1] = FALSE;
+		General.bWaitPcr[1] = FALSE;
+		m_bAoiTestF[1] = FALSE;
+		m_bAoiFdWriteF[1] = FALSE;
+		pView->MpeWrite(_T("MB440112"), 0); // 검사부(하) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103
+		pDoc->LogAuto(_T("PLC: 검사부(하) Feeding Offset Write 완료(PC가 확인하고 MB440112 Reset시킴.)"));
+	}
+}
+
+void CManagerProcedure::DoAutoSetFdOffset()
+{
+	if (!pView->m_mgrFeeding || !pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	double dAveX, dAveY;
+	CfPoint OfStUp, OfStDn;
+
+	BOOL bOn0 = pView->m_mgrFeeding->IsTestingAoiUp();
+	BOOL bOn1 = pView->m_mgrFeeding->IsTestingAoiDn();
+
+	if (bOn0 && !m_bAoiTestF[0])		// 검사부(상) 검사중
+	{
+		m_bAoiTestF[0] = TRUE;
+		General.bAoiTest[0] = TRUE;
+		General.bWaitPcr[0] = TRUE;
+	}
+	else if (!bOn0 && m_bAoiTestF[0])
+	{
+		m_bAoiTestF[0] = FALSE;
+		m_bAoiFdWriteF[0] = FALSE;
+		General.bAoiTest[0] = FALSE;
+
+		pView->MpeWrite(_T("MB440111"), 0); // 검사부(상) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103
+		pDoc->LogAuto(_T("PLC: 검사부(상) Feeding Offset Write 완료(PC가 확인하고 MB440111 Reset시킴.)"));
+	}
+
+	if (bOn1 && !m_bAoiTestF[1])		// 검사부(하) 검사중
+	{
+		m_bAoiTestF[1] = TRUE;
+		General.bAoiTest[1] = TRUE;
+		General.bWaitPcr[1] = TRUE;
+	}
+	else if (!bOn1 && m_bAoiTestF[1])
+	{
+		m_bAoiTestF[1] = FALSE;
+		m_bAoiFdWriteF[1] = FALSE;
+		General.bAoiTest[1] = FALSE;
+		pView->MpeWrite(_T("MB440112"), 0); // 검사부(하) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+		pDoc->LogAuto(_T("PLC: 검사부(하) Feeding Offset Write 완료(PC가 확인하고 MB440112 Reset시킴.)"));
+	}
+
+
+	BOOL bOn2 = pView->m_mgrFeeding->IsDoneWriteFdOffsetAoiUp();
+	BOOL bOn3 = pView->m_mgrFeeding->IsDoneWriteFdOffsetAoiDn();
+
+	if (bOn2 && !General.bAoiFdWrite[0])		// 검사부(상) Feeding Offset Write 완료
+		General.bAoiFdWrite[0] = TRUE;
+	else if (!bOn2 && General.bAoiFdWrite[0])
+		General.bAoiFdWrite[0] = FALSE;
+
+	if (bOn3 && !General.bAoiFdWrite[1])		// 검사부(하) Feeding Offset Write 완료
+		General.bAoiFdWrite[1] = TRUE;
+	else if (!bOn3 && General.bAoiFdWrite[1])
+		General.bAoiFdWrite[1] = FALSE;
+
+
+	if (bDualTest)
+	{
+		if ((General.bAoiFdWrite[0] && General.bAoiFdWrite[1]) && (!m_bAoiFdWriteF[0] && !m_bAoiFdWriteF[1]))
+		{
+			m_bAoiFdWriteF[0] = TRUE;
+			m_bAoiFdWriteF[1] = TRUE;
+
+			pDoc->GetAoiUpOffset(OfStUp);
+			pDoc->GetAoiDnOffset(OfStDn);
+
+			dAveX = OfStUp.x;
+			dAveY = OfStUp.y;
+
+			pView->SetAoiUpOffset(OfStUp);
+			pView->SetAoiDnOffset(OfStDn);
+
+			pView->MpeWrite(_T("ML45064"), (long)(-1.0*dAveX*1000.0));
+			pView->MpeWrite(_T("MB440111"), 0); // 검사부(상) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+			pView->MpeWrite(_T("MB440112"), 0); // 검사부(하) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+			pDoc->LogAuto(_T("PLC: 검사부(상MB440111,하MB440112) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+		}
+		else if ((!General.bAoiFdWrite[0] && !General.bAoiFdWrite[1]) && (m_bAoiFdWriteF[0] && m_bAoiFdWriteF[1]))
+		{
+			m_bAoiFdWriteF[0] = FALSE;
+			m_bAoiFdWriteF[1] = FALSE;
+			General.bAoiTest[0] = FALSE;
+			General.bAoiTest[1] = FALSE;
+		}
+
+		if (General.bAoiTest[0] && !General.bAoiTest[1])
+		{
+			if (General.bAoiFdWrite[0] && !m_bAoiFdWriteF[0])
+			{
+				m_bAoiFdWriteF[0] = TRUE;
+
+				OfStDn.x = 0.0; OfStDn.y = 0.0;
+				pDoc->GetAoiUpOffset(OfStUp);
+				pView->SetAoiUpOffset(OfStUp);
+				pView->SetAoiDnOffset(OfStDn);
+
+				pView->MpeWrite(_T("ML45064"), (long)(-1.0*OfStUp.x*1000.0));
+				pView->MpeWrite(_T("MB440111"), 0); // 검사부(상) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+				pDoc->LogAuto(_T("PLC: 검사부(상MB440111) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+			}
+			else if (!General.bAoiFdWrite[0] && m_bAoiFdWriteF[0])
+			{
+				m_bAoiFdWriteF[0] = FALSE;
+				General.bAoiTest[0] = FALSE;
+			}
+		}
+
+		if (!General.bAoiTest[0] && General.bAoiTest[1])
+		{
+			if (General.bAoiFdWrite[1] && !m_bAoiFdWriteF[1])
+			{
+				m_bAoiFdWriteF[1] = TRUE;
+
+				OfStUp.x = 0.0; OfStUp.y = 0.0;
+				pDoc->GetAoiDnOffset(OfStDn);
+				pView->SetAoiUpOffset(OfStUp);
+				pView->SetAoiDnOffset(OfStDn);
+
+				pView->MpeWrite(_T("ML45064"), (long)(-1.0*OfStDn.x*1000.0));
+				pView->MpeWrite(_T("MB440112"), 0); // 검사부(하) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103
+				pDoc->LogAuto(_T("PLC: 검사부(하MB440112) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+			}
+			else if (!General.bAoiFdWrite[1] && m_bAoiFdWriteF[1])
+			{
+				m_bAoiFdWriteF[1] = FALSE;
+				General.bAoiTest[1] = FALSE;
+			}
+		}
+	}
+	else
+	{
+		if (General.bAoiFdWrite[0] && !m_bAoiFdWriteF[0])
+		{
+			m_bAoiFdWriteF[0] = TRUE;
+
+			pDoc->GetAoiUpOffset(OfStUp);
+			pView->SetAoiUpOffset(OfStUp);
+
+			dAveX = (OfStUp.x);
+			dAveY = (OfStUp.y);
+
+			pView->MpeWrite(_T("ML45064"), (long)(-1.0*dAveX*1000.0));	// 검사부 Feeding 롤러 Offset(*1000, +:더 보냄, -덜 보냄)
+			pView->MpeWrite(_T("MB440111"), 0); // 검사부(상) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103
+			pView->MpeWrite(_T("MB440112"), 0); // 검사부(하) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)-20141103  // 20160721-syd-temp
+			pDoc->LogAuto(_T("PLC: 검사부(상MB440111,하MB440112) Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+		}
+		else if (!General.bAoiFdWrite[0] && m_bAoiFdWriteF[0])
+		{
+			m_bAoiFdWriteF[0] = FALSE;
+			General.bAoiTest[0] = FALSE;
+		}
+	}
+}
+
+void CManagerProcedure::DoAutoSetFdOffsetEngrave()
+{
+	if (!pView->m_mgrStatus || !m_pEngrave)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+	stBtnStatus& BtnStatus = (m_pEngrave->BtnStatus);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	double dAveX, dAveY;
+	CfPoint OfSt;
+
+	if ((BtnStatus.EngAuto.IsOnMking && !m_bEngTestF) || (BtnStatus.EngAuto.IsOnRead2d && !m_bEngTestF)) // 각인부 각인중
+	{
+		m_bEngTestF = TRUE;
+		General.bEngTest = TRUE;
+	}
+	else if ((!BtnStatus.EngAuto.IsOnMking && m_bEngTestF) || (!BtnStatus.EngAuto.IsOnRead2d && m_bEngTestF))
+	{
+		m_bEngTestF = FALSE;
+		General.bEngTest = FALSE;
+		m_bEngFdWriteF = FALSE;
+		pView->MpeWrite(_T("MB44011A"), 0); // 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+		pDoc->LogAuto(_T("PC: 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+	}
+
+	BOOL bOn = pView->m_mgrFeeding->IsDoneWriteFdOffsetEng();
+
+	if (bOn && !General.bEngFdWrite)		// 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+	{
+		General.bEngFdWrite = TRUE;
+	}
+	else if (!bOn && General.bEngFdWrite)
+	{
+		General.bEngFdWrite = FALSE;
+	}
+
+	if (General.bEngFdWrite && !m_bEngFdWriteF)
+	{
+		m_bEngFdWriteF = TRUE;
+
+		pDoc->GetEngOffset(OfSt);
+
+		dAveX = OfSt.x;
+		dAveY = OfSt.y;
+
+		pView->SetEngOffset(OfSt);
+
+		pDoc->LogAuto(_T("PC: 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)"));
+		pView->MpeWrite(_T("ML45078"), (long)(dAveX*1000.0));	// 각인부 Feeding 롤러 Offset(*1000, +:더 보냄, -덜 보냄, PC가 쓰고 PLC에서 지움)
+		pView->MpeWrite(_T("MB44011A"), 0);						// 각인부 Feeding Offset Write 완료(PC가 확인하고 Reset시킴.)
+		Sleep(10);
+	}
+	else if (!General.bEngFdWrite && m_bEngFdWriteF)
+	{
+		m_bEngFdWriteF = FALSE;
+		General.bEngTest = FALSE;
+	}
+}
+
+void CManagerProcedure::DoAutoChkCycleStop()
+{
+	stGeneral& General = (pView->m_mgrStatus->General);
+	CManagerFeeding* pMgrFd = (pView->m_mgrFeeding);
+
+	if (General.bCycleStop && !m_bCycleStopF)
+	{
+		m_bCycleStopF = TRUE;
+		pView->Buzzer(TRUE);
+		if (!pView->m_sAlmMsg.IsEmpty())
+		{
+			pDoc->LogAuto(pView->m_sAlmMsg);
+			pView->MsgBox(pView->m_sAlmMsg, 0, 0, DEFAULT_TIME_OUT, FALSE);
+
+			if (pView->m_sAlmMsg == pMgrFd->GetAoiAlarmReStartMsg(0) || pView->m_sAlmMsg == pMgrFd->GetAoiAlarmReTestMsg(0))
+			{
+				pView->ChkReTestAlarmOnAoiUp();
+			}
+			else if (pView->m_sAlmMsg == pMgrFd->GetAoiAlarmReStartMsg(1) || pView->m_sAlmMsg == pMgrFd->GetAoiAlarmReTestMsg(1))
+			{
+				pView->ChkReTestAlarmOnAoiDn();
+			}
+		}
+		pView->m_sAlmMsg = _T("");
+		pView->m_sIsAlmMsg = _T("");
+		pView->m_sPrevAlmMsg = _T("");
+	}
+	else if (!General.bCycleStop && m_bCycleStopF)
+	{
+		m_bCycleStopF = FALSE;
+	}
+}
+
+void CManagerProcedure::DoAutoDispMsg()
+{
+	BOOL bDispMsg = FALSE;
+	int idx, nStepDispMsg;
+
+	// [2] : 고정불량-상, [3] : 고정불량-하, [5] : nSerialL <= 0, [6] : CopyDefImg 우측 Camera,  
+	// [7] : CopyDefImg 좌측 Camera, [8] : 보이스코일(좌) 초기위치 이동, [9] : 보이스코일(우) 초기위치 이동
+	for (idx = 0; idx < 10; idx++)
+	{
+		if (m_bDispMsgDoAuto[idx])
+		{
+			bDispMsg = TRUE;
+			nStepDispMsg = m_nStepDispMsg[idx];
+			break;
+		}
+	}
+	if (bDispMsg && IsRun())
+	{
+		switch (nStepDispMsg)
+		{
+		case 0:
+			break;
+		case FROM_DOMARK0:
+			m_bDispMsgDoAuto[8] = FALSE;
+			m_nStepDispMsg[8] = 0;
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
+			pView->DispMain(_T("정 지"), RGB_RED);
+			break;
+		case FROM_DOMARK1:
+			m_bDispMsgDoAuto[9] = FALSE;
+			m_nStepDispMsg[9] = 0;
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
+			pView->DispMain(_T("정 지"), RGB_RED);
+			break;
+		case FROM_DISPDEFIMG:
+			m_bDispMsgDoAuto[0] = FALSE;
+			m_nStepDispMsg[0] = 0;
+			pView->Stop();
+			pView->MsgBox(_T("버퍼(우) Serial이 맞지않습니다."));
+			break;
+		case FROM_DISPDEFIMG + 1:
+			m_bDispMsgDoAuto[1] = FALSE;
+			m_nStepDispMsg[1] = 0;
+			pView->Stop();
+			pView->MsgBox(_T("버퍼(우) Serial이 맞지않습니다."));
+			break;
+		case FROM_DISPDEFIMG + 2: // IsFixUp
+			m_bDispMsgDoAuto[2] = FALSE;
+			m_nStepDispMsg[2] = 0;
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
+			//m_bSwStopNow = TRUE;
+			//m_bSwRunF = FALSE;
+			pView->DispMain(_T("정 지"), RGB_RED);
+			pView->MsgBox(m_sFixMsg[0]);
+			m_sFixMsg[0] = _T("");
+			break;
+		case FROM_DISPDEFIMG + 3: // IsFixDn
+			m_bDispMsgDoAuto[3] = FALSE;
+			m_nStepDispMsg[3] = 0;
+			pView->Buzzer(TRUE, 0);
+			TowerLamp(RGB_RED, TRUE);
+			pView->Stop();
+			//m_bSwStopNow = TRUE;
+			//m_bSwRunF = FALSE;
+			pView->DispMain(_T("정 지"), RGB_RED);
+			pView->MsgBox(m_sFixMsg[1]);
+			m_sFixMsg[1] = _T("");
+			break;
+		case FROM_DISPDEFIMG + 4:
+			//m_bDispMsgDoAuto[4] = FALSE;
+			//m_nStepDispMsg[4] = 0;
+			//Stop();
+			//TowerLamp(RGB_RED, TRUE);
+			//Buzzer(TRUE, 0);
+			//m_bSwStopNow = TRUE;
+			//m_bSwRunF = FALSE;
+			//pView->DispStsBar(_T("정지-41"), 0);
+			//DispMain(_T("정 지"), RGB_RED);	
+			//MsgBox(m_sFixMsg);
+			//m_sFixMsg = _T("");
+			break;
+		case FROM_DISPDEFIMG + 5:
+			m_bDispMsgDoAuto[5] = FALSE;
+			m_nStepDispMsg[5] = 0;
+			pView->Stop();
+			pView->MsgBox(_T("버퍼(좌) Serial이 맞지않습니다."));
+			break;
+		case FROM_DISPDEFIMG + 6:
+			m_bDispMsgDoAuto[6] = FALSE;
+			m_nStepDispMsg[6] = 0;
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
+			//m_bSwStopNow = TRUE;
+			//m_bSwRunF = FALSE;
+			pView->DispMain(_T("정 지"), RGB_RED);
+			break;
+		case FROM_DISPDEFIMG + 7:
+			m_bDispMsgDoAuto[7] = FALSE;
+			m_nStepDispMsg[7] = 0;
+			pView->Buzzer(TRUE, 0);
+			pView->Stop();
+			//m_bSwStopNow = TRUE;
+			//m_bSwRunF = FALSE;
+			pView->DispMain(_T("정 지"), RGB_RED);
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::DoAutoChkShareVsFolder()	// 잔량처리 시 계속적으로 반복해서 이함수가 호출됨으로 좌우 마킹 인덱스 동일 현상 발생.(case AT_LP + 8:)
+{
+	if (!pView->m_mgrStatus)
+		return;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+	stBtnPush& BtnPush = (pView->m_mgrFeeding->Btn);
+
+	CString sLot, sLayerUp, sLayerDn;
+	BOOL bDualTestInner;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	int nSerial = 0;
+	CString sNewLot;
+	int nNewLot = 0;
+	BOOL bNewModel = FALSE;
+
+	switch (General.nStepAuto)
+	{
+	case 0:
+		BtnPush.bSwRun = FALSE;
+		BtnPush.bSwStop = TRUE;
+		General.nStepAuto++;
+		break;
+	case 1:
+		if (IsReady() || IsAuto())		// 운전준비
+		{
+			TowerLamp(RGB_YELLOW, TRUE, TRUE);
+			General.nStepAuto++;
+		}
+		break;
+	case 2:
+		if (IsRun())
+			General.nStepAuto++;
+		break;
+	case 3:
+		ClrDispMsg();
+		TowerLamp(RGB_YELLOW, TRUE, FALSE);
+		General.nStepAuto++;
+		break;
+	case 4:
+		if (IsRun())		// 초기운전
+		{
+			if (!IsAoiLdRun())
+			{
+				Stop();
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+			else
+			{
+				ResetWinker(); // 20151126 : 운전스위치 램프 동작 문제로 수정.
+
+				TowerLamp(RGB_GREEN, TRUE, TRUE);
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (pDoc->WorkingInfo.LastJob.bDualTest)
+					{
+						if (m_sDispMain != _T("양면샘플"))
+							DispMain(_T("양면샘플"), RGB_GREEN);
+					}
+					else
+					{
+						if (m_sDispMain != _T("단면샘플"))
+							DispMain(_T("단면샘플"), RGB_GREEN);
+					}
+				}
+				else if (pDoc->GetTestMode() == MODE_INNER)
+				{
+					if (m_sDispMain != _T("내층검사"))
+						DispMain(_T("내층검사"), RGB_GREEN);
+				}
+				else if (pDoc->GetTestMode() == MODE_OUTER)
+				{
+					if (m_sDispMain != _T("외층검사"))
+						DispMain(_T("외층검사"), RGB_GREEN);
+				}
+				else if (pDoc->WorkingInfo.LastJob.bDualTest)
+				{
+					if (m_sDispMain != _T("양면검사"))
+						DispMain(_T("양면검사"), RGB_GREEN);
+				}
+				else
+				{
+					if (m_sDispMain != _T("단면검사"))
+						DispMain(_T("단면검사"), RGB_GREEN);
+					//if(m_sDispMain != _T("초기운전")
+					//	DispMain(_T("초기운전", RGB_GREEN);
+				}
+				m_nVsBufLastSerial[0] = GetVsUpBufLastSerial();
+				if (bDualTest)
+					m_nVsBufLastSerial[1] = GetVsDnBufLastSerial();
+
+				SetListBuf();
+
+				if (MODE_INNER == pDoc->GetTestMode() || MODE_OUTER == pDoc->GetTestMode()) // Please modify for outer mode.-20221226
+				{
+					GetCurrentInfoEng();
+					if (m_pDlgMenu01)
+						m_pDlgMenu01->UpdateData();
+				}
+
+
+				General.nStepAuto = AT_LP;
+			}
+		}
+		else
+			Winker(MN_RUN); // Run Button - 20151126 : 운전스위치 램프 동작 문제로 수정.
+		break;
+
+	case AT_LP + (AtLpVsIdx::ChkShare) :
+		if (IsShare()) // ChkShare()
+		{
+			bPcrInShare[0] = FALSE;
+			bPcrInShare[1] = FALSE;
+
+			if (IsShareUp()) // 검사부(상) 검사중
+			{
+				nSerial = GetShareUp();
+				if (nSerial > 0)
+				{
+					if (pView->m_bSerialDecrese)
+					{
+						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelSharePcrUp();
+						}
+						else
+						{
+							//m_nShareUpS = nSerial;
+							bPcrInShare[0] = TRUE;
+						}
+					}
+					else
+					{
+						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelSharePcrUp();
+						}
+						else
+						{
+							//m_nShareUpS = nSerial;
+							bPcrInShare[0] = TRUE;
+						}
+					}
+				}
+				//else
+				//{
+				//	m_bLoadShare[0] = FALSE;
+				//}
+			}
+			//else
+			//	m_bLoadShare[0] = FALSE;
+
+
+			if (bDualTest)
+			{
+				if (IsShareDn()) // 검사부(하) 검사중
+				{
+					nSerial = GetShareDn();
+					if (nSerial > 0)
+					{
+						if (pView->m_bSerialDecrese)
+						{
+							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelSharePcrDn();
+							}
+							else
+							{
+								//m_nShareDnS = nSerial;
+								bPcrInShare[1] = TRUE;
+							}
+						}
+						else
+						{
+							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelSharePcrDn();
+							}
+							else
+							{
+								//m_nShareDnS = nSerial;
+								bPcrInShare[1] = TRUE;
+							}
+						}
+					}
+					//else
+					//{
+					//	m_bLoadShare[1] = FALSE;
+					//}
+				}
+				//else
+				//	m_bLoadShare[1] = FALSE;
+
+				if (bPcrInShare[0] || bPcrInShare[1])
+					General.nStepAuto++;
+			}
+			else
+			{
+				if (bPcrInShare[0])
+					General.nStepAuto++;
+			}
+		}
+		else // if (IsShare())
+		{
+			if (IsShareVs())
+				General.nStepAuto = AT_LP + (AtLpVsIdx::ChkShareVs);
+		}
+									   break;
+
+	case AT_LP + (AtLpVsIdx::ChkShare) + 1:
+		//if (!m_bCont) // 이어가기 아닌 경우.
+		//{
+		//	if (!ChkStShotNum())
+		//	{
+		//		Stop();
+		//		TowerLamp(RGB_YELLOW, TRUE);
+		//	}
+		//}
+		General.nStepAuto++;
+		break;
+	case AT_LP + (AtLpVsIdx::ChkShare) + 2:
+		//if (IsRun())
+	{
+		//m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
+		General.nStepAuto++;
+	}
+	break;
+
+	case AT_LP + (AtLpVsIdx::ChkShare) + 3:
+		Shift2DummyBuf();			// PCR 이동(Share->Buffer)
+		General.nStepAuto = AT_LP + (AtLpVsIdx::ChkShare);
+		break;
+
+	case AT_LP + (AtLpVsIdx::ChkShareVs) :
+		if (IsShareVs()) // ChkShareVs()
+		{
+			bPcrInShareVs[0] = FALSE;
+			bPcrInShareVs[1] = FALSE;
+
+			if (IsShareVsUp()) // 검사부(상) 검사중
+			{
+				nSerial = GetShareVsUp();
+				if (nSerial > 0)
+				{
+					if (pView->m_bSerialDecrese)
+					{
+						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelShareVsPcrUp();
+						}
+						else
+						{
+							m_nShareUpS = nSerial;
+							bPcrInShareVs[0] = TRUE;
+						}
+					}
+					else
+					{
+						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelShareVsPcrUp();
+						}
+						else
+						{
+							m_nShareUpS = nSerial;
+							bPcrInShareVs[0] = TRUE;
+						}
+					}
+				}
+				//else
+				//{
+				//	m_bLoadShareVs[0] = FALSE;
+				//}
+			}
+			//else
+			//	m_bLoadShareVs[0] = FALSE;
+
+
+			if (bDualTest)
+			{
+				if (IsShareVsDn()) // 검사부(하) 검사중
+				{
+					nSerial = GetShareVsDn();
+					if (nSerial > 0)
+					{
+						if (pView->m_bSerialDecrese)
+						{
+							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelShareVsPcrDn();
+							}
+							else
+							{
+								m_nShareDnS = nSerial;
+								bPcrInShareVs[1] = TRUE;
+							}
+						}
+						else
+						{
+							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelShareVsPcrDn();
+							}
+							else
+							{
+								m_nShareDnS = nSerial;
+								bPcrInShareVs[1] = TRUE;
+							}
+						}
+					}
+					//else
+					//{
+					//	m_bLoadShareVs[1] = FALSE;
+					//}
+				}
+				//else
+				//	m_bLoadShareVs[1] = FALSE;
+
+				if (bPcrInShareVs[0] || bPcrInShareVs[1])
+					General.nStepAuto++;
+			}
+			else
+			{
+				if (bPcrInShareVs[0])
+					General.nStepAuto++;
+			}
+		}
+		else // if (IsShare())
+		{
+			if (!m_bLastProc)
+			{
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
+					nSerial = GetShareVsUp();
+
+					if (bDualTest)
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else if (ChkLastProcFromUp())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->m_ListBuf[0].GetLast();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->m_ListBuf[1].GetLast();
+						}
+					}
+					else
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->m_ListBuf[0].GetLast();
+						}
+					}
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+					}
+
+					General.nStepAuto++;
+				}
+			}
+			else // if (!m_bLastProc)
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+					}
+				}
+
+				m_bWaitPcr[0] = FALSE; // 향후 제거해야 할 flag
+				m_bWaitPcr[1] = FALSE;
+				General.nStepAuto++;
+			}
+
+			if (MODE_INNER == pDoc->GetTestMode())
+			{
+				if (IsSetLotEnd())
+					nSerial = GetLotEndSerial();
+				else
+					nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+				if (ChkLastProc())
+				{
+					if (ChkLastProcFromEng())
+					{
+						if (!IsSetLotEnd())
+							SetLotEnd(nSerial);
+					}
+				}
+			}
+		}
+										 break;
+
+	case AT_LP + (AtLpVsIdx::ChkShareVs) + 1:
+		if (!m_bCont) // 이어가기 아닌 경우.
+		{
+			if (!ChkStShotNum())
+			{
+				Stop();
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+		}
+		General.nStepAuto++;
+		break;
+	case AT_LP + (AtLpVsIdx::ChkShareVs) + 2:
+		//if (IsRun())
+	{
+		m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
+		General.nStepAuto++;
+	}
+	break;
+
+	case AT_LP + (AtLpVsIdx::ChkShareVs) + 3:
+		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		Shift2Buf();			// PCR 이동(Share->Buffer)
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + (AtLpVsIdx::UpdateReelmap) :
+		//if (!IsRun())
+		//	break;
+
+		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+											if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+											{
+												Sleep(100);
+												break;
+											}
+
+											if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+											{
+												if (m_bTHREAD_MAKE_ITS_FILE_UP) // Write Reelmap
+													break;
+
+												if (bDualTest)
+												{
+													if (m_bTHREAD_MAKE_ITS_FILE_DN)
+														break;
+												}
+											}
+
+											General.nStepAuto++;
+
+											if (m_nShareUpS > 0)
+											{
+												m_nShareUpCnt++;
+
+												if (pDoc->GetCurrentInfoEng())
+												{
+													if (pDoc->GetTestMode() == MODE_OUTER)
+														pDoc->GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
+												}
+
+												bNewModel = GetAoiUpInfo(m_nShareUpS, &nNewLot); // Buffer에서 PCR파일의 헤드 정보를 얻음.
+
+												if (bNewModel)	// AOI 정보(AoiCurrentInfoPath) -> AOI Feeding Offset
+												{
+													m_bNewModel = TRUE;
+													InitInfo();
+													ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+
+													pDoc->GetCamPxlRes();
+
+													if (IsLastJob(0)) // Up
+													{
+														pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+															pDoc->WorkingInfo.LastJob.sModelUp,
+															pDoc->WorkingInfo.LastJob.sLayerUp);
+														pDoc->m_Master[0].LoadMstInfo();
+
+														if (m_pEngrave)
+															m_pEngrave->SwMenu01UpdateWorking(TRUE);
+
+
+														if (pDoc->GetTestMode() == MODE_OUTER)
+														{
+															pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+																pDoc->WorkingInfo.LastJob.sModelUp,
+																pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+															pDoc->m_MasterInner[0].LoadMstInfo();
+														}
+													}
+
+													if (IsLastJob(1)) // Dn
+													{
+														pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+															pDoc->WorkingInfo.LastJob.sModelDn,
+															pDoc->WorkingInfo.LastJob.sLayerDn,
+															pDoc->WorkingInfo.LastJob.sLayerUp);
+														pDoc->m_Master[1].LoadMstInfo();
+
+														if (pDoc->GetTestMode() == MODE_OUTER)
+														{
+															pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+																pDoc->WorkingInfo.LastJob.sModelUp,
+																pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+																pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+															pDoc->m_MasterInner[0].LoadMstInfo();
+														}
+													}
+
+													SetAlignPos();
+
+													InitReelmap();
+
+													if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+														InitReelmapInner();
+
+													ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
+
+													if (m_pDlgMenu01)
+													{
+														m_pDlgMenu01->InitGL();
+														m_bDrawGL_Menu01 = TRUE;
+														m_pDlgMenu01->RefreshRmap();
+														m_pDlgMenu01->InitCadImg();
+														m_pDlgMenu01->SetPnlNum();
+														m_pDlgMenu01->SetPnlDefNum();
+													}
+
+													if (m_pDlgMenu02)
+													{
+														m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
+														m_pDlgMenu02->InitCadImg();
+													}
+
+													if (pDoc->GetTestMode() == MODE_OUTER)
+													{
+														if (m_pDlgMenu06)
+														{
+															m_pDlgMenu06->InitGL();
+															m_bDrawGL_Menu06 = TRUE;
+															m_pDlgMenu06->RefreshRmap();
+															m_pDlgMenu06->InitCadImg();
+															m_pDlgMenu06->SetPnlNum();
+															m_pDlgMenu06->SetPnlDefNum();
+														}
+													}
+												}
+												else
+												{
+													if (m_nShareUpS == 1)
+													{
+														pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+														if ((pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
+														{
+															if (pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE)
+																pView->MsgBox(_T("현재 마킹부는 일반 모드 인데, \r\n상면 AOI는 DTS 모드에서 검사를 진행하였습니다."));
+															else
+																pView->MsgBox(_T("현재 마킹부는 DTS 모드 인데, \r\n상면 AOI는 일반 모드에서 검사를 진행하였습니다."));
+
+															Stop();
+															TowerLamp(RGB_RED, TRUE);
+															break;
+														}
+													}
+												}
+
+												if (nNewLot)
+												{
+													if (!pDoc->m_bNewLotShare[0])
+													{
+														pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
+														if (!bDualTest)
+															OpenReelmapFromBuf(m_nShareUpS);
+													}
+												}
+
+												LoadPcrUp(m_nShareUpS);				// Default: From Buffer, TRUE: From Share
+
+												if (pDoc->m_ListBuf[0].nTot <= pDoc->m_ListBuf[1].nTot)
+												{
+													UpdateReelmap(m_nShareUpS); // 시리얼파일의 정보로 릴맵을 만듬
+												}
+
+												//if (!bDualTest)
+												//{
+												//	if (m_nShareUpS != m_nShareUpSprev)
+												//	{
+												//		m_nShareUpSprev = m_nShareUpS;
+												//		UpdateReelmap(m_nShareUpS); // 시리얼파일의 정보로 릴맵을 만듬 
+												//	}
+												//}
+
+												if (!m_bLastProc)
+												{
+													if (ChkLastProc())
+													{
+														m_nLastProcAuto = LAST_PROC;
+														m_bLastProc = TRUE;
+
+														if (bDualTest)
+														{
+															if (ChkLastProcFromEng())
+															{
+																if (IsSetLotEnd())
+																	nSerial = GetLotEndSerial();
+																else
+																	nSerial = pDoc->GetCurrentInfoEngShotNum();
+															}
+															else if (ChkLastProcFromUp())
+															{
+																if (IsSetLotEnd())
+																	nSerial = GetLotEndSerial();
+																else
+																	nSerial = pDoc->m_ListBuf[0].GetLast();
+															}
+															else
+															{
+																if (IsSetLotEnd())
+																	nSerial = GetLotEndSerial();
+																else
+																	nSerial = pDoc->m_ListBuf[1].GetLast();
+															}
+														}
+														else
+														{
+															if (ChkLastProcFromEng())
+															{
+																if (IsSetLotEnd())
+																	nSerial = GetLotEndSerial();
+																else
+																	nSerial = pDoc->GetCurrentInfoEngShotNum();
+															}
+															else
+															{
+																if (IsSetLotEnd())
+																	nSerial = GetLotEndSerial();
+																else
+																	nSerial = pDoc->m_ListBuf[0].GetLast();
+															}
+														}
+
+														if (!IsSetLotEnd())
+														{
+															SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+														}
+													}
+												}
+												else
+												{
+													if (ChkLastProcFromEng())
+													{
+														if (IsSetLotEnd())
+															nSerial = GetLotEndSerial();
+														else
+															nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+														if (!IsSetLotEnd())
+														{
+															SetLotEnd(nSerial);
+														}
+													}
+												}
+											}
+											break;
+
+	case AT_LP + (AtLpVsIdx::UpdateReelmap) + 1:
+		//if (!IsRun())
+		//	break;
+
+		if (!bDualTest)
+		{
+			General.nStepAuto++;
+			break;
+		}
+
+		if (m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (m_bTHREAD_REELMAP_YIELD_DN || m_bTHREAD_REELMAP_YIELD_ALLUP || m_bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		General.nStepAuto++;
+
+		if (IsSetLotEnd())
+		{
+			if (m_nShareDnS > GetLotEndSerial())
+				break;
+		}
+
+		if (m_nShareDnS > 0)
+		{
+			if (m_nShareDnS % 2)
+				m_nShareDnSerial[0] = m_nShareDnS; // 홀수
+			else
+				m_nShareDnSerial[1] = m_nShareDnS; // 짝수
+			m_nShareDnCnt++;
+
+
+			bNewModel = GetAoiDnInfo(m_nShareDnS, &nNewLot);
+
+			if (bNewModel)	// AOI 정보(AoiCurrentInfoPath) -> AOI Feeding Offset
+			{
+				//MsgBox(_T("신규 모델에 의한 AOI(하)에서 로트 분리가 되었습니다.\r\n이전 로트를 잔량처리 합니다.");
+				InitInfo();
+				ResetMkInfo(1); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+				ModelChange(1); // 0 : AOI-Up , 1 : AOI-Dn
+
+			}
+			else
+			{
+				if (m_nShareDnS == 1)
+				{
+					pDoc->m_nAoiCamInfoStrPcs[1] = GetAoiDnCamMstInfo();
+					if ((pDoc->m_nAoiCamInfoStrPcs[1] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
+					{
+						if (pDoc->m_nAoiCamInfoStrPcs[1] == 1 ? TRUE : FALSE)
+							pView->MsgBox(_T("현재 마킹부는 일반 모드 인데, \r\n하면 AOI는 DTS 모드에서 검사를 진행하였습니다."));
+						else
+							pView->MsgBox(_T("현재 마킹부는 DTS 모드 인데, \r\n하면 AOI는 일반 모드에서 검사를 진행하였습니다."));
+
+						Stop();
+						TowerLamp(RGB_RED, TRUE);
+						break;
+					}
+				}
+			}
+
+			if (nNewLot)
+			{
+				if (!pDoc->m_bNewLotShare[1])
+				{
+					pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
+					if (bDualTest)
+						OpenReelmapFromBuf(m_nShareDnS);
+				}
+			}
+
+			LoadPcrDn(m_nShareDnS);
+
+			if (pDoc->m_ListBuf[1].nTot <= pDoc->m_ListBuf[0].nTot)
+			{
+				UpdateReelmap(m_nShareDnS); // 시리얼파일의 정보로 릴맵을 만듬
+			}
+
+			//if (bDualTest)
+			//{
+			//	if (m_nShareDnS != m_nShareDnSprev)
+			//	{
+			//		m_nShareDnSprev = m_nShareDnS;
+			//		UpdateReelmap(m_nShareDnS);  // 시리얼파일의 정보로 릴맵을 만듬  // After inspect bottom side.
+			//	}
+			//}
+
+
+			if (!m_bLastProc)
+			{
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
+
+					if (ChkLastProcFromEng())
+					{
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
+						else
+							nSerial = pDoc->GetCurrentInfoEngShotNum();
+					}
+					else if (ChkLastProcFromUp())
+					{
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
+						else
+							nSerial = pDoc->m_ListBuf[0].GetLast();
+					}
+					else
+					{
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
+						else
+							nSerial = pDoc->m_ListBuf[1].GetLast();
+					}
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+					}
+				}
+			}
+			else
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+					}
+				}
+			}
+		}
+		break;
+
+	case AT_LP + (AtLpVsIdx::UpdateReelmap) + 2:
+		General.nStepAuto++;
+		if (m_nShareUpS > 0)
+		{
+			if (pView->m_pDlgFrameHigh)
+				pView->m_pDlgFrameHigh->SetAoiLastShot(0, m_nShareUpS);
+		}
+		if (bDualTest)
+		{
+			if (m_nShareDnS > 0)
+			{
+				if (IsSetLotEnd())
+				{
+					if (m_nShareDnS > GetLotEndSerial())
+						break;
+				}
+
+				if (pView->m_pDlgFrameHigh)
+					pView->m_pDlgFrameHigh->SetAoiLastShot(1, m_nShareDnS);
+			}
+		}
+		break;
+
+	case AT_LP + (AtLpVsIdx::UpdateReelmap) + 3:
+		//if (IsRun())
+	{
+		if (bDualTest)
+		{
+			if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+				break;
+		}
+		else
+		{
+			if (m_bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
+				break;
+		}
+		General.nStepAuto++;
+	}
+	break;
+
+	case AT_LP + (AtLpVsIdx::MakeItsFile) :
+		//if (IsRun())
+	{
+		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (!bDualTest)
+			{
+				if (m_nShareUpS > 0)
+					MakeItsFile(m_nShareUpS); // BOOL CReelMap::MakeItsFile(int nSerial, int nLayer) // RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+			}
+			else
+			{
+				if (m_nShareDnS > 0)
+					MakeItsFile(m_nShareDnS); // BOOL CReelMap::MakeItsFile(int nSerial, int nLayer) // RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+			}
+		}
+
+		General.nStepAuto++;
+	}
+										  break;
+
+	case AT_LP + (AtLpVsIdx::MakeItsFile) + 1:
+		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (m_bTHREAD_MAKE_ITS_FILE_UP) // makeIts
+				break;
+
+			if (pDoc->WorkingInfo.LastJob.bDualTest)
+			{
+				if (m_bTHREAD_MAKE_ITS_FILE_DN) // makeIts
+					break;
+			}
+		}
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + (AtLpVsIdx::ResetShare) :
+		m_nShareUpS = 0;
+		m_nShareDnS = 0;
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + (AtLpVsIdx::ResetShare) + 1:
+		m_bLoadShare[0] = FALSE;
+		m_bLoadShare[1] = FALSE;
+		General.nStepAuto = AT_LP + (AtLpVsIdx::ChkShare);
+		break;
+
+
+	case LAST_PROC_VS_ALL:			 // 잔량처리 3
+		m_nDummy[0] = 0;
+		m_nDummy[1] = 0;
+		m_bChkLastProcVs = TRUE;
+		TowerLamp(RGB_GREEN, TRUE);
+		DispMain(_T("상면VS잔량"), RGB_GREEN);
+		if (m_nAoiLastSerial[0] < 1)
+			m_nAoiLastSerial[0] = GetAoiUpSerial();
+		if (!IsSetLotEnd())
+			SetLotEnd(m_nAoiLastSerial[0]);
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 1:
+		if (IsVsUp())
+			General.nStepAuto++;
+		else
+			General.nStepAuto = m_nPrevStepAuto;
+		break;
+
+	case LAST_PROC_VS_ALL + 2:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 3:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 4:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 5:
+		General.nStepAuto = m_nPrevStepAuto;
+		break;
+	}
+}
+
+void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-잔량처리 시 계속적으로 반복해서 이함수가 호출됨으로 좌우 마킹 인덱스 동일 현상 발생.(case AT_LP + 8:)
+{
+	CString sLot, sLayerUp, sLayerDn;
+	BOOL bDualTestInner;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	int nSerial = 0;
+	CString sNewLot;
+	int nNewLot = 0;
+	//BOOL bPcrInShare[2];
+	BOOL bNewModel = FALSE;
+
+	switch (General.nStepAuto)
+	{
+	case 0:
+		m_bSwRun = FALSE;
+		m_bSwStop = TRUE;
+		General.nStepAuto++;
+		break;
+	case 1:
+		if (IsReady() || IsAuto())		// 운전준비
+		{
+			TowerLamp(RGB_YELLOW, TRUE, TRUE);
+			General.nStepAuto++;
+		}
+		break;
+	case 2:
+		if (IsRun())
+			General.nStepAuto++;
+		break;
+	case 3:
+		ClrDispMsg();
+		TowerLamp(RGB_YELLOW, TRUE, FALSE);
+		General.nStepAuto++;
+		break;
+	case 4:
+		if (IsRun())		// 초기운전
+		{
+			if (!IsAoiLdRun())
+			{
+				Stop();
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+			else
+			{
+				ResetWinker(); // 20151126 : 운전스위치 램프 동작 문제로 수정.
+
+				TowerLamp(RGB_GREEN, TRUE, TRUE);
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (pDoc->WorkingInfo.LastJob.bDualTest)
+					{
+						if (m_sDispMain != _T("양면샘플"))
+							DispMain(_T("양면샘플"), RGB_GREEN);
+					}
+					else
+					{
+						if (m_sDispMain != _T("단면샘플"))
+							DispMain(_T("단면샘플"), RGB_GREEN);
+					}
+				}
+				else if (pDoc->GetTestMode() == MODE_INNER)
+				{
+					if (m_sDispMain != _T("내층검사"))
+						DispMain(_T("내층검사"), RGB_GREEN);
+				}
+				else if (pDoc->GetTestMode() == MODE_OUTER)
+				{
+					if (m_sDispMain != _T("외층검사"))
+						DispMain(_T("외층검사"), RGB_GREEN);
+				}
+				else if (pDoc->WorkingInfo.LastJob.bDualTest)
+				{
+					if (m_sDispMain != _T("양면검사"))
+						DispMain(_T("양면검사"), RGB_GREEN);
+				}
+				else
+				{
+					if (m_sDispMain != _T("단면검사"))
+						DispMain(_T("단면검사"), RGB_GREEN);
+					//if(m_sDispMain != _T("초기운전")
+					//	DispMain(_T("초기운전", RGB_GREEN);
+				}
+				m_nVsBufLastSerial[0] = GetVsUpBufLastSerial();
+				if (bDualTest)
+					m_nVsBufLastSerial[1] = GetVsDnBufLastSerial();
+
+				SetListBuf();
+
+				if (MODE_INNER == pDoc->GetTestMode() || MODE_OUTER == pDoc->GetTestMode()) // Please modify for outer mode.-20221226
+				{
+					GetCurrentInfoEng();
+					if (m_pDlgMenu01)
+						m_pDlgMenu01->UpdateData();
+				}
+
+
+				General.nStepAuto = AT_LP;
+			}
+		}
+		else
+			Winker(MN_RUN); // Run Button - 20151126 : 운전스위치 램프 동작 문제로 수정.
+		break;
+
+	case AT_LP:
+		if (IsShare()) // ChkShare()
+		{
+			bPcrInShare[0] = FALSE;
+			bPcrInShare[1] = FALSE;
+
+			//if (IsShareUp() && IsTestDoneUp() && !m_bAoiTestF[0]) // 검사부(상) 검사중
+			if (IsShareUp())
+			{
+				nSerial = GetShareUp();
+				if (nSerial > 0)
+				{
+					if (pView->m_bSerialDecrese)
+					{
+						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelSharePcrUp();
+						}
+						else
+						{
+							m_nShareUpS = nSerial;
+							bPcrInShare[0] = TRUE;
+						}
+					}
+					else
+					{
+						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+						{
+							// Delete PCR File
+							pDoc->DelSharePcrUp();
+						}
+						else
+						{
+							m_nShareUpS = nSerial;
+							bPcrInShare[0] = TRUE;
+						}
+					}
+				}
+				else
+				{
+					m_bLoadShare[0] = FALSE;
+				}
+			}
+			else
+				m_bLoadShare[0] = FALSE;
+
+
+			if (bDualTest)
+			{
+				//if (IsShareDn() && IsTestDoneDn() && !m_bAoiTestF[1]) // 검사부(하) 검사중
+				if (IsShareDn())
+				{
+					nSerial = GetShareDn();
+					if (nSerial > 0)
+					{
+						if (pView->m_bSerialDecrese)
+						{
+							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelSharePcrDn();
+							}
+							else
+							{
+								m_nShareDnS = nSerial;
+								bPcrInShare[1] = TRUE;
+							}
+						}
+						else
+						{
+							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
+							{
+								// Delete PCR File
+								pDoc->DelSharePcrDn();
+							}
+							else
+							{
+								m_nShareDnS = nSerial;
+								bPcrInShare[1] = TRUE;
+							}
+						}
+					}
+					else
+					{
+						m_bLoadShare[1] = FALSE;
+					}
+				}
+				else
+					m_bLoadShare[1] = FALSE;
+
+				if (bPcrInShare[0] || bPcrInShare[1])
+					General.nStepAuto++;
+			}
+			else
+			{
+				if (bPcrInShare[0])
+					General.nStepAuto++;
+			}
+		}
+		else // if (IsShare())
+		{
+			if (!m_bLastProc)
+			{
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
+					nSerial = GetShareUp();
+
+					//if (IsVs())
+					//{
+					//	if (m_nAoiLastSerial[0] < 1)
+					//		m_nAoiLastSerial[0] = nSerial;
+
+					//	m_nPrevStepAuto = General.nStepAuto;
+					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // 잔량처리 3
+					//	break;
+					//}
+					//else
+					{
+						if (bDualTest)
+						{
+							if (ChkLastProcFromEng())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->GetCurrentInfoEngShotNum();
+							}
+							else if (ChkLastProcFromUp())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[0].GetLast();
+							}
+							else
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[1].GetLast();
+							}
+						}
+						else
+						{
+							if (ChkLastProcFromEng())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->GetCurrentInfoEngShotNum();
+							}
+							else
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[0].GetLast();
+							}
+						}
+
+						if (!IsSetLotEnd()) // 20160810
+						{
+							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+											   //if (m_nAoiLastSerial[0] < 1)
+											   //m_nAoiLastSerial[0] = nSerial;
+						}
+
+						General.nStepAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+					//if (m_nLotEndSerial != nSerial)
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+						//if (m_nAoiLastSerial[0] < 1)
+						//m_nAoiLastSerial[0] = nSerial;
+					}
+				}
+
+				m_bWaitPcr[0] = FALSE;
+				m_bWaitPcr[1] = FALSE;
+				General.nStepAuto++;
+			}
+
+			if (MODE_INNER == pDoc->GetTestMode())
+			{
+				if (IsSetLotEnd())
+					nSerial = GetLotEndSerial();
+				else
+					nSerial = pDoc->GetCurrentInfoEngShotNum();
+				//SetLastSerialEng(nSerial);
+
+				if (ChkLastProc())
+				{
+					if (ChkLastProcFromEng())
+					{
+						//if (m_nLotEndSerial != nSerial)
+						if (!IsSetLotEnd())
+							SetLotEnd(nSerial);
+					}
+				}
+			}
+
+		}
+		break;
+
+	case AT_LP + 1:
+		if (!m_bCont) // 이어가기 아닌 경우.
+		{
+			if (!ChkStShotNum())
+			{
+				Stop();
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+		}
+		else
+		{
+			//if (!ChkContShotNum())
+			//{
+			//	Stop();
+			//	TowerLamp(RGB_YELLOW, TRUE);
+			//}
+		}
+		General.nStepAuto++;
+		break;
+	case AT_LP + 2:
+		if (IsRun())
+		{
+			m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
+			General.nStepAuto++;
+		}
+		break;
+
+	case AT_LP + 3:
+		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		Shift2Buf();			// PCR 이동(Share->Buffer)
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + 4:
+		if (!IsRun())
+			break;
+
+		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		{
+			//if (m_bTHREAD_UPDATE_REELMAP_INOUTER_UP) // Write Reelmap
+			if (m_bTHREAD_MAKE_ITS_FILE_UP)
+				break;
+
+			if (bDualTest)
+			{
+				if (m_bTHREAD_MAKE_ITS_FILE_DN)
+					break;
+			}
+		}
+
+		//if (!bDualTest)
+		//{
+		//	if (pDoc->GetTestMode() == MODE_OUTER)
+		//	{
+		//		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_INNER_UP) // Write Reelmap
+		//			break;
+
+		//		if (pDoc->WorkingInfo.LastJob.bDualTestInner)
+		//		{
+		//			if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
+		//				break;
+		//		}
+		//	}
+		//}
+
+		General.nStepAuto++;
+
+		if (m_nShareUpS > 0)
+		{
+			//if (m_nShareUpS % 2)
+			//	m_nShareUpSerial[0] = m_nShareUpS; // 홀수
+			//else
+			//	m_nShareUpSerial[1] = m_nShareUpS; // 짝수
+			m_nShareUpCnt++;
+
+			if (pDoc->GetCurrentInfoEng())
+			{
+				if (pDoc->GetTestMode() == MODE_OUTER)
+					pDoc->GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
+			}
+
+			bNewModel = GetAoiUpInfo(m_nShareUpS, &nNewLot); // Buffer에서 PCR파일의 헤드 정보를 얻음.
+
+			if (bNewModel)	// AOI 정보(AoiCurrentInfoPath) -> AOI Feeding Offset
+			{
+				m_bNewModel = TRUE;
+				InitInfo();
+				ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+
+				pDoc->GetCamPxlRes();
+
+				if (IsLastJob(0)) // Up
+				{
+					pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pDoc->WorkingInfo.LastJob.sModelUp,
+						pDoc->WorkingInfo.LastJob.sLayerUp);
+					pDoc->m_Master[0].LoadMstInfo();
+					//pDoc->m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.LastJob.sLotUp);
+
+
+					if (m_pEngrave)
+						m_pEngrave->SwMenu01UpdateWorking(TRUE);
+
+
+					if (pDoc->GetTestMode() == MODE_OUTER)
+					{
+						//GetCurrentInfoEng();
+						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->WorkingInfo.LastJob.sModelUp,
+							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+						pDoc->m_MasterInner[0].LoadMstInfo();
+					}
+				}
+
+				if (IsLastJob(1)) // Dn
+				{
+					pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pDoc->WorkingInfo.LastJob.sModelDn,
+						pDoc->WorkingInfo.LastJob.sLayerDn,
+						pDoc->WorkingInfo.LastJob.sLayerUp);
+					pDoc->m_Master[1].LoadMstInfo();
+					//pDoc->m_Master[1].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.LastJob.sLotDn);
+
+					if (pDoc->GetTestMode() == MODE_OUTER)
+					{
+						//GetCurrentInfoEng();
+						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->WorkingInfo.LastJob.sModelUp,
+							pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+						pDoc->m_MasterInner[0].LoadMstInfo();
+					}
+				}
+
+				SetAlignPos();
+
+				// 20220502 - end
+				InitReelmap();	// 20220421
+
+
+				if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+					InitReelmapInner();	// 20220421
+
+
+				ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
+
+				if (m_pDlgMenu01)
+				{
+					m_pDlgMenu01->InitGL();
+					m_bDrawGL_Menu01 = TRUE;
+					m_pDlgMenu01->RefreshRmap();
+					m_pDlgMenu01->InitCadImg();
+					m_pDlgMenu01->SetPnlNum();
+					m_pDlgMenu01->SetPnlDefNum();
+				}
+
+				if (m_pDlgMenu02)
+				{
+					m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
+					m_pDlgMenu02->InitCadImg();
+				}
+
+				if (pDoc->GetTestMode() == MODE_OUTER) // syd-20231121
+				{
+					if (m_pDlgMenu06)
+					{
+						m_pDlgMenu06->InitGL();
+						m_bDrawGL_Menu06 = TRUE;
+						m_pDlgMenu06->RefreshRmap();
+						m_pDlgMenu06->InitCadImg();
+						m_pDlgMenu06->SetPnlNum();
+						m_pDlgMenu06->SetPnlDefNum();
+					}
+				}
+
+			}
+			else
+			{
+				if (m_nShareUpS == 1)
+				{
+					pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+					if ((pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
+					{
+						if (pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE)
+							pView->MsgBox(_T("현재 마킹부는 일반 모드 인데, \r\n상면 AOI는 DTS 모드에서 검사를 진행하였습니다."));
+						else
+							pView->MsgBox(_T("현재 마킹부는 DTS 모드 인데, \r\n상면 AOI는 일반 모드에서 검사를 진행하였습니다."));
+
+						Stop();
+						TowerLamp(RGB_RED, TRUE);
+						break;
+
+					}
+				}
+			}
+
+			if (nNewLot)
+			{
+				if (!pDoc->m_bNewLotShare[0])
+				{
+					pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
+					if (!bDualTest)
+						OpenReelmapFromBuf(m_nShareUpS);
+				}
+			}
+
+			LoadPcrUp(m_nShareUpS);				// Default: From Buffer, TRUE: From Share
+
+			if (pDoc->m_ListBuf[0].nTot <= pDoc->m_ListBuf[1].nTot)
+			{
+				UpdateReelmap(m_nShareUpS); // 시리얼파일의 정보로 릴맵을 만듬
+			}
+
+			//if (!bDualTest)
+			//{
+			//	if (m_nShareUpS != m_nShareUpSprev)
+			//	{
+			//		m_nShareUpSprev = m_nShareUpS;
+			//		UpdateReelmap(m_nShareUpS); // 시리얼파일의 정보로 릴맵을 만듬 
+			//	}
+			//}
+
+			if (!m_bLastProc)
+			{
+				//if (!IsSetLotEnd())
+				//{
+				//	if (ChkLotEndUp(m_nShareUpS))// 파일의 내용 중에 Lot End (-2) 잔량처리를 체크함. (연속 3Pnl:-2) -> 로트완료 
+				//	{
+				//		SetLotEnd(m_nShareUpS - pDoc->AoiDummyShot[0]);
+				//		if (m_nAoiLastSerial[0] < 1)
+				//			m_nAoiLastSerial[0] = m_nShareUpS;
+
+				//		if (!bDualTest)
+				//		{
+				//			m_bLastProc = TRUE;
+				//			m_nLastProcAuto = LAST_PROC;
+				//		}
+				//	}
+				//}
+
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
+
+					//if (IsVs())
+					//{
+					//	if (m_nAoiLastSerial[0] < 1)
+					//		m_nAoiLastSerial[0] = m_nShareUpS;
+
+					//	m_nPrevStepAuto = General.nStepAuto;
+					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // 잔량처리 3
+					//	break;
+					//}
+					//else
+					{
+						if (bDualTest)
+						{
+							if (ChkLastProcFromEng())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->GetCurrentInfoEngShotNum();
+							}
+							else if (ChkLastProcFromUp())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[0].GetLast();
+							}
+							else
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[1].GetLast();
+							}
+						}
+						else
+						{
+							if (ChkLastProcFromEng())
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->GetCurrentInfoEngShotNum();
+							}
+							else
+							{
+								if (IsSetLotEnd())
+									nSerial = GetLotEndSerial();
+								else
+									nSerial = pDoc->m_ListBuf[0].GetLast();
+							}
+						}
+
+						if (!IsSetLotEnd()) // 20160810
+						{
+							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+											   //if (m_nAoiLastSerial[0] < 1)
+											   //m_nAoiLastSerial[0] = nSerial;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+					//if (m_nLotEndSerial != nSerial)
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+						//if (m_nAoiLastSerial[0] < 1)
+						//m_nAoiLastSerial[0] = nSerial;
+					}
+				}
+			}
+		}
+		else
+		{
+			//ClrDispMsg();
+			//AfxMessageBox(_T("Error : m_nShareUpS <= 0"));
+		}
+		break;
+
+	case AT_LP + 5:
+		if (!IsRun())
+			break;
+
+		if (!bDualTest)
+		{
+			General.nStepAuto++;
+			break;
+		}
+
+		if (m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		if (m_bTHREAD_REELMAP_YIELD_DN || m_bTHREAD_REELMAP_YIELD_ALLUP || m_bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
+
+		General.nStepAuto++;
+
+		//if (m_bChkLastProcVs)
+		//{
+		//	if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
+		//		break;
+		//}
+		//else
+		{
+			if (IsSetLotEnd())
+			{
+				//if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
+				if (m_nShareDnS > GetLotEndSerial())
+					break;
+			}
+		}
+
+
+		if (m_nShareDnS > 0)
+		{
+			if (m_nShareDnS % 2)
+				m_nShareDnSerial[0] = m_nShareDnS; // 홀수
+			else
+				m_nShareDnSerial[1] = m_nShareDnS; // 짝수
+			m_nShareDnCnt++;
+
+
+			bNewModel = GetAoiDnInfo(m_nShareDnS, &nNewLot);
+
+			if (bNewModel)	// AOI 정보(AoiCurrentInfoPath) -> AOI Feeding Offset
+			{
+				//MsgBox(_T("신규 모델에 의한 AOI(하)에서 로트 분리가 되었습니다.\r\n이전 로트를 잔량처리 합니다.");
+				InitInfo();
+				ResetMkInfo(1); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+				ModelChange(1); // 0 : AOI-Up , 1 : AOI-Dn
+
+			}
+			else
+			{
+				if (m_nShareDnS == 1)
+				{
+					pDoc->m_nAoiCamInfoStrPcs[1] = GetAoiDnCamMstInfo();
+					if ((pDoc->m_nAoiCamInfoStrPcs[1] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
+					{
+						if (pDoc->m_nAoiCamInfoStrPcs[1] == 1 ? TRUE : FALSE)
+							pView->MsgBox(_T("현재 마킹부는 일반 모드 인데, \r\n하면 AOI는 DTS 모드에서 검사를 진행하였습니다."));
+						else
+							pView->MsgBox(_T("현재 마킹부는 DTS 모드 인데, \r\n하면 AOI는 일반 모드에서 검사를 진행하였습니다."));
+
+						Stop();
+						TowerLamp(RGB_RED, TRUE);
+						break;
+					}
+				}
+			}
+
+			if (nNewLot)
+			{
+				if (!pDoc->m_bNewLotShare[1])
+				{
+					pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
+					if (bDualTest)
+						OpenReelmapFromBuf(m_nShareDnS);
+				}
+			}
+
+			LoadPcrDn(m_nShareDnS);
+
+			if (pDoc->m_ListBuf[1].nTot <= pDoc->m_ListBuf[0].nTot)
+			{
+				UpdateReelmap(m_nShareDnS); // 시리얼파일의 정보로 릴맵을 만듬
+			}
+
+			//if (bDualTest)
+			//{
+			//	if (m_nShareDnS != m_nShareDnSprev)
+			//	{
+			//		m_nShareDnSprev = m_nShareDnS;
+			//		UpdateReelmap(m_nShareDnS);  // 시리얼파일의 정보로 릴맵을 만듬  // After inspect bottom side.
+			//	}
+			//}
+
+
+			if (!m_bLastProc)
+			{
+				//if (!IsSetLotEnd())
+				//{
+				//	if (ChkLotEndDn(m_nShareDnS))// 파일의 내용 중에 Lot End (-2) 잔량처리를 체크함. (연속 3Pnl:-2) -> 로트완료 
+				//	{
+				//		if (!IsSetLotEnd())
+				//			SetLotEnd(m_nShareDnS - pDoc->AoiDummyShot[1]);
+				//		if (m_nAoiLastSerial[0] < 1)
+				//			m_nAoiLastSerial[0] = m_nShareDnS;
+				//		if (bDualTest)
+				//		{
+				//			m_bLastProc = TRUE;
+				//			m_nLastProcAuto = LAST_PROC;
+				//		}
+				//	}
+				//}
+
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
+
+					//if (IsVs())
+					//{
+					//	if (m_nAoiLastSerial[0] < 1)
+					//		m_nAoiLastSerial[0] = m_nShareDnS;
+
+					//	m_nPrevStepAuto = General.nStepAuto;
+					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // 잔량처리 3
+					//	break;
+					//}
+					//else
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else if (ChkLastProcFromUp())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->m_ListBuf[0].GetLast();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->m_ListBuf[1].GetLast();
+						}
+
+						if (!IsSetLotEnd()) // 20160810
+						{
+							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+											   //if (m_nAoiLastSerial[0] < 1)
+											   //m_nAoiLastSerial[0] = nSerial;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
+
+					//if (m_nLotEndSerial != nSerial)
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+						//if (m_nAoiLastSerial[0] < 1)
+						//m_nAoiLastSerial[0] = nSerial;
+					}
+				}
+			}
+		}
+		else
+		{
+			//ClrDispMsg();
+			//AfxMessageBox(_T("Error : m_nShareDnS <= 0"));
+		}
+
+		break;
+
+	case AT_LP + 6:
+		General.nStepAuto++;
+		if (m_nShareUpS > 0)
+		{
+			if (pView->m_pDlgFrameHigh)
+				pView->m_pDlgFrameHigh->SetAoiLastShot(0, m_nShareUpS);
+		}
+		if (bDualTest)
+		{
+			if (m_nShareDnS > 0)
+			{
+				//if (m_bChkLastProcVs)
+				//{
+				//	if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
+				//		break;
+				//}
+				//else
+				{
+					if (IsSetLotEnd())
+					{
+						//if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
+						if (m_nShareDnS > GetLotEndSerial())
+							break;
+					}
+				}
+
+				if (pView->m_pDlgFrameHigh)
+					pView->m_pDlgFrameHigh->SetAoiLastShot(1, m_nShareDnS);
+			}
+		}
+		break;
+
+	case AT_LP + 7:
+		if (IsRun())
+		{
+			//if (pDoc->GetTestMode() == MODE_OUTER)
+			//{
+			//	if (m_bTHREAD_UPDATE_REELMAP_INNER_UP) // Write Reelmap
+			//		break;
+
+			//	if (pDoc->WorkingInfo.LastJob.bDualTestInner)
+			//	{
+			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
+			//			break;
+			//	}
+			//}
+
+			if (bDualTest)
+			{
+				if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+					break;
+			}
+			else
+			{
+				if (m_bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
+					break;
+			}
+			//SetListBuf(); // 20170727-잔량처리 시 계속적으로 반복해서 이함수가 호출됨으로 좌우 마킹 인덱스 동일 현상 발생.(case AT_LP + 8:)
+			General.nStepAuto++;
+		}
+		break;
+
+
+	case AT_LP + 8:
+		if (IsRun())
+		{
+			if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (!bDualTest)
+				{
+					if (m_nShareUpS > 0)
+						MakeItsFile(m_nShareUpS);
+					//UpdateReelmapInner(m_nShareUpS);
+				}
+				else
+				{
+					if (m_nShareDnS > 0)
+						MakeItsFile(m_nShareDnS);
+					//UpdateReelmapInner(m_nShareDnS);
+				}
+			}
+
+			General.nStepAuto++;
+		}
+		break;
+
+	case AT_LP + 9:
+		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (m_bTHREAD_MAKE_ITS_FILE_UP) // makeIts
+				break;
+
+			if (pDoc->WorkingInfo.LastJob.bDualTest)
+			{
+				if (m_bTHREAD_MAKE_ITS_FILE_DN) // makeIts
+					break;
+			}
+
+			//if (pDoc->GetTestMode() == MODE_OUTER)
+			//{
+			//	if (pDoc->WorkingInfo.LastJob.bDualTestInner)
+			//	{
+			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
+			//			break;
+			//	}
+			//}
+			//else
+			//{
+			//	if (pDoc->WorkingInfo.LastJob.bDualTest)
+			//	{
+			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
+			//			break;
+			//	}
+			//}
+		}
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + 10:
+		m_nShareUpS = 0;
+		m_nShareDnS = 0;
+		General.nStepAuto++;
+		break;
+
+	case AT_LP + 11:
+		m_bLoadShare[0] = FALSE;
+		m_bLoadShare[1] = FALSE;
+		General.nStepAuto = AT_LP;
+		break;
+
+
+	case LAST_PROC_VS_ALL:			 // 잔량처리 3
+		m_nDummy[0] = 0;
+		m_nDummy[1] = 0;
+		m_bChkLastProcVs = TRUE;
+		TowerLamp(RGB_GREEN, TRUE);
+		DispMain(_T("상면VS잔량"), RGB_GREEN);
+		if (m_nAoiLastSerial[0] < 1)
+			m_nAoiLastSerial[0] = GetAoiUpSerial();
+		if (!IsSetLotEnd())
+			SetLotEnd(m_nAoiLastSerial[0]);
+		//m_nAoiLastSerial[1] = GetAoiDnSerial();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 1:
+		if (IsVsUp())
+			General.nStepAuto++;
+		else
+			General.nStepAuto = m_nPrevStepAuto;
+		break;
+
+	case LAST_PROC_VS_ALL + 2:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 3:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 4:
+		//SetDummyUp();
+		General.nStepAuto++;
+		break;
+
+	case LAST_PROC_VS_ALL + 5:
+		General.nStepAuto = m_nPrevStepAuto;
+		break;
+	}
+}
+
+void CManagerProcedure::DoAutoMarking()
+{
+	if (pDoc->WorkingInfo.LastJob.nAlignMethode == TWO_POINT)
+		MarkingWith2PointAlign();
+	else if (pDoc->WorkingInfo.LastJob.nAlignMethode == FOUR_POINT)
+		MarkingWith4PointAlign();
+	else
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("마킹을 위한 Align방식이 정해지지 않았습니다."));
+	}
+}
+
+void CManagerProcedure::DoAutoMarkingEngrave()
+{
+	stBtnStatus& BtnStatus = (pView->m_mgrProcedure->m_pEngrave->BtnStatus);
+
+	// 각인부 마킹중 ON (PC가 ON, OFF)
+	if (BtnStatus.EngAuto.IsOnMking && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 3))) // 각인부 마킹중 ON (PC가 ON, OFF)
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnMkIng, TRUE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 2D(GUI) 각인 동작Running신호 ON (PC On->PC Off)"));
+			MpeWrite(_T("MB440173"), 1); // 2D(GUI) 각인 동작Running신호(PC On->PC Off)
+		}
+#endif
+	}
+	else if (!BtnStatus.EngAuto.IsOnMking && (m_pMpe->m_pMpeSignal[6] & (0x01 << 3)))
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnMkIng, FALSE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 2D(GUI) 각인 동작Running신호 OFF (PC On->PC Off)"));
+			MpeWrite(_T("MB440173"), 0); // 2D(GUI) 각인 동작Running신호(PC On->PC Off)
+		}
+#endif
+	}
+
+	// 각인부 마킹완료 ON (PC가 ON, OFF)
+	if (BtnStatus.EngAuto.IsMkDone && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 4))) // 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkDone, TRUE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 각인부 작업완료 ON (PC가 On, PLC가 확인 후 Off)"));
+			MpeWrite(_T("MB440174"), 1); // 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+		}
+#endif
+	}
+	else if (!BtnStatus.EngAuto.IsMkDone && (m_pMpe->m_pMpeSignal[6] & (0x01 << 4))) // 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkDone, FALSE);
+		//#ifdef USE_MPE
+		//		if (m_pMpe)
+		//			MpeWrite(_T("MB440174"), 0); // 각인부 작업완료.(PC가 On, PLC가 확인 후 Off)
+		//#endif
+	}
+
+	// 각인부 2D 리더 작업중 신호
+	if (BtnStatus.EngAuto.IsOnRead2d && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 8))) // 각인부 2D 리더 작업중 신호(PC On->PC Off)
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnReading2d, TRUE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 각인부 2D 리더 작업중 신호 ON (PC On->PC Off)"));
+			MpeWrite(_T("MB440178"), 1); // 각인부 2D 리더 작업중 신호(PC On->PC Off)
+		}
+#endif
+	}
+	else if (!BtnStatus.EngAuto.IsOnRead2d && (m_pMpe->m_pMpeSignal[6] & (0x01 << 8)))
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnReading2d, FALSE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 각인부 2D 리더 작업중 신호 OFF (PC On->PC Off)"));
+			MpeWrite(_T("MB440178"), 0); // 각인부 2D 리더 작업중 신호(PC On->PC Off)
+		}
+#endif
+	}
+
+	// 각인부 2D 리더 작업완료 신호
+	if (BtnStatus.EngAuto.IsRead2dDone && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 9))) // 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadDone, TRUE);
+#ifdef USE_MPE
+		if (m_pMpe)
+		{
+			pDoc->LogAuto(_T("PC: 각인부 2D 리더 작업완료 신호 ON (PC가 On, PLC가 확인 후 Off)"));
+			MpeWrite(_T("MB440179"), 1); // 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
+		}
+#endif
+	}
+	else if (!BtnStatus.EngAuto.IsRead2dDone && (m_pMpe->m_pMpeSignal[6] & (0x01 << 9)))
+	{
+		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadDone, FALSE);
+		//#ifdef USE_MPE
+		//		if (m_pMpe)
+		//			MpeWrite(_T("MB440179"), 0); // 각인부 2D 리더 작업완료 신호.(PC가 On, PLC가 확인 후 Off)
+		//#endif
+	}
+
+}
+
+BOOL CManagerProcedure::IsLotEnd()
+{
+	return m_bLotEnd;
+}
+
+BOOL CManagerProcedure::ReloadReelmap(int nSerial)
+{
+	m_nReloadReelmapSerial = nSerial;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	m_bTHREAD_RELOAD_RST_UP = TRUE;
+	if (bDualTest)
+	{
+		m_bTHREAD_RELOAD_RST_DN = TRUE;
+		m_bTHREAD_RELOAD_RST_ALLUP = TRUE;
+		m_bTHREAD_RELOAD_RST_ALLDN = TRUE;
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		m_bTHREAD_RELOAD_RST_UP_INNER = TRUE;
+		m_bTHREAD_RELOAD_RST_ITS = TRUE;
+		if (pDoc->WorkingInfo.LastJob.bDualTestInner)
+		{
+			m_bTHREAD_RELOAD_RST_DN_INNER = TRUE;
+			m_bTHREAD_RELOAD_RST_ALLUP_INNER = TRUE;
+			m_bTHREAD_RELOAD_RST_ALLDN_INNER = TRUE;
+		}
+	}
+
+	Sleep(100);
+
+	return TRUE;
+}
+
+void CManagerProcedure::UpdateRst()
+{
+	pView->UpdateRst();
+}
+
+void CManagerProcedure::LotEnd()
+{
+	//if (m_pDlgMenu01)
+	//	m_pDlgMenu01->LotEnd();
+	//if (m_pDlgMenu03)
+	//	m_pDlgMenu03->SwAoiLotEnd(TRUE);
+
+	m_bCont = FALSE;
+	SetLotEd();
+
+	//ReloadReelmap();
+	MakeResultMDS();
+
+	if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+	{
+		FinalCopyItsFiles();
+	}
+
+	if (pDoc->m_pReelMap == pDoc->m_pReelMapUp)
+	{
+		DuplicateRmap(RMAP_UP);
+	}
+	else if (pDoc->m_pReelMap == pDoc->m_pReelMapAllUp)
+	{
+		DuplicateRmap(RMAP_ALLUP);
+	}
+	else if (pDoc->m_pReelMap == pDoc->m_pReelMapIts)
+	{
+		DuplicateRmap(RMAP_ITS);
+	}
+
+	if (m_pEngrave)
+		m_pEngrave->SwMenu01DispDefImg(TRUE);
+}
+
+BOOL CManagerProcedure::ChkLastProcFromUp()
+{
+	if (!pView->m_mgrStatus)
+		return FALSE;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	return General.bLastProcFromUp;
+}
+
+BOOL CManagerProcedure::ChkLastProcFromEng()
+{
+	if (!pView->m_mgrStatus)
+		return FALSE;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	return General.bLastProcFromEng;
 }

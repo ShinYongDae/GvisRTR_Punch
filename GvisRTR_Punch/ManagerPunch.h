@@ -42,7 +42,6 @@ class CManagerPunch : public CWnd
 
 	BOOL Init();
 	BOOL Create();
-	void InitDevices();
 	BOOL CreateDevices();
 	void DoInterlock();
 
@@ -80,6 +79,7 @@ public:
 
 	// 작업입니다.
 public:
+	void Reset();
 	BOOL InitAct();
 
 	void SetLight(int nVal = -1);

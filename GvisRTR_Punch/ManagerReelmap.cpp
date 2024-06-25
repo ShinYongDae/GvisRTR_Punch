@@ -13,6 +13,8 @@ extern CGvisRTR_PunchView* pView;
 CManagerReelmap::CManagerReelmap(CWnd* pParent)
 {
 	m_pParent = pParent;
+
+	Reset();
 	Init();
 
 	if (!Create())
@@ -53,6 +55,10 @@ void CManagerReelmap::OnTimer(UINT_PTR nIDEvent)
 void CManagerReelmap::Init()
 {
 	LoadConfig();
+}
+
+void CManagerReelmap::Reset()
+{
 }
 
 BOOL CManagerReelmap::InitAct()

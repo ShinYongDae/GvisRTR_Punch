@@ -1823,10 +1823,11 @@ void CEngrave::GetOpInfo(SOCKET_DATA SockData)
 
 void CEngrave::GetInfo(SOCKET_DATA SockData)
 {
+	stGeneral& General = (pView->m_mgrStatus->General);
+
 	int nCmdCode = SockData.nCmdCode;
 	int nMsgId = SockData.nMsgID;
 
-	//m_bGetInfo = FALSE;
 	if (nCmdCode == _SetSig)
 	{
 		switch (nMsgId)
@@ -1859,13 +1860,6 @@ void CEngrave::GetInfo(SOCKET_DATA SockData)
 				pDoc->WorkingInfo.EngInfo.sModelUp = CharToString(SockData.strData);
 			}
 			break;
-		//case _ItemInx::_ModelDnName:
-		//	if (pDoc->WorkingInfo.LastJob.sModelDn != CharToString(SockData.strData))
-		//	{
-		//		m_bGetInfo = TRUE;
-		//		pDoc->WorkingInfo.LastJob.sModelDn = CharToString(SockData.strData);
-		//	}
-		//	break;
 		case _ItemInx::_LotUpName:
 			if (pDoc->WorkingInfo.EngInfo.sLotUp != CharToString(SockData.strData))
 			{
@@ -1895,7 +1889,7 @@ void CEngrave::GetInfo(SOCKET_DATA SockData)
 			}
 			break;
 		case _ItemInx::_LoadMstInfo:
-			pView->m_bLoadMstInfo = TRUE;
+			General.bLoadMstInfo = TRUE;
 			break;
 		case _ItemInx::_TotReelLen:
 			m_bGetInfo = TRUE;
@@ -1905,7 +1899,6 @@ void CEngrave::GetInfo(SOCKET_DATA SockData)
 		case _ItemInx::_PartVel:
 			m_bGetInfo = TRUE;
 			pDoc->WorkingInfo.LastJob.sPartialSpd = CharToString(SockData.strData);
-
 			::WritePrivateProfileString(_T("Last Job"), _T("Partial Speed"), pDoc->WorkingInfo.LastJob.sPartialSpd, PATH_WORKING_INFO);
 			break;
 		case _ItemInx::_TempStopLen:
@@ -1939,273 +1932,26 @@ void CEngrave::GetInfo(SOCKET_DATA SockData)
 
 void CEngrave::GetTotRatio(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetSig)
-	{
-		switch (nMsgId)
-		{
-			;
-		}
-	}
-	else if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case _ItemInx::_DefNumUp:
-			pDoc->m_nBad[0] = SockData.nData1;
-			break;
-		case _ItemInx::_DefRtoUp:
-			pDoc->m_dBadRatio[0] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_GoodNumUp:
-			pDoc->m_nGood[0] = SockData.nData1;
-			break;
-		case _ItemInx::_GoodRtoUp:
-			pDoc->m_dGoodRatio[0] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_TestNumUp:
-			pDoc->m_nTestNum[0] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumDn:
-			pDoc->m_nBad[1] = SockData.nData1;
-			break;
-		case _ItemInx::_DefRtoDn:
-			pDoc->m_dBadRatio[1] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_GoodNumDn:
-			pDoc->m_nGood[1] = SockData.nData1;
-			break;
-		case _ItemInx::_GoodRtoDn:
-			pDoc->m_dGoodRatio[1] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_TestNumDn:
-			pDoc->m_nTestNum[1] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumTot:
-			pDoc->m_nBad[2] = SockData.nData1;
-			break;
-		case _ItemInx::_DefRtoTot:
-			pDoc->m_dBadRatio[2] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_GoodNumTot:
-			pDoc->m_nGood[2] = SockData.nData1;
-			break;
-		case _ItemInx::_GoodRtoTot:
-			pDoc->m_dGoodRatio[2] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_TestNumTot:
-			pDoc->m_nTestNum[2] = SockData.nData1;
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::GetStTime(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case _ItemInx::_LotStTime:
-			pDoc->m_sLotStTime = CharToString(SockData.strData);
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::GetRunTime(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case  _ItemInx::_LotRunTime:
-			pDoc->m_sLotRunTime = CharToString(SockData.strData);
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::GetEdTime(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case _ItemInx::_LotEdTime:
-			pDoc->m_sLotEdTime = CharToString(SockData.strData);
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::GetStripRatio(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case _ItemInx::_1LnGoodRtoUp:
-			pDoc->m_dStripRatio[0][0] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_2LnGoodRtoUp:
-			pDoc->m_dStripRatio[0][1] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_3LnGoodRtoUp:
-			pDoc->m_dStripRatio[0][2] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_4LnGoodRtoUp:
-			pDoc->m_dStripRatio[0][3] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_AllLnGoodRtoUp:
-			pDoc->m_dStripRatio[0][4] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_1LnGoodRtoDn:
-			pDoc->m_dStripRatio[1][0] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_2LnGoodRtoDn:
-			pDoc->m_dStripRatio[1][1] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_3LnGoodRtoDn:
-			pDoc->m_dStripRatio[1][2] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_4LnGoodRtoDn:
-			pDoc->m_dStripRatio[1][3] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_AllLnGoodRtoDn:
-			pDoc->m_dStripRatio[1][4] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_1LnGoodRtoTot:
-			pDoc->m_dStripRatio[2][0] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_2LnGoodRtoTot:
-			pDoc->m_dStripRatio[2][1] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_3LnGoodRtoTot:
-			pDoc->m_dStripRatio[2][2] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_4LnGoodRtoTot:
-			pDoc->m_dStripRatio[2][3] = (double)SockData.fData1;
-			break;
-		case _ItemInx::_AllLnGoodRtoTot:
-			pDoc->m_dStripRatio[2][4] = (double)SockData.fData1;
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::GetDef(SOCKET_DATA SockData)
 {
-	int nCmdCode = SockData.nCmdCode;
-	int nMsgId = SockData.nMsgID;
-
-	if (nCmdCode == _SetData)
-	{
-		switch (nMsgId)
-		{
-		case _ItemInx::_DefNumOpen:
-			pDoc->m_nDef[DEF_OPEN] = SockData.nData1; // IDC_STC_DEF_OPEN
-			break;
-		case _ItemInx::_DefNumShort:
-			pDoc->m_nDef[DEF_SHORT] = SockData.nData1; // IDC_STC_DEF_SHORT
-			break;
-		case _ItemInx::_DefNumUshort:
-			pDoc->m_nDef[DEF_USHORT] = SockData.nData1; // IDC_STC_DEF_U_SHORT
-			break;
-		case _ItemInx::_DefNumLnW:
-			pDoc->m_nDef[DEF_SPACE] = SockData.nData1; // IDC_STC_DEF_SPACE
-			break;
-		case _ItemInx::_DefExtr:
-			pDoc->m_nDef[DEF_EXTRA] = SockData.nData1; // IDC_STC_DEF_EXTRA
-			break;
-		case _ItemInx::_DefNumProt:
-			pDoc->m_nDef[DEF_PROTRUSION] = SockData.nData1; // IDC_STC_DEF_PROT
-			break;
-		case _ItemInx::_DefNumPhole:
-			pDoc->m_nDef[DEF_PINHOLE] = SockData.nData1; // IDC_STC_DEF_P_HOLE
-			break;
-		case _ItemInx::_DefNumPad:
-			pDoc->m_nDef[DEF_PAD] = SockData.nData1; // IDC_STC_DEF_PAD
-			break;
-		case _ItemInx::_DefNumHopen:
-			pDoc->m_nDef[DEF_HOLE_OPEN] = SockData.nData1; // IDC_STC_DEF_H_OPEN
-			break;
-		case _ItemInx::_DefNumHmiss:
-			pDoc->m_nDef[DEF_HOLE_MISS] = SockData.nData1; // IDC_STC_DEF_H_MISS
-			break;
-		case _ItemInx::_DefNumHpos:
-			pDoc->m_nDef[DEF_HOLE_POSITION] = SockData.nData1; // IDC_STC_DEF_H_POS
-			break;
-		case _ItemInx::_DefNumHdef:
-			pDoc->m_nDef[DEF_HOLE_DEFECT] = SockData.nData1; // IDC_STC_DEF_H_DEF
-			break;
-		case _ItemInx::_DefNumNick:
-			pDoc->m_nDef[DEF_NICK] = SockData.nData1; // IDC_STC_DEF_NICK
-			break;
-		case _ItemInx::_DefNumPoi:
-			pDoc->m_nDef[DEF_POI] = SockData.nData1; // IDC_STC_DEF_POI
-			break;
-		case _ItemInx::_DefNumVhOpen:
-			pDoc->m_nDef[DEF_VH_OPEN] = SockData.nData1; // IDC_STC_DEF_VH_OPEN
-			break;
-		case _ItemInx::_DefNumVhMiss:
-			pDoc->m_nDef[DEF_VH_MISS] = SockData.nData1; // IDC_STC_DEF_VH_MISS
-			break;
-		case _ItemInx::_DefNumVhPos:
-			pDoc->m_nDef[DEF_VH_POSITION] = SockData.nData1; // IDC_STC_DEF_VH_POS
-			break;
-		case _ItemInx::_DefNumVhd:
-			pDoc->m_nDef[DEF_VH_DEF] = SockData.nData1; // IDC_STC_DEF_VH_DEF
-			break;
-		case _ItemInx::_DefNumLight:
-			pDoc->m_nDef[DEF_LIGHT] = SockData.nData1; // IDC_STC_DEF_LIGHT
-			break;
-		case _ItemInx::_DefNumEnick:
-			pDoc->m_nDef[DEF_EDGE_NICK] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumEprot:
-			pDoc->m_nDef[DEF_EDGE_PROT] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumEspace:
-			pDoc->m_nDef[DEF_EDGE_SPACE] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumUdd1:
-			pDoc->m_nDef[DEF_USER_DEFINE_1] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumNrw:
-			pDoc->m_nDef[DEF_NARROW] = SockData.nData1;
-			break;
-		case _ItemInx::_DefNumWide:
-			pDoc->m_nDef[DEF_WIDE] = SockData.nData1;
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void CEngrave::Get2DReader(SOCKET_DATA SockData)
@@ -2325,25 +2071,20 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 		{
 		case _ItemInx::_FdVel:
 			pDoc->WorkingInfo.Motion.sMkJogVel = pDoc->WorkingInfo.Motion.sAoiJogVel = CharToString(SockData.strData);
-
 			::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_JOG_VEL"), pDoc->WorkingInfo.Motion.sMkJogVel, PATH_WORKING_INFO);
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_VEL"), pDoc->WorkingInfo.Motion.sAoiJogVel, PATH_WORKING_INFO);
-#ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkJogVel) * 1000.0);
 			if (pView)
 				pView->MpeWrite(_T("ML45038"), lData);	// 연속공급 속도 (단위 mm/sec * 1000)
-#endif
 			break;
 		case _ItemInx::_FdAcc:
 			pDoc->WorkingInfo.Motion.sMkJogAcc = pDoc->WorkingInfo.Motion.sAoiJogAcc = CharToString(SockData.strData);
 
 			::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_JOG_ACC"), pDoc->WorkingInfo.Motion.sMkJogAcc, PATH_WORKING_INFO);
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_ACC"), pDoc->WorkingInfo.Motion.sAoiJogAcc, PATH_WORKING_INFO);
-#ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkJogAcc) * 1000.0);
 			if (pView)
 				pView->MpeWrite(_T("ML45040"), lData);	// 연속공급 가속도 (단위 mm/s^2 * 1000)
-#endif
 			break;
 		case _ItemInx::_OnePnlLen:
 			pDoc->WorkingInfo.Motion.sMkFdDist = CharToString(SockData.strData);
@@ -2353,22 +2094,17 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 
 			::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_VEL"), pDoc->WorkingInfo.Motion.sMkFdVel, PATH_WORKING_INFO);
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_VEL"), pDoc->WorkingInfo.Motion.sMkFdVel, PATH_WORKING_INFO);
-#ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkFdVel) * 1000.0);
 			if (pView)
 				pView->MpeWrite(_T("ML45034"), lData);	// 한 판넬 Feeding 속도 (단위 mm/sec * 1000)
-#endif
 			break;
 		case _ItemInx::_OnePnlAcc:
 			pDoc->WorkingInfo.Motion.sMkFdAcc = CharToString(SockData.strData);
-
 			::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_ACC"), pDoc->WorkingInfo.Motion.sMkFdAcc, PATH_WORKING_INFO);
 			::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_ACC"), pDoc->WorkingInfo.Motion.sMkFdAcc, PATH_WORKING_INFO);
-#ifdef USE_MPE
 			lData = (long)(_tstof(pDoc->WorkingInfo.Motion.sMkFdAcc) * 1000.0);
 			if (pView)
 				pView->MpeWrite(_T("ML45036"), lData);	// 한 판넬 Feeding 가속도 (단위 mm/s^2 * 1000)
-#endif
 			break;
 		case _ItemInx::_FdDiffMax:
 			pDoc->WorkingInfo.Motion.sLmtFdErr = CharToString(SockData.strData);
@@ -2382,7 +2118,6 @@ void CEngrave::GetFdInfo(SOCKET_DATA SockData)
 			break;
 		case _ItemInx::_FdDiffNum:
 			pDoc->WorkingInfo.Motion.sLmtFdOvrNum = CharToString(SockData.strData);
-
 			::WritePrivateProfileString(_T("Motion"), _T("ADJUST_LIMIT_FEEDING_OVER_NUM"), pDoc->WorkingInfo.Motion.sLmtFdOvrNum, PATH_WORKING_INFO);
 			break;
 		default:

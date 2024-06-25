@@ -64,6 +64,9 @@ public:
 	void SetLight2(int nVal = -1);
 	void ResetLight();
 	void ResetLight2();
+	void SetAoiUpOffset(CfPoint &OfSt);
+	void SetAoiDnOffset(CfPoint &OfSt);
+	void SetEngOffset(CfPoint &OfSt);
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

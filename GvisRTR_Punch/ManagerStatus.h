@@ -5,7 +5,7 @@
 
 struct stGeneral
 {
-	BOOL bLotEnd, bLastProc, bMkSt, bCam, bLastProcFromUp;
+	BOOL bLotEnd, bLotEndF, bLastProc, bMkSt, bCam, bLastProcFromUp;
 	BOOL bLastProcFromEng, bCycleStop, bSerialDecrese;
 	BOOL bContDiffLot, bDoneChgLot, bUseRTRYShiftAdjust;
 	BOOL bUpdateYield, bUpdateYieldOnRmap;
@@ -13,6 +13,8 @@ struct stGeneral
 	BOOL bFailAlign, bDoMk, bDoneMk, bReMark, bRejectDone, bAnswer;
 	BOOL bInitAuto, bLoadMstInfo;
 	BOOL bBufEmpty[2], bBufEmptyF[2];							// [0] : Up, [1] : Dn
+	BOOL bCont, bAoiTest[2], bWaitPcr[2], bAoiFdWrite[2], bEngTest, bEngFdWrite;
+	BOOL bReadyDone;
 
 	int nLotEndAuto, nMkStAuto, nPrevMkStAuto, nLastProcAuto, nTestMode, nLotEndSerial;
 	int nStepAuto, nPrevStepAuto, nMkStrip, nSaveMk0Img, nSaveMk1Img;
@@ -23,7 +25,7 @@ struct stGeneral
 
 	stGeneral()
 	{
-		bLotEnd = FALSE; bLastProc = FALSE; bMkSt = FALSE; bCam = FALSE; bLastProcFromUp = FALSE;
+		bLotEnd = FALSE; bLotEndF = FALSE; bLastProc = FALSE; bMkSt = FALSE; bCam = FALSE; bLastProcFromUp = FALSE;
 		bLastProcFromEng = FALSE; bCycleStop = FALSE; bSerialDecrese = FALSE;
 		bContDiffLot = FALSE; bDoneChgLot = FALSE; bUseRTRYShiftAdjust = FALSE;
 		bUpdateYield = FALSE; bUpdateYieldOnRmap = FALSE;
@@ -33,6 +35,9 @@ struct stGeneral
 		bInitAuto = FALSE; bLoadMstInfo = FALSE;
 		bBufEmpty[0] = FALSE; bBufEmptyF[0] = FALSE;
 		bBufEmpty[1] = FALSE; bBufEmptyF[1] = FALSE;
+		bCont = FALSE; bAoiTest[0] = FALSE; bAoiTest[1] = FALSE; bWaitPcr[0] = FALSE; bWaitPcr[1] = FALSE;
+		bAoiFdWrite[0] = FALSE; bAoiFdWrite[1] = FALSE; bEngTest = FALSE; bEngFdWrite = FALSE;
+		bReadyDone = FALSE;
 
 		nLotEndAuto = 0; nMkStAuto = 0; nPrevMkStAuto = 0;
 		nLastProcAuto = 0; nTestMode = 0; nLotEndSerial = 0;
@@ -45,7 +50,6 @@ struct stGeneral
 		nAoiCamInfoStrPcs[0] = -1; nAoiCamInfoStrPcs[1] = -1;
 
 		sNewLotUp = _T("");
-
 	}
 };
 
@@ -170,6 +174,7 @@ public:
 
 	// 작업입니다.
 public:
+	void Reset();
 
 	// 생성된 메시지 맵 함수
 protected:

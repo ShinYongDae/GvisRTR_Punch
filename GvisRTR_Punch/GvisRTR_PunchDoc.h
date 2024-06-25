@@ -6,11 +6,17 @@
 #pragma once
 
 #include "Global/GlobalDefine.h"
+#include "Global/MyData.h"
 #include "Process/MyFile.h"
 
 
 class CGvisRTR_PunchDoc : public CDocument
 {
+	BOOL m_bOffLogAuto, m_bOffLogPLC;
+	BOOL m_bUseDts, m_bUseIts;
+
+	BOOL LoadWorkingInfo();
+
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchDoc();
 	DECLARE_DYNCREATE(CGvisRTR_PunchDoc)
@@ -29,6 +35,8 @@ public:
 	int GetTestMode();
 	void SetTestMode(int nMode);
 
+	double GetOffsetInitPos();
+
 	// File communication for Engrave
 	void GetMkInfo(); // About Engrave Signal
 	void SetMkInfo(CString sMenu, CString sItem, BOOL bOn);
@@ -43,6 +51,33 @@ public:
 	void SetEngraveFdPitch(double dPitch);
 	void SetEngraveAoiDist(double dLen);
 	void SetEngBufInitPos(double dPos);
+	BOOL GetCurrentInfoSignal(int nIdxSig);
+	void SetCurrentInfoSignal(int nIdxSig, BOOL bOn);
+	int GetAoiUpAutoSerial();
+	void SetAoiUpAutoSerial(int nSerial);
+	int GetAoiUpAutoStep();
+	void SetAoiUpAutoStep(int nStep);
+	int GetAoiDnAutoSerial();
+	void SetAoiDnAutoSerial(int nSerial);
+	int GetAoiDnAutoStep();
+	void SetAoiDnAutoStep(int nStep);
+	CString GetAoiUpAlarmRestartMsg();
+	CString GetAoiUpAlarmReTestMsg();
+	CString GetAoiDnAlarmRestartMsg();
+	CString GetAoiDnAlarmReTestMsg();
+	BOOL GetAoiUpVsStatus();
+	int GetLastShotMk();
+	BOOL GetAoiUpOffset(CfPoint &OfSt);
+	BOOL GetAoiDnOffset(CfPoint &OfSt);
+	BOOL GetEngOffset(CfPoint &OfSt);
+	void SetEngraveReaderDist(double dLen);
+	void SetOnePnlLen(double dLen);
+	double GetOnePnlLen();
+	void SetOnePnlVel(double dVel);
+	void SetFdJogVel(double dVel);
+	void SetFdJogAcc(double dVel);
+	double GetOnePnlVel();
+	double GetFdJogVel();
 
 // 재정의입니다.
 public:

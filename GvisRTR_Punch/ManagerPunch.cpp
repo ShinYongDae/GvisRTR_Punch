@@ -17,7 +17,16 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 	m_bTIM_INIT_PUNCH = FALSE;
 	m_bTIM_SCAN_STATUS = FALSE;
 
-	InitDevices();
+	m_pMotion = NULL;
+	m_pVoiceCoil[0] = NULL;
+	m_pVoiceCoil[1] = NULL;
+	m_pLight = NULL;
+	m_pVision[0] = NULL;			// Camera & MIL
+	m_pVision[1] = NULL;			// Camera & MIL
+	m_pVisionInner[0] = NULL;		// Camera & MIL
+	m_pVisionInner[1] = NULL;		// Camera & MIL
+
+	Reset();
 
 	if (!Create())
 	{
@@ -80,19 +89,6 @@ int CManagerPunch::MsgBox(CString sMsg, int nThreadIdx, int nType, int nTimOut, 
 	return pView->MsgBox(sMsg, nThreadIdx, nType, nTimOut, bEngave);
 }
 
-void CManagerPunch::InitDevices()
-{
-	m_pMotion = NULL;
-	m_pVoiceCoil[0] = NULL;
-	m_pVoiceCoil[1] = NULL;
-	m_pLight = NULL;
-	m_pVision[0] = NULL;			// Camera & MIL
-	m_pVision[1] = NULL;			// Camera & MIL
-	m_pVisionInner[0] = NULL;		// Camera & MIL
-	m_pVisionInner[1] = NULL;		// Camera & MIL
-
-}
-
 BOOL CManagerPunch::CreateDevices()
 {
 	if (m_pMotion)
@@ -152,6 +148,12 @@ BOOL CManagerPunch::Init()
 			Sleep(30);
 		}
 	}
+
+	return TRUE;
+}
+
+void CManagerPunch::Reset()
+{
 }
 
 BOOL CManagerPunch::InitAct()

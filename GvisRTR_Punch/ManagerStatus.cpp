@@ -13,6 +13,8 @@ extern CGvisRTR_PunchView* pView;
 CManagerStatus::CManagerStatus(CWnd* pParent)
 {
 	m_pParent = pParent;
+
+	Reset();
 	Init();
 
 	if (!Create())
@@ -34,6 +36,10 @@ END_MESSAGE_MAP()
 void CManagerStatus::Init()
 {
 
+}
+
+void CManagerStatus::Reset()
+{
 }
 
 BOOL CManagerStatus::Create()

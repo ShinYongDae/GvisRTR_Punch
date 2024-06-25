@@ -14,6 +14,7 @@ CManagerThread::CManagerThread(CWnd* pParent)
 {
 	m_pParent = pParent;
 
+	Reset();
 	Init();
 }
 
@@ -47,6 +48,11 @@ void CManagerThread::OnTimer(UINT_PTR nIDEvent)
 }
 
 void CManagerThread::Init()
+{
+
+}
+
+void CManagerThread::Reset()
 {
 
 }

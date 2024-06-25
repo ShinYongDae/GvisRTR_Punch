@@ -39,6 +39,7 @@ public:
 
 	// 작업입니다.
 public:
+	void Reset();
 	BOOL InitAct();
 
 

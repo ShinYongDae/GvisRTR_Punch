@@ -23,6 +23,7 @@ public:
 
 	// 작업입니다.
 public:
+	void Reset();
 	BOOL InitAct();
 
 	// 생성된 메시지 맵 함수
