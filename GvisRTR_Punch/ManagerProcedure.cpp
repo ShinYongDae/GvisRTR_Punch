@@ -176,32 +176,36 @@ void CManagerProcedure::SetCurrentInfoBufDn(int nIdx, int nData)
 
 int CManagerProcedure::GetAoiUpCamMstInfo() // AOI상 strpcs.bin 연결
 {
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[0].MasterInfo;
+
 	TCHAR szData[200];
 	CString sPath;
 	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiUpVrsData,
 		pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerUp, pDoc->WorkingInfo.LastJob.sLotUp);
 
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
-		pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+		MasterInfo.nOutFileOnAoi = _ttoi(szData);
 	else
-		pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi = -1;
+		MasterInfo.nOutFileOnAoi = -1;
 
-	return pView->m_mgrPunch->m_Master[0].MasterInfo.nOutFileOnAoi;
+	return MasterInfo.nOutFileOnAoi;
 }
 
 int CManagerProcedure::GetAoiDnCamMstInfo() // AOI하 strpcs.bin 연결
 {
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
+
 	TCHAR szData[200];
 	CString sPath;
 	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiDnVrsData,
 		pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerDn, pDoc->WorkingInfo.LastJob.sLotUp);
 
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
-		pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+		MasterInfo.nOutFileOnAoi = _ttoi(szData);
 	else
-		pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi = -1;
+		MasterInfo.nOutFileOnAoi = -1;
 
-	return pView->m_mgrPunch->m_Master[1].MasterInfo.nOutFileOnAoi;
+	return MasterInfo.nOutFileOnAoi;
 }
 
 void CManagerProcedure::SetMkMenu01(CString sMenu, CString sItem, CString sData)
@@ -3516,4 +3520,32 @@ BOOL CManagerProcedure::ChkLastProcFromEng()
 	stGeneral& General = (pView->m_mgrStatus->General);
 
 	return General.bLastProcFromEng;
+}
+
+void CManagerProcedure::SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg)		// m_sAoiUpAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return;
+	pView->m_mgrFeeding->SetAoiUpAlarmRestartMsg(sAoiUpAlarmReStartMsg);
+}
+
+void CManagerProcedure::SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg)		// m_sAoiDnAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return;
+	pView->m_mgrFeeding->SetAoiDnAlarmRestartMsg(sAoiDnAlarmReStartMsg);
+}
+
+void CManagerProcedure::SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg)			// m_sAoiUpAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return;
+	pView->m_mgrFeeding->SetAoiUpAlarmReTestMsg(sAoiUpAlarmReTestMsg);
+}
+
+void CManagerProcedure::SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg)			// m_sAoiDnAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return;
+	pView->m_mgrFeeding->SetAoiDnAlarmReTestMsg(sAoiDnAlarmReTestMsg);
 }

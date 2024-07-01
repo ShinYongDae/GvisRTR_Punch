@@ -108,6 +108,67 @@ void CManagerReelmap::Init()
 	m_cSmallDefCode[24] = 'w';	//	Wide
 	m_cSmallDefCode[25] = '?';	//	Light
 
+	m_rgbDef[DEF_NONE] = (RGB_WHITE); // (RGB_GREEN)
+	m_rgbDef[DEF_NICK] = (RGB_MAGENTA);
+	m_rgbDef[DEF_PROTRUSION] = (RGB_SKYBLUE);
+	m_rgbDef[DEF_SPACE] = (RGB_LTGREEN);
+	m_rgbDef[DEF_OPEN] = (RGB_LTRED);
+	m_rgbDef[DEF_SHORT] = (RGB_RED);
+	m_rgbDef[DEF_USHORT] = (RGB_LTCYAN);
+	m_rgbDef[DEF_PINHOLE] = (RGB_LLTGREEN);
+	m_rgbDef[DEF_HOLE_MISS] = (RGB_LTBLUE);
+	m_rgbDef[DEF_EXTRA] = (RGB_CLOUDBLUE);
+	m_rgbDef[DEF_PAD] = (RGB_LTPURPLE);
+	m_rgbDef[DEF_HOLE_POSITION] = (RGB_PINK);
+	m_rgbDef[DEF_POI] = (RGB_LTMAGENTA);
+	m_rgbDef[DEF_VH_POSITION] = (RGB_LTYELLOW);
+	m_rgbDef[DEF_VH_MISS] = (RGB_BOON);
+	m_rgbDef[DEF_HOLE_DEFECT] = (RGB_LTPINK);
+	m_rgbDef[DEF_HOLE_OPEN] = (RGB_YELLOWGREEN);
+	m_rgbDef[DEF_VH_OPEN] = (RGB_RED);
+	m_rgbDef[DEF_VH_DEF] = (RGB_BROWN);
+	m_rgbDef[DEF_LIGHT] = (RGB_YELLOW);
+
+	m_cBigDef[0] = '*';		//	NONE
+	m_cBigDef[1] = 'N';		//	NICK
+	m_cBigDef[2] = 'D';		//	PROTRUSION
+	m_cBigDef[3] = 'A';		//	SPACE
+	m_cBigDef[4] = 'O';		//	OPEN
+	m_cBigDef[5] = 'S';		//	SHORT
+	m_cBigDef[6] = 'U';		//	USHORT
+	m_cBigDef[7] = 'I';		//	PINHOLE
+	m_cBigDef[8] = 'H';		//	HOLE_MISS
+	m_cBigDef[9] = 'E';		//	EXTRA
+	m_cBigDef[10] = 'P';	//	PAD
+	m_cBigDef[11] = 'L';	//	HOLE_POSITION
+	m_cBigDef[12] = 'X';	//	POI
+	m_cBigDef[13] = 'T';	//	VH_POSITION
+	m_cBigDef[14] = 'M';	//	VH_MISS
+	m_cBigDef[15] = 'F';	//	HOLE_DEFECT
+	m_cBigDef[16] = 'C';	//	HOLE_OPEN
+	m_cBigDef[17] = 'G';	//	VH_OPEN
+	m_cBigDef[18] = 'V';	//	VH_DEF
+
+	m_cSmallDef[0] = '*';
+	m_cSmallDef[1] = 'n';
+	m_cSmallDef[2] = 'd';
+	m_cSmallDef[3] = 'a';
+	m_cSmallDef[4] = 'o';
+	m_cSmallDef[5] = 's';
+	m_cSmallDef[6] = 'u';
+	m_cSmallDef[7] = 'i';
+	m_cSmallDef[8] = 'h';
+	m_cSmallDef[9] = 'e';
+	m_cSmallDef[10] = 'p';
+	m_cSmallDef[11] = 'l';
+	m_cSmallDef[12] = 'x';
+	m_cSmallDef[13] = 't';
+	m_cSmallDef[14] = 'm';
+	m_cSmallDef[15] = 'f';
+	m_cSmallDef[16] = 'c';
+	m_cSmallDef[17] = 'g';
+	m_cSmallDef[18] = 'v';
+
 	LoadConfig();
 }
 
@@ -123,4 +184,60 @@ BOOL CManagerReelmap::InitAct()
 
 void CManagerReelmap::LoadConfig()
 {
+	TCHAR szData[MAX_PATH];
+	TCHAR sep[] = { _T(",;\r\n\t") };
+	CString sVal;
+
+	if (0 < ::GetPrivateProfileString(_T("REELMAP"), _T("BackGround"), NULL, szData, sizeof(szData), PATH_CONFIG))
+	{
+		sVal = _tcstok(szData, sep);
+		m_nBkColor[0] = _tstoi(sVal);
+		sVal = _tcstok(NULL, sep);
+		m_nBkColor[1] = _tstoi(sVal);
+		sVal = _tcstok(NULL, sep);
+		m_nBkColor[2] = _tstoi(sVal);
+	}
+
+	LoadDefectTableIni();
+}
+
+BOOL CManagerReelmap::LoadDefectTableIni()
+{
+	TCHAR szData[200];
+	TCHAR sep[] = { _T(",;\r\n\t") };
+	CString sIdx, sVal;
+	int k;
+
+	for (k = 1; k < MAX_DEF; k++)
+	{
+		sIdx.Format(_T("%d"), k);
+		if (0 < ::GetPrivateProfileString(_T("DEFECT"), sIdx, NULL, szData, sizeof(szData), PATH_CONFIG))
+		{
+			sVal = _tcstok(szData, sep);
+			m_sEngDef[k].Format(_T("%s"), sVal);
+			sVal = _tcstok(NULL, sep);
+			m_sKorDef[k].Format(_T("%s"), sVal);
+			sVal = _tcstok(NULL, sep);
+			m_cBigDef[k] = sVal.GetAt(0);
+			sVal = _tcstok(NULL, sep);
+			m_cSmallDef[k] = sVal.GetAt(0);
+			sVal = _tcstok(NULL, sep);
+			m_rgbDef[k] = (COLORREF)_tstoi(sVal);
+			sVal = _tcstok(NULL, sep);
+			m_nOdr[k] = _tstoi(sVal);
+		}
+		else
+		{
+			pView->ClrDispMsg();
+			AfxMessageBox(_T("Error - LoadDefectTableIni()"));
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+void CManagerReelmap::SetRgbDef(int nDef, COLORREF rgbVal)
+{
+	m_rgbDef[nDef] = rgbVal;
 }

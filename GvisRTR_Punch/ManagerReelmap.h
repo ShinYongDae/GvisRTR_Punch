@@ -31,6 +31,7 @@ class CManagerReelmap : public CWnd
 	void Init();
 	BOOL Create();
 	void LoadConfig();
+	BOOL LoadDefectTableIni();
 
 public:
 	CManagerReelmap(CWnd* pParent = NULL);
@@ -41,6 +42,11 @@ public:
 	stPcrShare PcrShare[2];
 	char m_cBigDefCode[MAX_DEF];
 	char m_cSmallDefCode[MAX_DEF];
+	CString m_sKorDef[MAX_DEF], m_sEngDef[MAX_DEF];
+	char m_cBigDef[MAX_DEF], m_cSmallDef[MAX_DEF];
+	COLORREF m_rgbDef[MAX_DEF];
+	int m_nOdr[MAX_DEF];
+	int m_nBkColor[3]; //RGB
 
 
 	// 현재 작업인 데이터구조 ===================================================================
@@ -69,6 +75,7 @@ public:
 public:
 	void Reset();
 	BOOL InitAct();
+	void SetRgbDef(int nDef, COLORREF rgbVal);
 
 
 	// 생성된 메시지 맵 함수

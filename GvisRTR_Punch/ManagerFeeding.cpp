@@ -2521,3 +2521,23 @@ CString CManagerFeeding::GetAoiAlarmReTestMsg(int nId)
 
 	return str;
 }
+
+void CManagerFeeding::SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg)		// m_sAoiUpAlarmReStartMsg
+{
+	m_sAoiUpAlarmReStartMsg = sAoiUpAlarmReStartMsg;
+}
+
+void CManagerFeeding::SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg)		// m_sAoiDnAlarmReStartMsg
+{
+	m_sAoiDnAlarmReStartMsg = sAoiDnAlarmReStartMsg;
+}
+
+void CManagerFeeding::SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg)			// m_sAoiUpAlarmReTestMsg
+{
+	m_sAoiUpAlarmReTestMsg = sAoiUpAlarmReTestMsg;
+}
+
+void CManagerFeeding::SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg)			// m_sAoiDnAlarmReTestMsg
+{
+	m_sAoiDnAlarmReTestMsg = sAoiDnAlarmReTestMsg;
+}

@@ -115,7 +115,6 @@ class CReelMap : public CReelYield //public CWnd
 	//BOOL ReadYield(int nSerial, CString sPath);
 	//BOOL WriteYield(int nSerial, CString sPath);
 	
-	BOOL LoadDefectTableIni();
 	//BOOL LoadDefectTableDB();
 
 	//BOOL MakeDirYield(CString sPath);
@@ -146,11 +145,6 @@ public:
 	CRect **pPcsRgn;
 
 	int **pPcsDef; // [DispPnlIdx][PcsID] : 불량코드.
-	CString m_sKorDef[MAX_DEF], m_sEngDef[MAX_DEF];
-	char m_cBigDef[MAX_DEF], m_cSmallDef[MAX_DEF];
-	COLORREF m_rgbDef[MAX_DEF];
-	int m_nOdr[MAX_DEF];
-	int m_nBkColor[3]; //RGB
 
 // 	CString *pMkInfo;
 
@@ -167,7 +161,6 @@ public:
 	void SetLotStartTime(DWORD dwTime);
 	void SetLotEndTime(DWORD dwTime);
 
-	void SetRgbDef(int nDef, COLORREF rgbVal);
 	void SetPnlNum(int *pPnlNum=NULL);
 	void IncPnlNum();
 	void AddPnlNum(int nNum);

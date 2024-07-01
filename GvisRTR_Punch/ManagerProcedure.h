@@ -140,6 +140,10 @@ public:
 	void SetMkMenu03(CString sMenu, CString sItem, BOOL bOn);
 	BOOL IsRun();
 	BOOL IsLotEnd();
+	void SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg);		// m_sAoiUpAlarmReStartMsg
+	void SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg);		// m_sAoiDnAlarmReStartMsg
+	void SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg);			// m_sAoiUpAlarmReTestMsg
+	void SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg);			// m_sAoiDnAlarmReTestMsg
 
 	// 생성된 메시지 맵 함수
 protected:

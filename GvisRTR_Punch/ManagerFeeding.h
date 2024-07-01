@@ -168,6 +168,10 @@ public:
 	BOOL IsDoneWriteFdOffsetEng();
 	CString GetAoiAlarmReStartMsg(int nId);	// Up, Dn
 	CString GetAoiAlarmReTestMsg(int nId);	// Up, Dn
+	void SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg);		// m_sAoiUpAlarmReStartMsg
+	void SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg);		// m_sAoiDnAlarmReStartMsg
+	void SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg);			// m_sAoiUpAlarmReTestMsg
+	void SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg);			// m_sAoiDnAlarmReTestMsg
 
 	// 생성된 메시지 맵 함수
 protected:
