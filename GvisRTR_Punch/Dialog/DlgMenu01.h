@@ -58,7 +58,7 @@ public:
 
 	// 특성입니다.
 public:
-
+	BOOL m_bLastProc;
 
 	// 작업입니다.
 public:
@@ -68,6 +68,10 @@ public:
 	CString GetRunTime();
 	void DispRunTime();
 	void DispLotTime();
+	void DispLotEndSerial(int nSerial);
+	void Reset();
+	void ResetLotTime();
+	void UpdateData();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.

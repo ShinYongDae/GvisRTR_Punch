@@ -3,7 +3,8 @@
 
 #include "Device/Engrave.h"
 
-#define TIM_INIT_PROCEDURE			0
+#define MAX_DISP				10
+#define TIM_INIT_PROCEDURE		0
 
 #define AT_LP					10
 #define MK_DONE_CHECK			30	// m_nStepMk
@@ -88,9 +89,27 @@ class CManagerProcedure : public CWnd
 	unsigned long m_Flag;
 	BOOL m_bAoiTestF[2], m_bAoiFdWriteF[2], bAoiFdWriteF[2];
 	BOOL m_bEngTestF, m_bEngFdWriteF, m_bCycleStopF;
-	BOOL m_bDispMsgDoAuto[10];
-	int m_nStepDispMsg[10];
+	BOOL m_bDispMsgDoAuto[MAX_DISP];
+	int m_nStepDispMsg[MAX_DISP];
 	CString m_sFixMsg[2]; //[0]:up , [1]:dn
+	DWORD m_dwCycSt, m_dwCycTim;
+	double m_dTotVel, m_dPartVel;
+
+	BOOL m_bPcrInShare[2], m_bPcrInShareVs[2];	// [Up/Dn]
+	BOOL m_bFailAlign[2][4];					// [nCam][nPos] 
+	BOOL m_bReAlign[2][4];						// [nCam][nPos] 
+	BOOL m_bSkipAlign[2][4];					// [nCam][nPos] 
+
+	BOOL m_bDoMk[2];			// [nCam] : TRUE(Punching), FALSE(Stop Punching)
+	BOOL m_bDoneMk[2];			// [nCam] : TRUE(Punching 완료), FALSE(Punching 미완료)
+	BOOL m_bReMark[2];			// [nCam] : TRUE(Punching 다시시작), FALSE(pass)
+
+	int m_nTotMk[2], m_nCurMk[2]; // [0]: 좌 MK, [1]: 우 MK
+	int m_nPrevTotMk[2], m_nPrevCurMk[2]; // [0]: 좌 MK, [1]: 우 MK
+
+	BOOL m_bEngSt, m_bEngStSw;
+	BOOL m_bEng2dSt, m_bEng2dStSw;
+	int m_nEngStAuto, m_nEng2dStAuto;
 
 	BOOL Init();
 	BOOL Create();
@@ -109,11 +128,124 @@ class CManagerProcedure : public CWnd
 	void DoAutoMarking();
 	void DoAutoMarkingEngrave();
 
+	void MarkingWith2PointAlign();
+	void Mk2PtReady();
+	void Mk2PtChkSerial();
+	void Mk2PtInit();
+	void Mk2PtAlignPt0();
+	void Mk2PtAlignPt1();
+	void Mk2PtMoveInitPos();
+	void Mk2PtElecChk();
+	void Mk2PtDoMarking();
+	void Mk2PtShift2Mk();
+	void Mk2PtLotDiff();
+	void Mk2PtReject();
+	void Mk2PtErrStop();
+
+	void MarkingWith4PointAlign();
+	void Mk4PtReady();
+	void Mk4PtChkSerial();
+	void Mk4PtInit();
+	void Mk4PtAlignPt0();
+	void Mk4PtAlignPt1();
+	void Mk4PtAlignPt2();
+	void Mk4PtAlignPt3();
+	void Mk4PtMoveInitPos();
+	void Mk4PtElecChk();
+	void Mk4PtDoMarking();
+	void Mk4PtLotDiff();
+	void Mk4PtReject();
+	void Mk4PtErrStop();
+
 	BOOL ReloadReelmap(int nSerial);
 	void UpdateRst();
 	void LotEnd();
+	void MakeResultMDS();
+
+	BOOL ChkLastProc();
 	BOOL ChkLastProcFromUp();
 	BOOL ChkLastProcFromEng();
+	void SetCycTime();
+	void InitAutoEngSignal();
+	void Shift2DummyBuf();
+	void Shift2Buf();
+	BOOL IsSetLotEnd();
+	BOOL ChkStShotNum();
+	void ResetMkInfo(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+	BOOL IsLastJob(int nAoi); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+	void SetAlignPos();
+	void InitReelmap();
+	void InitReelmapInner();
+	void ModelChange(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn
+	void InitReelmapDisp();
+	void InitCamImgDisp();
+
+	BOOL IsRun();
+	BOOL IsAuto();
+	BOOL IsReady();
+	BOOL IsAoiLdRun();
+	BOOL IsLotEnd();
+	void Stop();
+	void ResetWinker();
+	void Winker(int nId, int nDly = 20); // 0:Ready, 1:Reset, 2:Run, 3:Stop
+	CString GetDispMain();
+	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
+	void SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg);		// m_sAoiUpAlarmReStartMsg
+	void SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg);		// m_sAoiDnAlarmReStartMsg
+	void SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg);			// m_sAoiUpAlarmReTestMsg
+	void SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg);			// m_sAoiDnAlarmReTestMsg
+	CString GetAoiUpAlarmRestartMsg();									// m_sAoiUpAlarmReStartMsg
+	CString GetAoiDnAlarmRestartMsg();									// m_sAoiDnAlarmReStartMsg
+	CString GetAoiUpAlarmReTestMsg();									// m_sAoiUpAlarmReTestMsg
+	CString GetAoiDnAlarmReTestMsg();									// m_sAoiDnAlarmReTestMsg
+	CString ReadAoiUpAlarmRestartMsg();									// m_sAoiUpAlarmReStartMsg
+	CString ReadAoiDnAlarmRestartMsg();									// m_sAoiDnAlarmReStartMsg
+	CString ReadAoiUpAlarmReTestMsg();									// m_sAoiUpAlarmReTestMsg
+	CString ReadAoiDnAlarmReTestMsg();									// m_sAoiDnAlarmReTestMsg
+
+	int GetCycTime();
+	void MoveInitPos0(BOOL bWait = TRUE);
+	void MoveInitPos1(BOOL bWait = TRUE);
+	void InitIoWrite();
+	void SetTest(BOOL bOn);
+	void ClrMkInfo();
+	void SetLastProc(int nFromMachine);
+	BOOL IsSameUpDnLot();
+
+	BOOL IsShare();
+	BOOL IsShareUp();
+	BOOL IsShareDn();
+	int GetShareUp();
+	int GetShareDn();
+
+	BOOL IsShareVs();
+	BOOL IsShareVsUp();
+	BOOL IsShareVsDn();
+	int GetShareVsUp();
+	int GetShareVsDn();
+
+	void SetListBuf();
+	BOOL IsBuffer(int nNum = 0);
+
+	int GetLotEndSerial();
+	void SetLotEnd(int nSerial);
+	void DispInfo();
+
+	int GetAoiUpCamMstInfo(); // AOI상 strpcs.bin 연결
+	int GetAoiDnCamMstInfo(); // AOI하 strpcs.bin 연결
+	BOOL GetAoiInfoUp(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
+	BOOL GetAoiInfoDn(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
+	void SetCurrentInfoBufUpTot(int nTotal);
+	void SetCurrentInfoBufUp(int nIdx, int nData);
+	void SetCurrentInfoBufDnTot(int nTotal);
+	void SetCurrentInfoBufDn(int nIdx, int nData);
+	void SetMkMenu01(CString sMenu, CString sItem, CString sData);
+	void SetMkMenu03(CString sMenu, CString sItem, BOOL bOn);
+	BOOL OpenReelmapFromBuf(int nSerial);
+	int LoadPcrUp(int nSerial);	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	int LoadPcrDn(int nSerial);	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	BOOL UpdateReelmap(int nSerial);
+	BOOL MakeItsFile(int nSerial);
 
 public:
 	CManagerProcedure(CWnd* pParent = NULL);
@@ -122,6 +254,19 @@ public:
 	// 특성입니다.
 public:
 	CEngrave* m_pEngrave;
+	BOOL m_bDoneDispMkInfo[2][2]; // [nCam][Up/Dn]
+
+	int m_nShareUpS, m_nShareUpSprev;
+	int m_nShareUpSerial[2]; // [nCam]
+	int m_nShareDnS, m_nShareDnSprev;
+	int m_nShareDnSerial[2]; // [nCam]
+	int m_nShareUpCnt;
+	int m_nShareDnCnt;
+
+	int m_nBufUpSerial[2]; // [nCam]
+	int m_nBufDnSerial[2]; // [nCam]
+	int m_nBufUpCnt;
+	int m_nBufDnCnt;
 
 
 	// 작업입니다.
@@ -130,20 +275,10 @@ public:
 	BOOL InitAct();
 	void InitAuto(BOOL bInit = TRUE); // When doReset...
 	void Auto();
-	void SetCurrentInfoBufUpTot(int nTotal);
-	void SetCurrentInfoBufUp(int nIdx, int nData);
-	void SetCurrentInfoBufDnTot(int nTotal);
-	void SetCurrentInfoBufDn(int nIdx, int nData);
-	int GetAoiUpCamMstInfo(); // AOI상 strpcs.bin 연결
-	int GetAoiDnCamMstInfo(); // AOI하 strpcs.bin 연결
-	void SetMkMenu01(CString sMenu, CString sItem, CString sData);
-	void SetMkMenu03(CString sMenu, CString sItem, BOOL bOn);
-	BOOL IsRun();
-	BOOL IsLotEnd();
-	void SetAoiUpAlarmRestartMsg(CString sAoiUpAlarmReStartMsg);		// m_sAoiUpAlarmReStartMsg
-	void SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg);		// m_sAoiDnAlarmReStartMsg
-	void SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg);			// m_sAoiUpAlarmReTestMsg
-	void SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg);			// m_sAoiDnAlarmReTestMsg
+
+	BOOL GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption = 0);		// 내층에서의 ITS 시리얼의 정보
+	BOOL GetAoiDnInfo(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
+	BOOL GetAoiUpInfo(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
 
 	// 생성된 메시지 맵 함수
 protected:

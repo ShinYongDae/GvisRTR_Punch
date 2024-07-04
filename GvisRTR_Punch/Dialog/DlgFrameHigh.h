@@ -61,7 +61,10 @@ public:
 	void ChkMenu06();
 
 	int GetLastShotMk();
+	void Reset();
 	void SetMkLastShot(int nSerial);
+	void SetAoiLastShot(int nAoi, int nSerial);
+	void SetEngraveLastShot(int nSerial);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.

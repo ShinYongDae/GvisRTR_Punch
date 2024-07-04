@@ -7,20 +7,6 @@
 
 #define TIM_INIT_REELMAP			0
 
-struct stPcrShare
-{
-	BOOL bExist;
-	int nSerial;
-	CString sModel, sLayer, sLot, sItsCode, sPrcsCode;
-
-	stPcrShare()
-	{
-		bExist = FALSE;
-		nSerial = 0;
-		sModel = _T(""); sLayer = _T(""); sLot = _T(""); sItsCode = _T(""); sPrcsCode = _T("");
-	}
-};
-
 class CManagerReelmap : public CWnd
 {
 	CWnd* m_pParent;
@@ -33,13 +19,19 @@ class CManagerReelmap : public CWnd
 	void LoadConfig();
 	BOOL LoadDefectTableIni();
 
+	void GetResult();
+	void MakeResult();
+	void MakeResultIts();
+	void MakeSapp3();
+	BOOL RemakeReelmap();
+	BOOL RemakeReelmapInner();
+
 public:
 	CManagerReelmap(CWnd* pParent = NULL);
 	~CManagerReelmap();
 
 	// 특성입니다.
 public:
-	stPcrShare PcrShare[2];
 	char m_cBigDefCode[MAX_DEF];
 	char m_cSmallDefCode[MAX_DEF];
 	CString m_sKorDef[MAX_DEF], m_sEngDef[MAX_DEF];
@@ -76,7 +68,48 @@ public:
 	void Reset();
 	BOOL InitAct();
 	void SetRgbDef(int nDef, COLORREF rgbVal);
+	void ClrFixPcs();
+	void RestoreReelmap();
+	BOOL ReloadReelmap();
+	BOOL ReloadReelmap(int nSerial);
+	void InitReelmap();
+	void InitReelmapUp();
+	void InitReelmapDn();
+	BOOL InitReelmapInner();
+	BOOL InitReelmapInnerUp();
+	BOOL InitReelmapInnerDn();
+	BOOL OpenReelmapFromBuf(int nSerial);
+	void OpenReelmap();
+	void OpenReelmapUp();
+	void OpenReelmapDn();
+	void OpenReelmapInner();
+	void OpenReelmapInnerUp();
+	void OpenReelmapInnerDn();
+	int LoadPcrUp(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	int LoadPcrDn(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	BOOL UpdateReelmap(int nSerial);	// 시리얼파일의 정보로 릴맵을 만듬 
+	BOOL MakeItsFile(int nSerial);
+	int GetVsBufLastSerial();
+	int GetVsUpBufLastSerial();
+	int GetVsDnBufLastSerial();
+	void MakeResultMDS();
+	void UpdateProcessNum(CString sProcessNum);
 
+	// ITS
+	CString GetPathReelmapIts();
+	BOOL MakeItsReelmapHeader();	// 내외층 머징된 릴맵 헤드
+	BOOL WriteIts(int nItsSerial);
+	BOOL MakeItsFile(int nSerial, int nLayer);		// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+	CString GetItsFileData(int nSerial, int nLayer);	// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+	BOOL MakeDirIts();
+
+	BOOL m_bThreadAliveFinalCopyItsFiles, m_bRtnThreadFinalCopyItsFiles;
+	CThreadTask m_ThreadTaskFinalCopyItsFiles; // CThreadTask class, handles the threading code
+	void StartThreadFinalCopyItsFiles();
+	void StopThreadFinalCopyItsFiles();
+	BOOL FinalCopyItsFiles();
+	BOOL CopyItsFile(CString sPathSrc, CString sPathDest);
+	static BOOL ThreadProcFinalCopyItsFiles(LPVOID lpContext);
 
 	// 생성된 메시지 맵 함수
 protected:

@@ -270,6 +270,33 @@
     <ClInclude Include="Device\VerifySys.h">
       <Filter>Device</Filter>
     </ClInclude>
+    <ClInclude Include="Device\vic7defs.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Vicdefs.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Process\freeimage.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\LibMil.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\LibMilBuf.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\LibMilDisp.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\LibMilDraw.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Sr1000w.h">
+      <Filter>Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Sr1000wDef.h">
+      <Filter>Device</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">
@@ -471,6 +498,21 @@
       <Filter>Device</Filter>
     </ClCompile>
     <ClCompile Include="Device\VerifySys.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\LibMil.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\LibMilBuf.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\LibMilDisp.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\LibMilDraw.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Sr1000w.cpp">
       <Filter>Device</Filter>
     </ClCompile>
   </ItemGroup>

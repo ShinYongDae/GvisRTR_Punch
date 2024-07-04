@@ -98,8 +98,25 @@ void CManagerProcedure::Reset()
 	m_bCycleStopF = FALSE;
 	m_sFixMsg[0] = _T("");
 	m_sFixMsg[1] = _T("");
+	m_dTotVel = 0.0; 
+	m_dPartVel = 0.0;
+	m_dwCycSt = 0;
+	m_dwCycTim = 0;
 
-	for (i = 0; i < 10; i++)
+	m_bEngSt = FALSE;
+	m_bEngStSw = FALSE;
+	m_nEngStAuto = 0;
+
+	m_bEng2dSt = FALSE;
+	m_bEng2dStSw = FALSE;
+	m_nEng2dStAuto = 0;
+
+	m_bPcrInShare[0] = FALSE;
+	m_bPcrInShare[1] = FALSE;
+	m_bPcrInShareVs[0] = FALSE;
+	m_bPcrInShareVs[1] = FALSE;
+
+	for (i = 0; i < MAX_DISP; i++)
 	{
 		m_bDispMsgDoAuto[i] = FALSE;
 		m_nStepDispMsg[i] = 0;
@@ -234,36 +251,47 @@ BOOL CManagerProcedure::IsRun()
 {
 	return pView->IsRun();
 	//return TRUE; // AlignTest
-	//if (m_sDispMain == _T("øÓ¿¸¡ﬂ") || m_sDispMain == _T("√ ±‚øÓ¿¸") || m_sDispMain == _T("¥‹∏Èª˘«√")
-	//	|| m_sDispMain == _T("¥‹∏È∞ÀªÁ") || m_sDispMain == _T("≥ª√˛∞ÀªÁ") || m_sDispMain == _T("ø‹√˛∞ÀªÁ")
-	//	|| m_sDispMain == _T("æÁ∏È∞ÀªÁ") || m_sDispMain == _T("æÁ∏Èª˘«√"))
+	//if (GetDispMain() == _T("øÓ¿¸¡ﬂ") || GetDispMain() == _T("√ ±‚øÓ¿¸") || GetDispMain() == _T("¥‹∏Èª˘«√")
+	//	|| GetDispMain() == _T("¥‹∏È∞ÀªÁ") || GetDispMain() == _T("≥ª√˛∞ÀªÁ") || GetDispMain() == _T("ø‹√˛∞ÀªÁ")
+	//	|| GetDispMain() == _T("æÁ∏È∞ÀªÁ") || GetDispMain() == _T("æÁ∏Èª˘«√"))
 	//	return TRUE;
 	//return FALSE;
 	//return m_bSwRun;
 }
 
+BOOL CManagerProcedure::IsReady()
+{
+	return pView->IsReady();
+}
+
+BOOL CManagerProcedure::IsAuto()
+{
+	return pView->IsAuto();
+}
+
+BOOL CManagerProcedure::IsAoiLdRun()
+{
+	return pView->IsAoiLdRun();
+}
+
 void CManagerProcedure::InitAuto(BOOL bInit)
 {
+	stGeneral& General = (pView->m_mgrStatus->General);
+
 	if (!pDoc->WorkingInfo.LastJob.bSampleTest)
 	{
 		::WritePrivateProfileString(_T("Infomation"), _T("Lot End"), _T("0"), pDoc->WorkingInfo.System.sPathMkCurrInfo);
 		::WritePrivateProfileString(_T("Infomation"), _T("Last Shot"), _T("10000"), pDoc->WorkingInfo.System.sPathMkCurrInfo);
 	}
 
-	SetAoiUpAlarmRestartMsg(GetAoiUpAlarmRestartMsg());		// m_sAoiUpAlarmReStartMsg
-	SetAoiDnAlarmRestartMsg(GetAoiDnAlarmRestartMsg());		// m_sAoiDnAlarmReStartMsg
-	SetAoiUpAlarmReTestMsg(GetAoiUpAlarmReTestMsg());		// m_sAoiUpAlarmReTestMsg
-	SetAoiDnAlarmReTestMsg(GetAoiDnAlarmReTestMsg());		// m_sAoiDnAlarmReTestMsg
+	SetAoiUpAlarmRestartMsg(ReadAoiUpAlarmRestartMsg());		// m_sAoiUpAlarmReStartMsg
+	SetAoiDnAlarmRestartMsg(ReadAoiDnAlarmRestartMsg());		// m_sAoiDnAlarmReStartMsg
+	SetAoiUpAlarmReTestMsg(ReadAoiUpAlarmReTestMsg());			// m_sAoiUpAlarmReTestMsg
+	SetAoiDnAlarmReTestMsg(ReadAoiDnAlarmReTestMsg());			// m_sAoiDnAlarmReTestMsg
 
-	SetAoiUpAutoStep(0);
-	SetAoiDnAutoStep(0);
+	pDoc->SetAoiUpAutoStep(0);
+	pDoc->SetAoiDnAutoStep(0);
 
-	m_nAoiUpAutoSerial = 0;
-	m_nAoiUpAutoSerialPrev = 0;
-	m_nAoiDnAutoSerial = 0;
-	m_nAoiDnAutoSerialPrev = 0;
-
-	pView->m_nDebugStep = 10; pView->DispThreadTick();
 	int nCam, nPoint, kk, a, b;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
@@ -275,45 +303,52 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	m_sFixMsg[0] = _T("");
 	m_sFixMsg[1] = _T("");
 
-	m_bReadyDone = FALSE;
-	m_bChkLastProcVs = FALSE;
-	m_nDummy[0] = 0;
-	m_nDummy[1] = 0;
-	m_nAoiLastSerial[0] = 0;
-	m_nAoiLastSerial[1] = 0;
+	General.bReadyDone = FALSE;
 	General.nStepAuto = 0;
-	m_nPrevStepAuto = 0;
-	m_nPrevMkStAuto = 0;
-	m_bAoiLdRun = TRUE;
-	m_bAoiLdRunF = FALSE;
-	m_bNewModel = FALSE;
-	m_nLotEndSerial = 0;
-	if (m_pDlgMenu01)
-		m_pDlgMenu01->DispLotEndSerial(0);
-	m_bCam = FALSE;
-	m_bReview = FALSE;
-	m_bChkBufIdx[0] = TRUE;
-	m_bChkBufIdx[0] = TRUE;
+	General.nPrevMkStAuto = 0;
+	General.nLotEndSerial = 0;
+	General.bCam = FALSE;
+	General.nStepMk[0] = 0;
+	General.nStepMk[1] = 0;
+	General.nStepMk[2] = 0;
+	General.nStepMk[3] = 0;
+	General.nMkPcs[0] = 0;
+	General.nMkPcs[1] = 0;
+	General.nMkPcs[2] = 0;
+	General.nMkPcs[3] = 0;
+	General.bWaitPcr[0] = FALSE;
+	General.bWaitPcr[1] = FALSE;
+	for (a = 0; a < 2; a++)
+	{
+		for (b = 0; b < MAX_STRIP; b++)
+		{
+			General.nMkStrip[a][b] = 0;
+			General.bRejectDone[a][b] = FALSE;
+		}
+	}
+	pView->DispLotEndSerial(0);
 
-	m_nErrCnt = 0;
+	//m_bChkLastProcVs = FALSE;
+	//m_nDummy[0] = 0;
+	//m_nDummy[1] = 0;
+	//m_nAoiLastSerial[0] = 0;
+	//m_nAoiLastSerial[1] = 0;
+	//m_nPrevStepAuto = 0;
+	//m_bAoiLdRun = TRUE;
+	//m_bAoiLdRunF = FALSE;
+	//m_bNewModel = FALSE;
+	//m_bReview = FALSE;
+	//m_bChkBufIdx[0] = TRUE;
+	//m_bChkBufIdx[0] = TRUE;
+	//m_nErrCnt = 0;
 
-	m_nStepMk[0] = 0;
-	m_nStepMk[1] = 0;
-	m_nStepMk[2] = 0;
-	m_nStepMk[3] = 0;
-	m_bTHREAD_MK[0] = FALSE;
-	m_bTHREAD_MK[1] = FALSE;
-	m_bTHREAD_MK[2] = FALSE;
-	m_bTHREAD_MK[3] = FALSE;
-	m_nMkPcs[0] = 0;
-	m_nMkPcs[1] = 0;
-	m_nMkPcs[2] = 0;
-	m_nMkPcs[3] = 0;
+	//Thread.bTHREAD_MK[0] = FALSE;
+	//Thread.bTHREAD_MK[1] = FALSE;
+	//Thread.bTHREAD_MK[2] = FALSE;
+	//Thread.bTHREAD_MK[3] = FALSE;
 
-	m_bMkTmpStop = FALSE;
+	//m_bMkTmpStop = FALSE;
 
-	m_bWaitPcr[0] = FALSE;
-	m_bWaitPcr[1] = FALSE;
 
 
 	m_nShareUpS = 0;
@@ -334,20 +369,22 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	m_nBufDnSerial[1] = 0;
 	m_nBufDnCnt = 0;
 
-	for (nCam = 0; nCam < 2; nCam++)
-	{
-		for (nPoint = 0; nPoint < 4; nPoint++)
-		{
-			m_pDlgMenu02->m_dMkFdOffsetX[nCam][nPoint] = 0.0;
-			m_pDlgMenu02->m_dMkFdOffsetY[nCam][nPoint] = 0.0;
-		}
-	}
+	//pView->m_mgrPunch->ResetMkFdOffset();
+	//for (nCam = 0; nCam < 2; nCam++)
+	//{
+	//	for (nPoint = 0; nPoint < 4; nPoint++)
+	//	{
+	//		m_pDlgMenu02->m_dMkFdOffsetX[nCam][nPoint] = 0.0;
+	//		m_pDlgMenu02->m_dMkFdOffsetY[nCam][nPoint] = 0.0;
+	//	}
+	//}
 
-
-	m_pDlgMenu02->m_dAoiUpFdOffsetX = 0.0;
-	m_pDlgMenu02->m_dAoiUpFdOffsetY = 0.0;
-	m_pDlgMenu02->m_dAoiDnFdOffsetX = 0.0;
-	m_pDlgMenu02->m_dAoiDnFdOffsetY = 0.0;
+	//pView->m_mgrPunch->ResetAoiUpFdOffset();
+	//pView->m_mgrPunch->ResetAoiDnFdOffset();
+	//m_pDlgMenu02->m_dAoiUpFdOffsetX = 0.0;
+	//m_pDlgMenu02->m_dAoiUpFdOffsetY = 0.0;
+	//m_pDlgMenu02->m_dAoiDnFdOffsetX = 0.0;
+	//m_pDlgMenu02->m_dAoiDnFdOffsetY = 0.0;
 
 	m_bReAlign[0][0] = FALSE;	// [nCam][nPos]
 	m_bReAlign[0][1] = FALSE;	// [nCam][nPos]
@@ -392,7 +429,6 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 	m_nPrevTotMk[1] = 0;
 	m_nPrevCurMk[1] = 0;
 
-
 	m_bMkSt = FALSE;
 	::WritePrivateProfileString(_T("Last Job"), _T("MkSt"), _T("0"), PATH_WORKING_INFO);
 	m_bMkStSw = FALSE;
@@ -411,174 +447,126 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 
 	m_bLastProc = FALSE;
 	if (MODE_INNER != pDoc->GetTestMode())
-		m_bLastProcFromUp = TRUE;
+		General.bLastProcFromUp = TRUE;
 	else
-		m_bLastProcFromEng = TRUE;
+		General.bLastProcFromEng = TRUE;
 
 	m_nLastProcAuto = 0;
 
 	pView->ClrAlarm();
 
 	m_dwCycSt = 0;
-	m_sNewLotUp = _T("");
-	m_sNewLotDn = _T("");
+	//m_sNewLotUp = _T("");
+	//m_sNewLotDn = _T("");
+	//m_nStop = 0;
+	
+	SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("0"));
 
-	m_nStop = 0;
-
-	m_nStepTHREAD_DISP_DEF = 0;
-	m_bTHREAD_DISP_DEF = FALSE;				// CopyDefImg Stop
-	m_nStepTHREAD_DISP_DEF_INNER = 0;
-	m_bTHREAD_DISP_DEF_INNER = FALSE;		// DispDefImg Stop
-
-	pDoc->SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("0"));
-
-	pView->m_nDebugStep = 11; pView->DispThreadTick();
-	for (a = 0; a < 2; a++)
-	{
-		for (b = 0; b < 4; b++)
-		{
-			m_nMkStrip[a][b] = 0;
-			m_bRejectDone[a][b] = FALSE;
-		}
-	}
-
-	pView->m_nDebugStep = 12; pView->DispThreadTick();
-	MpeWrite(_T("MB440100"), 0); // PLC øÓ¿¸¡ÿ∫Ò øœ∑·(PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)
-	MpeWrite(_T("MB440110"), 0); // ∏∂≈∑Ω√¿€(PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
-	MpeWrite(_T("MB440150"), 0); // ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
-	MpeWrite(_T("MB440170"), 0); // ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
+	pView->MpeWrite(_T("MB440100"), 0); // PLC øÓ¿¸¡ÿ∫Ò øœ∑·(PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)
+	pView->MpeWrite(_T("MB440110"), 0); // ∏∂≈∑Ω√¿€(PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
+	pView->MpeWrite(_T("MB440150"), 0); // ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+	pView->MpeWrite(_T("MB440170"), 0); // ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
 
 	InitAutoEngSignal();
 
-	pView->m_nDebugStep = 13; pView->DispThreadTick();
 	MoveInitPos1();
 	Sleep(30);
 	MoveInitPos0();
 
-	pView->m_nDebugStep = 14; pView->DispThreadTick();
 	InitIoWrite();
-	//pView->m_nDebugStep = 15; pView->DispThreadTick();
-	//OpenShareUp();
-	//pView->m_nDebugStep = 16; pView->DispThreadTick();
-	//OpenShareDn();
-	pView->m_nDebugStep = 17; pView->DispThreadTick();
 	SetTest(FALSE);	// ∞ÀªÁ∫Œ ªÛ/«œ ∞ÀªÁ Ω√¿€ (Off)
-	pView->m_nDebugStep = 18; pView->DispThreadTick();
-	if (m_pDlgMenu01)
+
+	if (pView->m_pDlgMenu01)
 	{
-		m_pDlgMenu01->m_bLastProc = FALSE;
-
-		if (MODE_INNER != pDoc->GetTestMode())
-			m_pDlgMenu01->m_bLastProcFromUp = TRUE;
-		else
-			m_pDlgMenu01->m_bLastProcFromEng = TRUE;
-
-		m_pDlgMenu01->ResetSerial();
-		m_pDlgMenu01->ResetLastProc();
+		pView->m_pDlgMenu01->Reset();
 	}
 
+	//Thread.nStepTHREAD_DISP_DEF = 0;
+	//Thread.bTHREAD_DISP_DEF = FALSE;				// CopyDefImg Stop
+	//Thread.nStepTHREAD_DISP_DEF_INNER = 0;
+	//Thread.bTHREAD_DISP_DEF_INNER = FALSE;		// DispDefImg Stop
 
-	m_bTHREAD_UPDATAE_YIELD[0] = FALSE;
-	m_bTHREAD_UPDATAE_YIELD[1] = FALSE;
-	m_nSerialTHREAD_UPDATAE_YIELD[0] = 0;
-	m_nSerialTHREAD_UPDATAE_YIELD[1] = 0;
+	//Thread.bTHREAD_UPDATAE_YIELD[0] = FALSE;
+	//Thread.bTHREAD_UPDATAE_YIELD[1] = FALSE;
+	//m_nSerialTHREAD_UPDATAE_YIELD[0] = 0;
+	//m_nSerialTHREAD_UPDATAE_YIELD[1] = 0;
 
-	m_bTHREAD_UPDATE_REELMAP_UP = FALSE;
-	m_bTHREAD_UPDATE_REELMAP_ALLUP = FALSE;
-	m_bTHREAD_UPDATE_REELMAP_DN = FALSE;
-	m_bTHREAD_UPDATE_REELMAP_ALLDN = FALSE;
-	m_bTHREAD_UPDATE_REELMAP_ITS = FALSE;
-	m_bTHREAD_MAKE_ITS_FILE_UP = FALSE;
-	m_bTHREAD_MAKE_ITS_FILE_DN = FALSE;
-	//m_bTHREAD_UPDATE_REELMAP_INOUTER_UP = FALSE;
-	//m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP = FALSE;
-	//m_bTHREAD_UPDATE_REELMAP_INOUTER_DN = FALSE;
-	//m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN = FALSE;
+	//Thread.bTHREAD_UPDATE_REELMAP_UP = FALSE;
+	//Thread.bTHREAD_UPDATE_REELMAP_ALLUP = FALSE;
+	//Thread.bTHREAD_UPDATE_REELMAP_DN = FALSE;
+	//Thread.bTHREAD_UPDATE_REELMAP_ALLDN = FALSE;
+	//Thread.bTHREAD_UPDATE_REELMAP_ITS = FALSE;
+	//Thread.bTHREAD_MAKE_ITS_FILE_UP = FALSE;
+	//Thread.bTHREAD_MAKE_ITS_FILE_DN = FALSE;
 
-	m_bTHREAD_REELMAP_YIELD_UP = FALSE;
-	m_bTHREAD_REELMAP_YIELD_ALLUP = FALSE;
-	m_bTHREAD_REELMAP_YIELD_DN = FALSE;
-	m_bTHREAD_REELMAP_YIELD_ALLDN = FALSE;
-	m_bTHREAD_REELMAP_YIELD_ITS = FALSE;
+	//Thread.bTHREAD_REELMAP_YIELD_UP = FALSE;
+	//Thread.bTHREAD_REELMAP_YIELD_ALLUP = FALSE;
+	//Thread.bTHREAD_REELMAP_YIELD_DN = FALSE;
+	//Thread.bTHREAD_REELMAP_YIELD_ALLDN = FALSE;
+	//Thread.bTHREAD_REELMAP_YIELD_ITS = FALSE;
 
-	m_nSnTHREAD_UPDATAE_YIELD = 0;
+	//m_nSnTHREAD_UPDATAE_YIELD = 0;
 
-	pDoc->m_nEjectBufferLastShot = -1;
-	m_bSerialDecrese = FALSE;
-	m_bStopF_Verify = TRUE;
-	m_bInitAuto = TRUE;
-	m_bInitAutoLoadMstInfo = TRUE;
+	General.nEjectBufferLastShot = -1;
+	General.bSerialDecrese = FALSE;
+	General.bStopF_Verify = TRUE;
+	General.bInitAuto = TRUE;
+	General.bInitAutoLoadMstInfo = TRUE;
 
 	if (bInit) // ¿ÃæÓ∞°±‚∞° æ∆¥—∞ÊøÏ.
 	{
-		MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141121
-		DispLotEnd(FALSE);
+		pView->MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141121
+		pView->DispLotEnd(FALSE);
 
-		m_nRstNum = 0;
-		m_bCont = FALSE;
+		//m_nRstNum = 0;
+		General.bCont = FALSE;
 		m_dTotVel = 0.0;
 		m_dPartVel = 0.0;
 		m_dwCycSt = 0;
 		m_dwCycTim = 0;
 
-		pDoc->m_nPrevSerial = 0;
-		pDoc->m_bNewLotShare[0] = FALSE;
-		pDoc->m_bNewLotShare[1] = FALSE;
-		pDoc->m_bNewLotBuf[0] = FALSE;
-		pDoc->m_bNewLotBuf[1] = FALSE;
-		pDoc->m_bDoneChgLot = FALSE;
+		//pDoc->m_nPrevSerial = 0;
+		//pDoc->m_bNewLotShare[0] = FALSE;
+		//pDoc->m_bNewLotShare[1] = FALSE;
+		//pDoc->m_bNewLotBuf[0] = FALSE;
+		//pDoc->m_bNewLotBuf[1] = FALSE;
+		//pDoc->m_bDoneChgLot = FALSE;
 
-		m_pDlgFrameHigh->m_nMkLastShot = 0;
-		m_pDlgFrameHigh->m_nAoiLastShot[0] = 0;
-		m_pDlgFrameHigh->m_nAoiLastShot[1] = 0;
+		//m_pDlgFrameHigh->m_nMkLastShot = 0;
+		//m_pDlgFrameHigh->m_nAoiLastShot[0] = 0;
+		//m_pDlgFrameHigh->m_nAoiLastShot[1] = 0;
 
-		pView->m_nDebugStep = 20; pView->DispThreadTick();
-		if (m_pDlgMenu01)
-			m_pDlgMenu01->ResetLotTime();
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->ResetLotTime();
 
-		//ClrMkInfo();
-		pView->m_nDebugStep = 21; pView->DispThreadTick();
+		ClrMkInfo();
 
-		//ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
-		//pView->m_nDebugStep = 22; pView->DispThreadTick();
-		//if (bDualTest)
-		//	ResetMkInfo(1);
-
-		pView->m_nDebugStep = 23; pView->DispThreadTick();
-		ClrMkInfo(); // 20220420 - Happen Release Trouble
-
-		pView->m_nDebugStep = 24; pView->DispThreadTick();
-		if (m_pDlgFrameHigh)
+		if (pView->m_pDlgFrameHigh)
 		{
-			m_pDlgFrameHigh->SetMkLastShot(0);
-			m_pDlgFrameHigh->SetAoiLastShot(0, 0);
-			m_pDlgFrameHigh->SetAoiLastShot(1, 0);
-			m_pDlgFrameHigh->SetEngraveLastShot(0);
+			pView->m_pDlgFrameHigh->Reset();
+			//m_pDlgFrameHigh->SetMkLastShot(0);
+			//m_pDlgFrameHigh->SetAoiLastShot(0, 0);
+			//m_pDlgFrameHigh->SetAoiLastShot(1, 0);
+			//m_pDlgFrameHigh->SetEngraveLastShot(0);
 		}
-		pView->m_nDebugStep = 25; pView->DispThreadTick();
-
-		//pDoc->m_ListBuf[0].Clear();
-		//pDoc->m_ListBuf[1].Clear();
 	}
 	else
 	{
-		pView->m_nDebugStep = 26; pView->DispThreadTick();
-		//if (pDoc->GetTestMode() == MODE_INNER && pDoc->WorkingInfo.LastJob.bDispLotEnd)
 		if (pDoc->GetTestMode() == MODE_INNER && pDoc->WorkingInfo.LastJob.bDispLotEnd)
 		{
 			if (IDYES == pView->MsgBox(_T("∞¢¿Œ∫Œø°º≠ ∑π¿Ã¿˙ ∞¢¿Œ∫Œ≈Õ Ω√¿€«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 			{
-				MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
+				pView->MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
 			}
 			else
 			{
 				if (IDYES == pView->MsgBox(_T("∞¢¿Œ∫Œø°º≠ 2D ƒ⁄µÂ∏¶ ¿–∞Ì ≥≠ »ƒ Last Shot¿ª »Æ¿Œ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 				{
-					MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
+					pView->MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
 				}
 				else
 				{
-					MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
+					pView->MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
 				}
 			}
 		}
@@ -586,69 +574,67 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 		{
 			if (IDYES == pView->MsgBox(_T("∞¢¿Œ∫Œø°º≠ 2D ƒ⁄µÂ∏¶ ¿–∞Ì ≥≠ »ƒ Last Shot¿ª »Æ¿Œ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 			{
-				MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
+				pView->MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
 			}
 			else
 			{
 				if (IDYES == pView->MsgBox(_T("∞¢¿Œ∫Œø°º≠ ∑π¿Ã¿˙ ∞¢¿Œ∫Œ≈Õ Ω√¿€«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO, DEFAULT_TIME_OUT, FALSE))
 				{
-					MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
+					pView->MpeWrite(_T("MB440187"), 0); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-∑π¿Ã¿˙ ∞°∞¯∫Œ≈Õ Ω√¿€
 				}
 				else
 				{
-					MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
+					pView->MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-2D ƒ⁄µÂ ¿–±‚∫Œ≈Õ Ω√¿€
 				}
 			}
-
 		}
 		else
 		{
-			MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141121
-		}
-		//DispStsBar("¿ÃæÓ∞°±‚");
-
-		pView->m_nDebugStep = 27; pView->DispThreadTick();
-		if (pDoc->m_pReelMap)
-			pDoc->m_pReelMap->ClrFixPcs();
-		if (pDoc->m_pReelMapUp)
-			pDoc->m_pReelMapUp->ClrFixPcs();
-
-		if (bDualTest)
-		{
-			if (pDoc->m_pReelMapDn)
-				pDoc->m_pReelMapDn->ClrFixPcs();
-			if (pDoc->m_pReelMapAllUp)
-				pDoc->m_pReelMapAllUp->ClrFixPcs();
-			if (pDoc->m_pReelMapAllDn)
-				pDoc->m_pReelMapAllDn->ClrFixPcs();
+			pView->MpeWrite(_T("MB440187"), 1); // ¿ÃæÓ∞°±‚(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141121
 		}
 
-		if (pDoc->GetTestMode() == MODE_OUTER)
-		{
-			if (pDoc->m_pReelMapInnerUp)
-				pDoc->m_pReelMapInnerUp->ClrFixPcs();
-
-			if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-			{
-				if (pDoc->m_pReelMapInnerDn)
-					pDoc->m_pReelMapInnerDn->ClrFixPcs();
-				if (pDoc->m_pReelMapInnerAllUp)
-					pDoc->m_pReelMapInnerAllUp->ClrFixPcs();
-				if (pDoc->m_pReelMapInnerAllDn)
-					pDoc->m_pReelMapInnerAllDn->ClrFixPcs();
-			}
-		}
+		if(pView->m_mgrReelmap)
+			pView->m_mgrReelmap->ClrFixPcs();
+		//if (pDoc->m_pReelMap)
+		//	pDoc->m_pReelMap->ClrFixPcs();
+		//if (pDoc->m_pReelMapUp)
+		//	pDoc->m_pReelMapUp->ClrFixPcs();
+		//
+		//if (bDualTest)
+		//{
+		//	if (pDoc->m_pReelMapDn)
+		//		pDoc->m_pReelMapDn->ClrFixPcs();
+		//	if (pDoc->m_pReelMapAllUp)
+		//		pDoc->m_pReelMapAllUp->ClrFixPcs();
+		//	if (pDoc->m_pReelMapAllDn)
+		//		pDoc->m_pReelMapAllDn->ClrFixPcs();
+		//}
+		//
+		//if (pDoc->GetTestMode() == MODE_OUTER)
+		//{
+		//	if (pDoc->m_pReelMapInnerUp)
+		//		pDoc->m_pReelMapInnerUp->ClrFixPcs();
+		//
+		//	if (pDoc->WorkingInfo.LastJob.bDualTestInner)
+		//	{
+		//		if (pDoc->m_pReelMapInnerDn)
+		//			pDoc->m_pReelMapInnerDn->ClrFixPcs();
+		//		if (pDoc->m_pReelMapInnerAllUp)
+		//			pDoc->m_pReelMapInnerAllUp->ClrFixPcs();
+		//		if (pDoc->m_pReelMapInnerAllDn)
+		//			pDoc->m_pReelMapInnerAllDn->ClrFixPcs();
+		//	}
+		//}
 
 #ifndef TEST_MODE
-		ReloadReelmap();
+		if (pView->m_mgrReelmap)
+			pView->m_mgrReelmap->ReloadReelmap();
 		UpdateRst();
 #endif
-		DispLotStTime();
-		pView->m_nDebugStep = 29; pView->DispThreadTick();
-		RestoreReelmap();
+		pView->DispLotStTime();
+		if (pView->m_mgrReelmap)
+			pView->m_mgrReelmap->RestoreReelmap();
 	}
-
-	pView->m_nDebugStep = 30; pView->DispThreadTick();
 }
 
 void CManagerProcedure::Auto()
@@ -658,9 +644,7 @@ void CManagerProcedure::Auto()
 
 void CManagerProcedure::DoAuto()
 {
-	if (!pView->m_mgrStatus)
-		return;
-
+	if (!pView->m_mgrStatus)	return;
 	stThread& Thread = (pView->m_mgrStatus->Thread);
 
 	CString str;
@@ -752,7 +736,7 @@ BOOL CManagerProcedure::DoAutoGetLotEndSignal()
 			break;
 		case LOT_END + 1:
 			pView->MpeWrite(_T("MB440180"), 1);			// ¿€æ˜¡æ∑·(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141031
-			pView->DispMain(_T("¿€æ˜¡æ∑·"), RGB_RED);
+			DispMain(_T("¿€æ˜¡æ∑·"), RGB_RED);
 			m_nLotEndAuto++;
 			break;
 		case LOT_END + 2:
@@ -1190,14 +1174,14 @@ void CManagerProcedure::DoAutoDispMsg()
 			m_nStepDispMsg[8] = 0;
 			pView->Buzzer(TRUE, 0);
 			pView->Stop();
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			break;
 		case FROM_DOMARK1:
 			m_bDispMsgDoAuto[9] = FALSE;
 			m_nStepDispMsg[9] = 0;
 			pView->Buzzer(TRUE, 0);
 			pView->Stop();
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			break;
 		case FROM_DISPDEFIMG:
 			m_bDispMsgDoAuto[0] = FALSE;
@@ -1218,7 +1202,7 @@ void CManagerProcedure::DoAutoDispMsg()
 			pView->Stop();
 			//m_bSwStopNow = TRUE;
 			//m_bSwRunF = FALSE;
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			pView->MsgBox(m_sFixMsg[0]);
 			m_sFixMsg[0] = _T("");
 			break;
@@ -1226,11 +1210,11 @@ void CManagerProcedure::DoAutoDispMsg()
 			m_bDispMsgDoAuto[3] = FALSE;
 			m_nStepDispMsg[3] = 0;
 			pView->Buzzer(TRUE, 0);
-			TowerLamp(RGB_RED, TRUE);
+			//TowerLamp(RGB_RED, TRUE);
 			pView->Stop();
 			//m_bSwStopNow = TRUE;
 			//m_bSwRunF = FALSE;
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			pView->MsgBox(m_sFixMsg[1]);
 			m_sFixMsg[1] = _T("");
 			break;
@@ -1260,7 +1244,7 @@ void CManagerProcedure::DoAutoDispMsg()
 			pView->Stop();
 			//m_bSwStopNow = TRUE;
 			//m_bSwRunF = FALSE;
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			break;
 		case FROM_DISPDEFIMG + 7:
 			m_bDispMsgDoAuto[7] = FALSE;
@@ -1269,7 +1253,7 @@ void CManagerProcedure::DoAutoDispMsg()
 			pView->Stop();
 			//m_bSwStopNow = TRUE;
 			//m_bSwRunF = FALSE;
-			pView->DispMain(_T("¡§ ¡ˆ"), RGB_RED);
+			DispMain(_T("¡§ ¡ˆ"), RGB_RED);
 			break;
 		}
 	}
@@ -1277,18 +1261,21 @@ void CManagerProcedure::DoAutoDispMsg()
 
 void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«ÿº≠ ¿Ã«‘ºˆ∞° »£√‚µ ¿∏∑Œ ¡¬øÏ ∏∂≈∑ ¿Œµ¶Ω∫ µø¿œ «ˆªÛ πﬂª˝.(case AT_LP + 8:)
 {
-	if (!pView->m_mgrStatus)
-		return;
+	if (!pView->m_mgrStatus || pView->m_mgrFeeding)		return;
+	if (!pView->m_mgrReelmap)							return;
 
+	CCamMaster* pMaster = (pView->m_mgrReelmap->m_Master);
+	CCamMaster* pMasterInner = (pView->m_mgrReelmap->m_MasterInner);
 	stGeneral& General = (pView->m_mgrStatus->General);
 	stBtnPush& BtnPush = (pView->m_mgrFeeding->Btn);
+	stListBuf* ListBuf = pView->m_mgrStatus->ListBuf;
 
 	CString sLot, sLayerUp, sLayerDn;
 	BOOL bDualTestInner;
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nSerial = 0;
-	CString sNewLot;
+	//CString sNewLot;
 	int nNewLot = 0;
 	BOOL bNewModel = FALSE;
 
@@ -1302,7 +1289,6 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 	case 1:
 		if (IsReady() || IsAuto())		// øÓ¿¸¡ÿ∫Ò
 		{
-			TowerLamp(RGB_YELLOW, TRUE, TRUE);
 			General.nStepAuto++;
 		}
 		break;
@@ -1311,8 +1297,7 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 			General.nStepAuto++;
 		break;
 	case 3:
-		ClrDispMsg();
-		TowerLamp(RGB_YELLOW, TRUE, FALSE);
+		pView->ClrDispMsg();
 		General.nStepAuto++;
 		break;
 	case 4:
@@ -1321,115 +1306,95 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 			if (!IsAoiLdRun())
 			{
 				Stop();
-				TowerLamp(RGB_YELLOW, TRUE);
 			}
 			else
 			{
-				ResetWinker(); // 20151126 : øÓ¿¸Ω∫¿ßƒ° ∑•«¡ µø¿€ πÆ¡¶∑Œ ºˆ¡§.
-
-				TowerLamp(RGB_GREEN, TRUE, TRUE);
+				ResetWinker();
 				if (pDoc->WorkingInfo.LastJob.bSampleTest)
 				{
 					if (pDoc->WorkingInfo.LastJob.bDualTest)
 					{
-						if (m_sDispMain != _T("æÁ∏Èª˘«√"))
+						if (GetDispMain() != _T("æÁ∏Èª˘«√"))
 							DispMain(_T("æÁ∏Èª˘«√"), RGB_GREEN);
 					}
 					else
 					{
-						if (m_sDispMain != _T("¥‹∏Èª˘«√"))
+						if (GetDispMain() != _T("¥‹∏Èª˘«√"))
 							DispMain(_T("¥‹∏Èª˘«√"), RGB_GREEN);
 					}
 				}
 				else if (pDoc->GetTestMode() == MODE_INNER)
 				{
-					if (m_sDispMain != _T("≥ª√˛∞ÀªÁ"))
+					if (GetDispMain() != _T("≥ª√˛∞ÀªÁ"))
 						DispMain(_T("≥ª√˛∞ÀªÁ"), RGB_GREEN);
 				}
 				else if (pDoc->GetTestMode() == MODE_OUTER)
 				{
-					if (m_sDispMain != _T("ø‹√˛∞ÀªÁ"))
+					if (GetDispMain() != _T("ø‹√˛∞ÀªÁ"))
 						DispMain(_T("ø‹√˛∞ÀªÁ"), RGB_GREEN);
 				}
 				else if (pDoc->WorkingInfo.LastJob.bDualTest)
 				{
-					if (m_sDispMain != _T("æÁ∏È∞ÀªÁ"))
+					if (GetDispMain() != _T("æÁ∏È∞ÀªÁ"))
 						DispMain(_T("æÁ∏È∞ÀªÁ"), RGB_GREEN);
 				}
 				else
 				{
-					if (m_sDispMain != _T("¥‹∏È∞ÀªÁ"))
+					if (GetDispMain() != _T("¥‹∏È∞ÀªÁ"))
 						DispMain(_T("¥‹∏È∞ÀªÁ"), RGB_GREEN);
-					//if(m_sDispMain != _T("√ ±‚øÓ¿¸")
-					//	DispMain(_T("√ ±‚øÓ¿¸", RGB_GREEN);
 				}
-				m_nVsBufLastSerial[0] = GetVsUpBufLastSerial();
-				if (bDualTest)
-					m_nVsBufLastSerial[1] = GetVsDnBufLastSerial();
 
 				SetListBuf();
 
 				if (MODE_INNER == pDoc->GetTestMode() || MODE_OUTER == pDoc->GetTestMode()) // Please modify for outer mode.-20221226
 				{
-					GetCurrentInfoEng();
-					if (m_pDlgMenu01)
-						m_pDlgMenu01->UpdateData();
+					pDoc->GetCurrentInfoEng();
+					if (pView->m_pDlgMenu01)
+						pView->m_pDlgMenu01->UpdateData();
 				}
-
 
 				General.nStepAuto = AT_LP;
 			}
 		}
 		else
-			Winker(MN_RUN); // Run Button - 20151126 : øÓ¿¸Ω∫¿ßƒ° ∑•«¡ µø¿€ πÆ¡¶∑Œ ºˆ¡§.
+			Winker(MN_RUN);
 		break;
 
 	case AT_LP + (AtLpVsIdx::ChkShare) :
 		if (IsShare()) // ChkShare()
 		{
-			bPcrInShare[0] = FALSE;
-			bPcrInShare[1] = FALSE;
+			m_bPcrInShare[0] = FALSE;
+			m_bPcrInShare[1] = FALSE;
 
 			if (IsShareUp()) // ∞ÀªÁ∫Œ(ªÛ) ∞ÀªÁ¡ﬂ
 			{
 				nSerial = GetShareUp();
 				if (nSerial > 0)
 				{
-					if (pView->m_bSerialDecrese)
+					if (General.bSerialDecrese)
 					{
-						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+						if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
 						{
-							// Delete PCR File
-							pDoc->DelSharePcrUp();
+							pDoc->DelSharePcrUp();	// Delete PCR File
 						}
 						else
 						{
-							//m_nShareUpS = nSerial;
-							bPcrInShare[0] = TRUE;
+							m_bPcrInShare[0] = TRUE;
 						}
 					}
 					else
 					{
-						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-						{
-							// Delete PCR File
-							pDoc->DelSharePcrUp();
+						if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+						{							
+							pDoc->DelSharePcrUp();	// Delete PCR File
 						}
 						else
 						{
-							//m_nShareUpS = nSerial;
-							bPcrInShare[0] = TRUE;
+							m_bPcrInShare[0] = TRUE;
 						}
 					}
 				}
-				//else
-				//{
-				//	m_bLoadShare[0] = FALSE;
-				//}
 			}
-			//else
-			//	m_bLoadShare[0] = FALSE;
-
 
 			if (bDualTest)
 			{
@@ -1438,47 +1403,38 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 					nSerial = GetShareDn();
 					if (nSerial > 0)
 					{
-						if (pView->m_bSerialDecrese)
+						if (General.bSerialDecrese)
 						{
-							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
+							if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
 							{
-								// Delete PCR File
-								pDoc->DelSharePcrDn();
+								
+								pDoc->DelSharePcrDn();	// Delete PCR File
 							}
 							else
 							{
-								//m_nShareDnS = nSerial;
-								bPcrInShare[1] = TRUE;
+								m_bPcrInShare[1] = TRUE;
 							}
 						}
 						else
 						{
-							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-							{
-								// Delete PCR File
-								pDoc->DelSharePcrDn();
+							if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+							{								
+								pDoc->DelSharePcrDn();	// Delete PCR File
 							}
 							else
 							{
-								//m_nShareDnS = nSerial;
-								bPcrInShare[1] = TRUE;
+								m_bPcrInShare[1] = TRUE;
 							}
 						}
 					}
-					//else
-					//{
-					//	m_bLoadShare[1] = FALSE;
-					//}
 				}
-				//else
-				//	m_bLoadShare[1] = FALSE;
 
-				if (bPcrInShare[0] || bPcrInShare[1])
+				if (m_bPcrInShare[0] || m_bPcrInShare[1])
 					General.nStepAuto++;
 			}
 			else
 			{
-				if (bPcrInShare[0])
+				if (m_bPcrInShare[0])
 					General.nStepAuto++;
 			}
 		}
@@ -1487,26 +1443,15 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 			if (IsShareVs())
 				General.nStepAuto = AT_LP + (AtLpVsIdx::ChkShareVs);
 		}
-									   break;
+		break;
 
 	case AT_LP + (AtLpVsIdx::ChkShare) + 1:
-		//if (!m_bCont) // ¿ÃæÓ∞°±‚ æ∆¥— ∞ÊøÏ.
-		//{
-		//	if (!ChkStShotNum())
-		//	{
-		//		Stop();
-		//		TowerLamp(RGB_YELLOW, TRUE);
-		//	}
-		//}
 		General.nStepAuto++;
 		break;
+
 	case AT_LP + (AtLpVsIdx::ChkShare) + 2:
-		//if (IsRun())
-	{
-		//m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
 		General.nStepAuto++;
-	}
-	break;
+		break;
 
 	case AT_LP + (AtLpVsIdx::ChkShare) + 3:
 		Shift2DummyBuf();			// PCR ¿Ãµø(Share->Buffer)
@@ -1516,49 +1461,40 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 	case AT_LP + (AtLpVsIdx::ChkShareVs) :
 		if (IsShareVs()) // ChkShareVs()
 		{
-			bPcrInShareVs[0] = FALSE;
-			bPcrInShareVs[1] = FALSE;
+			m_bPcrInShareVs[0] = FALSE;
+			m_bPcrInShareVs[1] = FALSE;
 
 			if (IsShareVsUp()) // ∞ÀªÁ∫Œ(ªÛ) ∞ÀªÁ¡ﬂ
 			{
 				nSerial = GetShareVsUp();
 				if (nSerial > 0)
 				{
-					if (pView->m_bSerialDecrese)
+					if (General.bSerialDecrese)
 					{
-						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-						{
-							// Delete PCR File
-							pDoc->DelShareVsPcrUp();
+						if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
+						{						
+							pDoc->DelShareVsPcrUp();	// Delete PCR File
 						}
 						else
 						{
 							m_nShareUpS = nSerial;
-							bPcrInShareVs[0] = TRUE;
+							m_bPcrInShareVs[0] = TRUE;
 						}
 					}
 					else
 					{
-						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-						{
-							// Delete PCR File
-							pDoc->DelShareVsPcrUp();
+						if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+						{						
+							pDoc->DelShareVsPcrUp();	// Delete PCR File
 						}
 						else
 						{
 							m_nShareUpS = nSerial;
-							bPcrInShareVs[0] = TRUE;
+							m_bPcrInShareVs[0] = TRUE;
 						}
 					}
 				}
-				//else
-				//{
-				//	m_bLoadShareVs[0] = FALSE;
-				//}
 			}
-			//else
-			//	m_bLoadShareVs[0] = FALSE;
-
 
 			if (bDualTest)
 			{
@@ -1567,47 +1503,39 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 					nSerial = GetShareVsDn();
 					if (nSerial > 0)
 					{
-						if (pView->m_bSerialDecrese)
+						if (General.bSerialDecrese)
 						{
-							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-							{
-								// Delete PCR File
-								pDoc->DelShareVsPcrDn();
+							if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
+							{							
+								pDoc->DelShareVsPcrDn();	// Delete PCR File
 							}
 							else
 							{
 								m_nShareDnS = nSerial;
-								bPcrInShareVs[1] = TRUE;
+								m_bPcrInShareVs[1] = TRUE;
 							}
 						}
 						else
 						{
-							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-							{
-								// Delete PCR File
-								pDoc->DelShareVsPcrDn();
+							if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+							{							
+								pDoc->DelShareVsPcrDn();	// Delete PCR File
 							}
 							else
 							{
 								m_nShareDnS = nSerial;
-								bPcrInShareVs[1] = TRUE;
+								m_bPcrInShareVs[1] = TRUE;
 							}
 						}
 					}
-					//else
-					//{
-					//	m_bLoadShareVs[1] = FALSE;
-					//}
 				}
-				//else
-				//	m_bLoadShareVs[1] = FALSE;
 
-				if (bPcrInShareVs[0] || bPcrInShareVs[1])
+				if (m_bPcrInShareVs[0] || m_bPcrInShareVs[1])
 					General.nStepAuto++;
 			}
 			else
 			{
-				if (bPcrInShareVs[0])
+				if (m_bPcrInShareVs[0])
 					General.nStepAuto++;
 			}
 		}
@@ -1635,14 +1563,14 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 							if (IsSetLotEnd())
 								nSerial = GetLotEndSerial();
 							else
-								nSerial = pDoc->m_ListBuf[0].GetLast();
+								nSerial = ListBuf[0].GetLast();
 						}
 						else
 						{
 							if (IsSetLotEnd())
 								nSerial = GetLotEndSerial();
 							else
-								nSerial = pDoc->m_ListBuf[1].GetLast();
+								nSerial = ListBuf[1].GetLast();
 						}
 					}
 					else
@@ -1659,7 +1587,7 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 							if (IsSetLotEnd())
 								nSerial = GetLotEndSerial();
 							else
-								nSerial = pDoc->m_ListBuf[0].GetLast();
+								nSerial = ListBuf[0].GetLast();
 						}
 					}
 
@@ -1686,8 +1614,8 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 					}
 				}
 
-				m_bWaitPcr[0] = FALSE; // «‚»ƒ ¡¶∞≈«ÿæﬂ «“ flag
-				m_bWaitPcr[1] = FALSE;
+				General.bWaitPcr[0] = FALSE; // «‚»ƒ ¡¶∞≈«ÿæﬂ «“ flag
+				General.bWaitPcr[1] = FALSE;
 				General.nStepAuto++;
 			}
 
@@ -1708,35 +1636,31 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 				}
 			}
 		}
-										 break;
+		break;
 
 	case AT_LP + (AtLpVsIdx::ChkShareVs) + 1:
-		if (!m_bCont) // ¿ÃæÓ∞°±‚ æ∆¥— ∞ÊøÏ.
+		if (!General.bCont) // ¿ÃæÓ∞°±‚ æ∆¥— ∞ÊøÏ.
 		{
 			if (!ChkStShotNum())
 			{
 				Stop();
-				TowerLamp(RGB_YELLOW, TRUE);
 			}
 		}
 		General.nStepAuto++;
 		break;
 	case AT_LP + (AtLpVsIdx::ChkShareVs) + 2:
-		//if (IsRun())
-	{
-		m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
+		//m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
 		General.nStepAuto++;
-	}
 	break;
 
 	case AT_LP + (AtLpVsIdx::ChkShareVs) + 3:
-		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_YIELD_UP || Thread.bTHREAD_UPDATE_YIELD_DN || Thread.bTHREAD_UPDATE_YIELD_ALLUP || Thread.bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
@@ -1747,266 +1671,252 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 		break;
 
 	case AT_LP + (AtLpVsIdx::UpdateReelmap) :
-		//if (!IsRun())
-		//	break;
-
-		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-											if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
-											{
-												Sleep(100);
-												break;
-											}
+		if (Thread.bTHREAD_UPDATE_YIELD_UP || Thread.bTHREAD_UPDATE_YIELD_DN || Thread.bTHREAD_UPDATE_YIELD_ALLUP || Thread.bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		{
+			Sleep(100);
+			break;
+		}
 
-											if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
-											{
-												if (m_bTHREAD_MAKE_ITS_FILE_UP) // Write Reelmap
-													break;
+		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (Thread.bTHREAD_MAKE_ITS_FILE_UP) // Write Reelmap
+				break;
 
-												if (bDualTest)
-												{
-													if (m_bTHREAD_MAKE_ITS_FILE_DN)
-														break;
-												}
-											}
+			if (bDualTest)
+			{
+				if (Thread.bTHREAD_MAKE_ITS_FILE_DN)
+					break;
+			}
+		}
 
-											General.nStepAuto++;
+		General.nStepAuto++;
 
-											if (m_nShareUpS > 0)
-											{
-												m_nShareUpCnt++;
+		if (m_nShareUpS > 0)
+		{
+			m_nShareUpCnt++;
 
-												if (pDoc->GetCurrentInfoEng())
-												{
-													if (pDoc->GetTestMode() == MODE_OUTER)
-														pDoc->GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
-												}
+			if (pDoc->GetCurrentInfoEng())
+			{
+				if (pDoc->GetTestMode() == MODE_OUTER)
+					GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
+			}
 
-												bNewModel = GetAoiUpInfo(m_nShareUpS, &nNewLot); // Bufferø°º≠ PCR∆ƒ¿œ¿« «ÏµÂ ¡§∫∏∏¶ æÚ¿Ω.
+			bNewModel = GetAoiUpInfo(m_nShareUpS, &nNewLot); // Bufferø°º≠ PCR∆ƒ¿œ¿« «ÏµÂ ¡§∫∏∏¶ æÚ¿Ω.
 
-												if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
-												{
-													m_bNewModel = TRUE;
-													InitInfo();
-													ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+			if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
+			{
+				//m_bNewModel = TRUE;
+				DispInfo();
+				ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
 
-													pDoc->GetCamPxlRes();
+				pDoc->GetCamPxlRes();
 
-													if (IsLastJob(0)) // Up
-													{
-														pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-															pDoc->WorkingInfo.LastJob.sModelUp,
-															pDoc->WorkingInfo.LastJob.sLayerUp);
-														pDoc->m_Master[0].LoadMstInfo();
+				if (IsLastJob(0)) // Up
+				{
+					pMaster[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pDoc->WorkingInfo.LastJob.sModelUp,
+						pDoc->WorkingInfo.LastJob.sLayerUp);
+					pMaster[0].LoadMstInfo();
 
-														if (m_pEngrave)
-															m_pEngrave->SwMenu01UpdateWorking(TRUE);
+					if (m_pEngrave)
+						m_pEngrave->SwMenu01UpdateWorking(TRUE);
 
 
-														if (pDoc->GetTestMode() == MODE_OUTER)
-														{
-															pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-																pDoc->WorkingInfo.LastJob.sModelUp,
-																pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-															pDoc->m_MasterInner[0].LoadMstInfo();
-														}
-													}
+					if (pDoc->GetTestMode() == MODE_OUTER)
+					{
+						pMasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->WorkingInfo.LastJob.sModelUp,
+							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+						pMasterInner[0].LoadMstInfo();
+					}
+				}
 
-													if (IsLastJob(1)) // Dn
-													{
-														pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-															pDoc->WorkingInfo.LastJob.sModelDn,
-															pDoc->WorkingInfo.LastJob.sLayerDn,
-															pDoc->WorkingInfo.LastJob.sLayerUp);
-														pDoc->m_Master[1].LoadMstInfo();
+				if (IsLastJob(1)) // Dn
+				{
+					pMaster[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pDoc->WorkingInfo.LastJob.sModelDn,
+						pDoc->WorkingInfo.LastJob.sLayerDn,
+						pDoc->WorkingInfo.LastJob.sLayerUp);
+					pMaster[1].LoadMstInfo();
 
-														if (pDoc->GetTestMode() == MODE_OUTER)
-														{
-															pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-																pDoc->WorkingInfo.LastJob.sModelUp,
-																pDoc->WorkingInfo.LastJob.sInnerLayerDn,
-																pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-															pDoc->m_MasterInner[0].LoadMstInfo();
-														}
-													}
+					if (pDoc->GetTestMode() == MODE_OUTER)
+					{
+						pMasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->WorkingInfo.LastJob.sModelUp,
+							pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+						pMasterInner[0].LoadMstInfo();
+					}
+				}
 
-													SetAlignPos();
+				SetAlignPos();
+				InitReelmap();
 
-													InitReelmap();
+				if (pMaster[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+					InitReelmapInner();
 
-													if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
-														InitReelmapInner();
+				ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
+				InitReelmapDisp();
+				//if (m_pDlgMenu01)
+				//{
+				//	m_pDlgMenu01->InitGL();
+				//	m_bDrawGL_Menu01 = TRUE;
+				//	m_pDlgMenu01->RefreshRmap();
+				//	m_pDlgMenu01->InitCadImg();
+				//	m_pDlgMenu01->SetPnlNum();
+				//	m_pDlgMenu01->SetPnlDefNum();
+				//}
 
-													ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
+				InitCamImgDisp();
+				//if (m_pDlgMenu02)
+				//{
+				//	m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg∏¶ Display«‘.
+				//	m_pDlgMenu02->InitCadImg();
+				//}
 
-													if (m_pDlgMenu01)
-													{
-														m_pDlgMenu01->InitGL();
-														m_bDrawGL_Menu01 = TRUE;
-														m_pDlgMenu01->RefreshRmap();
-														m_pDlgMenu01->InitCadImg();
-														m_pDlgMenu01->SetPnlNum();
-														m_pDlgMenu01->SetPnlDefNum();
-													}
+				//if (pDoc->GetTestMode() == MODE_OUTER)
+				//{
+				//	if (m_pDlgMenu06)
+				//	{
+				//		m_pDlgMenu06->InitGL();
+				//		m_bDrawGL_Menu06 = TRUE;
+				//		m_pDlgMenu06->RefreshRmap();
+				//		m_pDlgMenu06->InitCadImg();
+				//		m_pDlgMenu06->SetPnlNum();
+				//		m_pDlgMenu06->SetPnlDefNum();
+				//	}
+				//}
+			}
+			else
+			{
+				if (m_nShareUpS == 1)
+				{
+					pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+					if ((pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
+					{
+						if (pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE)
+							pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ ¿œπ› ∏µÂ ¿Œµ•, \r\nªÛ∏È AOI¥¬ DTS ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
+						else
+							pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ DTS ∏µÂ ¿Œµ•, \r\nªÛ∏È AOI¥¬ ¿œπ› ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
 
-													if (m_pDlgMenu02)
-													{
-														m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg∏¶ Display«‘.
-														m_pDlgMenu02->InitCadImg();
-													}
+						Stop();
+						break;
+					}
+				}
+			}
 
-													if (pDoc->GetTestMode() == MODE_OUTER)
-													{
-														if (m_pDlgMenu06)
-														{
-															m_pDlgMenu06->InitGL();
-															m_bDrawGL_Menu06 = TRUE;
-															m_pDlgMenu06->RefreshRmap();
-															m_pDlgMenu06->InitCadImg();
-															m_pDlgMenu06->SetPnlNum();
-															m_pDlgMenu06->SetPnlDefNum();
-														}
-													}
-												}
-												else
-												{
-													if (m_nShareUpS == 1)
-													{
-														pDoc->m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
-														if ((pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE) != pDoc->WorkingInfo.System.bStripPcsRgnBin)
-														{
-															if (pDoc->m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE)
-																pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ ¿œπ› ∏µÂ ¿Œµ•, \r\nªÛ∏È AOI¥¬ DTS ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
-															else
-																pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ DTS ∏µÂ ¿Œµ•, \r\nªÛ∏È AOI¥¬ ¿œπ› ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
+			if (nNewLot)
+			{
+				if (!bDualTest)
+					OpenReelmapFromBuf(m_nShareUpS);
+				//if (!pDoc->m_bNewLotShare[0])
+				//{
+				//	pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
+				//	if (!bDualTest)
+				//		OpenReelmapFromBuf(m_nShareUpS);
+				//}
+			}
 
-															Stop();
-															TowerLamp(RGB_RED, TRUE);
-															break;
-														}
-													}
-												}
+			LoadPcrUp(m_nShareUpS);				// Default: From Buffer, TRUE: From Share
 
-												if (nNewLot)
-												{
-													if (!pDoc->m_bNewLotShare[0])
-													{
-														pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
-														if (!bDualTest)
-															OpenReelmapFromBuf(m_nShareUpS);
-													}
-												}
+			if (ListBuf[0].nTot <= ListBuf[1].nTot)
+			{
+				UpdateReelmap(m_nShareUpS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ
+			}
 
-												LoadPcrUp(m_nShareUpS);				// Default: From Buffer, TRUE: From Share
+			if (!m_bLastProc)
+			{
+				if (ChkLastProc())
+				{
+					m_nLastProcAuto = LAST_PROC;
+					m_bLastProc = TRUE;
 
-												if (pDoc->m_ListBuf[0].nTot <= pDoc->m_ListBuf[1].nTot)
-												{
-													UpdateReelmap(m_nShareUpS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ
-												}
+					if (bDualTest)
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else if (ChkLastProcFromUp())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[1].GetLast();
+						}
+					}
+					else
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
+						}
+					}
 
-												//if (!bDualTest)
-												//{
-												//	if (m_nShareUpS != m_nShareUpSprev)
-												//	{
-												//		m_nShareUpSprev = m_nShareUpS;
-												//		UpdateReelmap(m_nShareUpS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ 
-												//	}
-												//}
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
+					}
+				}
+			}
+			else
+			{
+				if (ChkLastProcFromEng())
+				{
+					if (IsSetLotEnd())
+						nSerial = GetLotEndSerial();
+					else
+						nSerial = pDoc->GetCurrentInfoEngShotNum();
 
-												if (!m_bLastProc)
-												{
-													if (ChkLastProc())
-													{
-														m_nLastProcAuto = LAST_PROC;
-														m_bLastProc = TRUE;
-
-														if (bDualTest)
-														{
-															if (ChkLastProcFromEng())
-															{
-																if (IsSetLotEnd())
-																	nSerial = GetLotEndSerial();
-																else
-																	nSerial = pDoc->GetCurrentInfoEngShotNum();
-															}
-															else if (ChkLastProcFromUp())
-															{
-																if (IsSetLotEnd())
-																	nSerial = GetLotEndSerial();
-																else
-																	nSerial = pDoc->m_ListBuf[0].GetLast();
-															}
-															else
-															{
-																if (IsSetLotEnd())
-																	nSerial = GetLotEndSerial();
-																else
-																	nSerial = pDoc->m_ListBuf[1].GetLast();
-															}
-														}
-														else
-														{
-															if (ChkLastProcFromEng())
-															{
-																if (IsSetLotEnd())
-																	nSerial = GetLotEndSerial();
-																else
-																	nSerial = pDoc->GetCurrentInfoEngShotNum();
-															}
-															else
-															{
-																if (IsSetLotEnd())
-																	nSerial = GetLotEndSerial();
-																else
-																	nSerial = pDoc->m_ListBuf[0].GetLast();
-															}
-														}
-
-														if (!IsSetLotEnd())
-														{
-															SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
-														}
-													}
-												}
-												else
-												{
-													if (ChkLastProcFromEng())
-													{
-														if (IsSetLotEnd())
-															nSerial = GetLotEndSerial();
-														else
-															nSerial = pDoc->GetCurrentInfoEngShotNum();
-
-														if (!IsSetLotEnd())
-														{
-															SetLotEnd(nSerial);
-														}
-													}
-												}
-											}
-											break;
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+					}
+				}
+			}
+		}
+		break;
 
 	case AT_LP + (AtLpVsIdx::UpdateReelmap) + 1:
-		//if (!IsRun())
-		//	break;
-
 		if (!bDualTest)
 		{
 			General.nStepAuto++;
 			break;
 		}
 
-		if (m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-		if (m_bTHREAD_REELMAP_YIELD_DN || m_bTHREAD_REELMAP_YIELD_ALLUP || m_bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_REELMAP_YIELD_DN || Thread.bTHREAD_REELMAP_YIELD_ALLUP || Thread.bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
@@ -2029,15 +1939,14 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 			m_nShareDnCnt++;
 
 
-			bNewModel = GetAoiDnInfo(m_nShareDnS, &nNewLot);
+			bNewModel = pDoc->GetAoiDnInfo(m_nShareDnS, &nNewLot);
 
 			if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
 			{
 				//MsgBox(_T("Ω≈±‘ ∏µ®ø° ¿««— AOI(«œ)ø°º≠ ∑Œ∆Æ ∫–∏Æ∞° µ«æ˙Ω¿¥œ¥Ÿ.\r\n¿Ã¿¸ ∑Œ∆Æ∏¶ ¿‹∑Æ√≥∏Æ «’¥œ¥Ÿ.");
-				InitInfo();
+				DispInfo();
 				ResetMkInfo(1); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
 				ModelChange(1); // 0 : AOI-Up , 1 : AOI-Dn
-
 			}
 			else
 			{
@@ -2052,7 +1961,6 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 							pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ DTS ∏µÂ ¿Œµ•, \r\n«œ∏È AOI¥¬ ¿œπ› ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
 
 						Stop();
-						TowerLamp(RGB_RED, TRUE);
 						break;
 					}
 				}
@@ -2060,30 +1968,22 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 
 			if (nNewLot)
 			{
-				if (!pDoc->m_bNewLotShare[1])
-				{
-					pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
-					if (bDualTest)
-						OpenReelmapFromBuf(m_nShareDnS);
-				}
+				if (bDualTest)
+					OpenReelmapFromBuf(m_nShareDnS);
+				//if (!pDoc->m_bNewLotShare[1])
+				//{
+				//	pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
+				//	if (bDualTest)
+				//		OpenReelmapFromBuf(m_nShareDnS);
+				//}
 			}
 
 			LoadPcrDn(m_nShareDnS);
 
-			if (pDoc->m_ListBuf[1].nTot <= pDoc->m_ListBuf[0].nTot)
+			if (ListBuf[1].nTot <= ListBuf[0].nTot)
 			{
 				UpdateReelmap(m_nShareDnS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ
 			}
-
-			//if (bDualTest)
-			//{
-			//	if (m_nShareDnS != m_nShareDnSprev)
-			//	{
-			//		m_nShareDnSprev = m_nShareDnS;
-			//		UpdateReelmap(m_nShareDnS);  // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ  // After inspect bottom side.
-			//	}
-			//}
-
 
 			if (!m_bLastProc)
 			{
@@ -2104,14 +2004,14 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 						if (IsSetLotEnd())
 							nSerial = GetLotEndSerial();
 						else
-							nSerial = pDoc->m_ListBuf[0].GetLast();
+							nSerial = ListBuf[0].GetLast();
 					}
 					else
 					{
 						if (IsSetLotEnd())
 							nSerial = GetLotEndSerial();
 						else
-							nSerial = pDoc->m_ListBuf[1].GetLast();
+							nSerial = ListBuf[1].GetLast();
 					}
 
 					if (!IsSetLotEnd())
@@ -2162,25 +2062,20 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 		break;
 
 	case AT_LP + (AtLpVsIdx::UpdateReelmap) + 3:
-		//if (IsRun())
-	{
 		if (bDualTest)
 		{
-			if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+			if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 				break;
 		}
 		else
 		{
-			if (m_bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
+			if (Thread.bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
 				break;
 		}
 		General.nStepAuto++;
-	}
-	break;
+		break;
 
 	case AT_LP + (AtLpVsIdx::MakeItsFile) :
-		//if (IsRun())
-	{
 		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 		{
 			if (!bDualTest)
@@ -2196,18 +2091,17 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 		}
 
 		General.nStepAuto++;
-	}
-										  break;
+		break;
 
 	case AT_LP + (AtLpVsIdx::MakeItsFile) + 1:
 		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 		{
-			if (m_bTHREAD_MAKE_ITS_FILE_UP) // makeIts
+			if (Thread.bTHREAD_MAKE_ITS_FILE_UP) // makeIts
 				break;
 
 			if (pDoc->WorkingInfo.LastJob.bDualTest)
 			{
-				if (m_bTHREAD_MAKE_ITS_FILE_DN) // makeIts
+				if (Thread.bTHREAD_MAKE_ITS_FILE_DN) // makeIts
 					break;
 			}
 		}
@@ -2221,76 +2115,42 @@ void CManagerProcedure::DoAutoChkShareVsFolder()	// ¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«
 		break;
 
 	case AT_LP + (AtLpVsIdx::ResetShare) + 1:
-		m_bLoadShare[0] = FALSE;
-		m_bLoadShare[1] = FALSE;
 		General.nStepAuto = AT_LP + (AtLpVsIdx::ChkShare);
-		break;
-
-
-	case LAST_PROC_VS_ALL:			 // ¿‹∑Æ√≥∏Æ 3
-		m_nDummy[0] = 0;
-		m_nDummy[1] = 0;
-		m_bChkLastProcVs = TRUE;
-		TowerLamp(RGB_GREEN, TRUE);
-		DispMain(_T("ªÛ∏ÈVS¿‹∑Æ"), RGB_GREEN);
-		if (m_nAoiLastSerial[0] < 1)
-			m_nAoiLastSerial[0] = GetAoiUpSerial();
-		if (!IsSetLotEnd())
-			SetLotEnd(m_nAoiLastSerial[0]);
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 1:
-		if (IsVsUp())
-			General.nStepAuto++;
-		else
-			General.nStepAuto = m_nPrevStepAuto;
-		break;
-
-	case LAST_PROC_VS_ALL + 2:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 3:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 4:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 5:
-		General.nStepAuto = m_nPrevStepAuto;
 		break;
 	}
 }
 
-void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«ÿº≠ ¿Ã«‘ºˆ∞° »£√‚µ ¿∏∑Œ ¡¬øÏ ∏∂≈∑ ¿Œµ¶Ω∫ µø¿œ «ˆªÛ πﬂª˝.(case AT_LP + 8:)
+void CManagerProcedure::DoAutoChkShareFolder()
 {
+	if (!pView->m_mgrStatus || pView->m_mgrFeeding)		return;
+	if (!pView->m_mgrReelmap)							return;
+
+	CCamMaster* pMaster = (pView->m_mgrReelmap->m_Master);
+	CCamMaster* pMasterInner = (pView->m_mgrReelmap->m_MasterInner);
+	stGeneral& General = (pView->m_mgrStatus->General);
+	stBtnPush& BtnPush = (pView->m_mgrFeeding->Btn);
+	stListBuf* ListBuf = pView->m_mgrStatus->ListBuf;
+
 	CString sLot, sLayerUp, sLayerDn;
 	BOOL bDualTestInner;
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nSerial = 0;
-	CString sNewLot;
+	//CString sNewLot;
 	int nNewLot = 0;
-	//BOOL bPcrInShare[2];
+	//BOOL m_bPcrInShare[2];
 	BOOL bNewModel = FALSE;
 
 	switch (General.nStepAuto)
 	{
 	case 0:
-		m_bSwRun = FALSE;
-		m_bSwStop = TRUE;
+		BtnPush.bSwRun = FALSE;
+		BtnPush.bSwStop = TRUE;
 		General.nStepAuto++;
 		break;
 	case 1:
-		if (IsReady() || IsAuto())		// øÓ¿¸¡ÿ∫Ò
+		if (pView->IsReady() || pView->IsAuto())		// øÓ¿¸¡ÿ∫Ò
 		{
-			TowerLamp(RGB_YELLOW, TRUE, TRUE);
 			General.nStepAuto++;
 		}
 		break;
@@ -2299,8 +2159,7 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 			General.nStepAuto++;
 		break;
 	case 3:
-		ClrDispMsg();
-		TowerLamp(RGB_YELLOW, TRUE, FALSE);
+		pView->ClrDispMsg();
 		General.nStepAuto++;
 		break;
 	case 4:
@@ -2309,166 +2168,140 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 			if (!IsAoiLdRun())
 			{
 				Stop();
-				TowerLamp(RGB_YELLOW, TRUE);
 			}
 			else
 			{
 				ResetWinker(); // 20151126 : øÓ¿¸Ω∫¿ßƒ° ∑•«¡ µø¿€ πÆ¡¶∑Œ ºˆ¡§.
 
-				TowerLamp(RGB_GREEN, TRUE, TRUE);
 				if (pDoc->WorkingInfo.LastJob.bSampleTest)
 				{
 					if (pDoc->WorkingInfo.LastJob.bDualTest)
 					{
-						if (m_sDispMain != _T("æÁ∏Èª˘«√"))
+						if (GetDispMain() != _T("æÁ∏Èª˘«√"))
 							DispMain(_T("æÁ∏Èª˘«√"), RGB_GREEN);
 					}
 					else
 					{
-						if (m_sDispMain != _T("¥‹∏Èª˘«√"))
+						if (GetDispMain() != _T("¥‹∏Èª˘«√"))
 							DispMain(_T("¥‹∏Èª˘«√"), RGB_GREEN);
 					}
 				}
 				else if (pDoc->GetTestMode() == MODE_INNER)
 				{
-					if (m_sDispMain != _T("≥ª√˛∞ÀªÁ"))
+					if (GetDispMain() != _T("≥ª√˛∞ÀªÁ"))
 						DispMain(_T("≥ª√˛∞ÀªÁ"), RGB_GREEN);
 				}
 				else if (pDoc->GetTestMode() == MODE_OUTER)
 				{
-					if (m_sDispMain != _T("ø‹√˛∞ÀªÁ"))
+					if (GetDispMain() != _T("ø‹√˛∞ÀªÁ"))
 						DispMain(_T("ø‹√˛∞ÀªÁ"), RGB_GREEN);
 				}
 				else if (pDoc->WorkingInfo.LastJob.bDualTest)
 				{
-					if (m_sDispMain != _T("æÁ∏È∞ÀªÁ"))
+					if (GetDispMain() != _T("æÁ∏È∞ÀªÁ"))
 						DispMain(_T("æÁ∏È∞ÀªÁ"), RGB_GREEN);
 				}
 				else
 				{
-					if (m_sDispMain != _T("¥‹∏È∞ÀªÁ"))
+					if (GetDispMain() != _T("¥‹∏È∞ÀªÁ"))
 						DispMain(_T("¥‹∏È∞ÀªÁ"), RGB_GREEN);
-					//if(m_sDispMain != _T("√ ±‚øÓ¿¸")
-					//	DispMain(_T("√ ±‚øÓ¿¸", RGB_GREEN);
 				}
-				m_nVsBufLastSerial[0] = GetVsUpBufLastSerial();
-				if (bDualTest)
-					m_nVsBufLastSerial[1] = GetVsDnBufLastSerial();
 
 				SetListBuf();
 
 				if (MODE_INNER == pDoc->GetTestMode() || MODE_OUTER == pDoc->GetTestMode()) // Please modify for outer mode.-20221226
 				{
-					GetCurrentInfoEng();
-					if (m_pDlgMenu01)
-						m_pDlgMenu01->UpdateData();
+					pDoc->GetCurrentInfoEng();
+					if (pView->m_pDlgMenu01)
+						pView->m_pDlgMenu01->UpdateData();
 				}
-
 
 				General.nStepAuto = AT_LP;
 			}
 		}
 		else
-			Winker(MN_RUN); // Run Button - 20151126 : øÓ¿¸Ω∫¿ßƒ° ∑•«¡ µø¿€ πÆ¡¶∑Œ ºˆ¡§.
+			Winker(MN_RUN);
 		break;
 
 	case AT_LP:
 		if (IsShare()) // ChkShare()
 		{
-			bPcrInShare[0] = FALSE;
-			bPcrInShare[1] = FALSE;
+			m_bPcrInShare[0] = FALSE;
+			m_bPcrInShare[1] = FALSE;
 
-			//if (IsShareUp() && IsTestDoneUp() && !m_bAoiTestF[0]) // ∞ÀªÁ∫Œ(ªÛ) ∞ÀªÁ¡ﬂ
 			if (IsShareUp())
 			{
 				nSerial = GetShareUp();
 				if (nSerial > 0)
 				{
-					if (pView->m_bSerialDecrese)
+					if (General.bSerialDecrese)
 					{
-						if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-						{
-							// Delete PCR File
-							pDoc->DelSharePcrUp();
+						if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
+						{						
+							pDoc->DelSharePcrUp();	// Delete PCR File
 						}
 						else
 						{
 							m_nShareUpS = nSerial;
-							bPcrInShare[0] = TRUE;
+							m_bPcrInShare[0] = TRUE;
 						}
 					}
 					else
 					{
-						if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-						{
-							// Delete PCR File
-							pDoc->DelSharePcrUp();
+						if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+						{						
+							pDoc->DelSharePcrUp();	// Delete PCR File
 						}
 						else
 						{
 							m_nShareUpS = nSerial;
-							bPcrInShare[0] = TRUE;
+							m_bPcrInShare[0] = TRUE;
 						}
 					}
 				}
-				else
-				{
-					m_bLoadShare[0] = FALSE;
-				}
 			}
-			else
-				m_bLoadShare[0] = FALSE;
 
 
 			if (bDualTest)
 			{
-				//if (IsShareDn() && IsTestDoneDn() && !m_bAoiTestF[1]) // ∞ÀªÁ∫Œ(«œ) ∞ÀªÁ¡ﬂ
 				if (IsShareDn())
 				{
 					nSerial = GetShareDn();
 					if (nSerial > 0)
 					{
-						if (pView->m_bSerialDecrese)
+						if (General.bSerialDecrese)
 						{
-							if (m_nLotEndSerial > 0 && nSerial < m_nLotEndSerial)
-							{
-								// Delete PCR File
-								pDoc->DelSharePcrDn();
+							if (General.nLotEndSerial > 0 && nSerial < General.nLotEndSerial)
+							{							
+								pDoc->DelSharePcrDn();	// Delete PCR File
 							}
 							else
 							{
 								m_nShareDnS = nSerial;
-								bPcrInShare[1] = TRUE;
+								m_bPcrInShare[1] = TRUE;
 							}
 						}
 						else
 						{
-							if (m_nLotEndSerial > 0 && nSerial > m_nLotEndSerial)
-							{
-								// Delete PCR File
-								pDoc->DelSharePcrDn();
+							if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
+							{							
+								pDoc->DelSharePcrDn();	// Delete PCR File
 							}
 							else
 							{
 								m_nShareDnS = nSerial;
-								bPcrInShare[1] = TRUE;
+								m_bPcrInShare[1] = TRUE;
 							}
 						}
 					}
-					else
-					{
-						m_bLoadShare[1] = FALSE;
-					}
 				}
-				else
-					m_bLoadShare[1] = FALSE;
 
-				if (bPcrInShare[0] || bPcrInShare[1])
+				if (m_bPcrInShare[0] || m_bPcrInShare[1])
 					General.nStepAuto++;
 			}
 			else
 			{
-				if (bPcrInShare[0])
+				if (m_bPcrInShare[0])
 					General.nStepAuto++;
 			}
 		}
@@ -2481,69 +2314,55 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 					m_nLastProcAuto = LAST_PROC;
 					m_bLastProc = TRUE;
 					nSerial = GetShareUp();
-
-					//if (IsVs())
-					//{
-					//	if (m_nAoiLastSerial[0] < 1)
-					//		m_nAoiLastSerial[0] = nSerial;
-
-					//	m_nPrevStepAuto = General.nStepAuto;
-					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // ¿‹∑Æ√≥∏Æ 3
-					//	break;
-					//}
-					//else
+					
+					if (bDualTest)
 					{
-						if (bDualTest)
+						if (ChkLastProcFromEng())
 						{
-							if (ChkLastProcFromEng())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->GetCurrentInfoEngShotNum();
-							}
-							else if (ChkLastProcFromUp())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[0].GetLast();
-							}
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
 							else
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[1].GetLast();
-							}
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else if (ChkLastProcFromUp())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
 						}
 						else
 						{
-							if (ChkLastProcFromEng())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->GetCurrentInfoEngShotNum();
-							}
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
 							else
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[0].GetLast();
-							}
+								nSerial = ListBuf[1].GetLast();
 						}
-
-						if (!IsSetLotEnd()) // 20160810
-						{
-							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
-											   //if (m_nAoiLastSerial[0] < 1)
-											   //m_nAoiLastSerial[0] = nSerial;
-						}
-
-						General.nStepAuto++;
 					}
+					else
+					{
+						if (ChkLastProcFromEng())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
+						}
+					}
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
+					}
+
+					General.nStepAuto++;					
 				}
 			}
 			else
@@ -2555,17 +2374,14 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 					else
 						nSerial = pDoc->GetCurrentInfoEngShotNum();
 
-					//if (m_nLotEndSerial != nSerial)
 					if (!IsSetLotEnd())
 					{
 						SetLotEnd(nSerial);
-						//if (m_nAoiLastSerial[0] < 1)
-						//m_nAoiLastSerial[0] = nSerial;
 					}
 				}
 
-				m_bWaitPcr[0] = FALSE;
-				m_bWaitPcr[1] = FALSE;
+				General.bWaitPcr[0] = FALSE;
+				General.bWaitPcr[1] = FALSE;
 				General.nStepAuto++;
 			}
 
@@ -2575,57 +2391,45 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 					nSerial = GetLotEndSerial();
 				else
 					nSerial = pDoc->GetCurrentInfoEngShotNum();
-				//SetLastSerialEng(nSerial);
 
 				if (ChkLastProc())
 				{
 					if (ChkLastProcFromEng())
 					{
-						//if (m_nLotEndSerial != nSerial)
 						if (!IsSetLotEnd())
 							SetLotEnd(nSerial);
 					}
 				}
 			}
-
 		}
 		break;
 
 	case AT_LP + 1:
-		if (!m_bCont) // ¿ÃæÓ∞°±‚ æ∆¥— ∞ÊøÏ.
+		if (!General.bCont) // ¿ÃæÓ∞°±‚ æ∆¥— ∞ÊøÏ.
 		{
 			if (!ChkStShotNum())
 			{
 				Stop();
-				TowerLamp(RGB_YELLOW, TRUE);
 			}
-		}
-		else
-		{
-			//if (!ChkContShotNum())
-			//{
-			//	Stop();
-			//	TowerLamp(RGB_YELLOW, TRUE);
-			//}
 		}
 		General.nStepAuto++;
 		break;
 	case AT_LP + 2:
 		if (IsRun())
 		{
-			m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
+			//m_bBufEmpty[0] = pDoc->m_bBufEmpty[0]; // Up
 			General.nStepAuto++;
 		}
 		break;
 
 	case AT_LP + 3:
-		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_YIELD_UP || Thread.bTHREAD_UPDATE_YIELD_DN || Thread.bTHREAD_UPDATE_YIELD_ALLUP || Thread.bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
@@ -2639,13 +2443,13 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 		if (!IsRun())
 			break;
 
-		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-		if (m_bTHREAD_UPDATE_YIELD_UP || m_bTHREAD_UPDATE_YIELD_DN || m_bTHREAD_UPDATE_YIELD_ALLUP || m_bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_YIELD_UP || Thread.bTHREAD_UPDATE_YIELD_DN || Thread.bTHREAD_UPDATE_YIELD_ALLUP || Thread.bTHREAD_UPDATE_YIELD_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
@@ -2653,141 +2457,112 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 
 		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 		{
-			//if (m_bTHREAD_UPDATE_REELMAP_INOUTER_UP) // Write Reelmap
-			if (m_bTHREAD_MAKE_ITS_FILE_UP)
+			if (Thread.bTHREAD_MAKE_ITS_FILE_UP)
 				break;
 
 			if (bDualTest)
 			{
-				if (m_bTHREAD_MAKE_ITS_FILE_DN)
+				if (Thread.bTHREAD_MAKE_ITS_FILE_DN)
 					break;
 			}
 		}
-
-		//if (!bDualTest)
-		//{
-		//	if (pDoc->GetTestMode() == MODE_OUTER)
-		//	{
-		//		if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_INNER_UP) // Write Reelmap
-		//			break;
-
-		//		if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-		//		{
-		//			if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
-		//				break;
-		//		}
-		//	}
-		//}
 
 		General.nStepAuto++;
 
 		if (m_nShareUpS > 0)
 		{
-			//if (m_nShareUpS % 2)
-			//	m_nShareUpSerial[0] = m_nShareUpS; // »¶ºˆ
-			//else
-			//	m_nShareUpSerial[1] = m_nShareUpS; // ¬¶ºˆ
 			m_nShareUpCnt++;
 
 			if (pDoc->GetCurrentInfoEng())
 			{
 				if (pDoc->GetTestMode() == MODE_OUTER)
-					pDoc->GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
+					GetItsSerialInfo(m_nShareUpS, bDualTestInner, sLot, sLayerUp, sLayerDn, 0);
 			}
 
 			bNewModel = GetAoiUpInfo(m_nShareUpS, &nNewLot); // Bufferø°º≠ PCR∆ƒ¿œ¿« «ÏµÂ ¡§∫∏∏¶ æÚ¿Ω.
 
 			if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
 			{
-				m_bNewModel = TRUE;
-				InitInfo();
+				//m_bNewModel = TRUE;
+				DispInfo();
 				ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
 
 				pDoc->GetCamPxlRes();
 
 				if (IsLastJob(0)) // Up
 				{
-					pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+					pMaster[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 						pDoc->WorkingInfo.LastJob.sModelUp,
 						pDoc->WorkingInfo.LastJob.sLayerUp);
-					pDoc->m_Master[0].LoadMstInfo();
-					//pDoc->m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.LastJob.sLotUp);
-
+					pMaster[0].LoadMstInfo();
 
 					if (m_pEngrave)
 						m_pEngrave->SwMenu01UpdateWorking(TRUE);
 
-
 					if (pDoc->GetTestMode() == MODE_OUTER)
 					{
-						//GetCurrentInfoEng();
-						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pMasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 							pDoc->WorkingInfo.LastJob.sModelUp,
 							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-						pDoc->m_MasterInner[0].LoadMstInfo();
+						pMasterInner[0].LoadMstInfo();
 					}
 				}
 
 				if (IsLastJob(1)) // Dn
 				{
-					pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+					pMaster[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 						pDoc->WorkingInfo.LastJob.sModelDn,
 						pDoc->WorkingInfo.LastJob.sLayerDn,
 						pDoc->WorkingInfo.LastJob.sLayerUp);
-					pDoc->m_Master[1].LoadMstInfo();
-					//pDoc->m_Master[1].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.LastJob.sLotDn);
+					pMaster[1].LoadMstInfo();
 
 					if (pDoc->GetTestMode() == MODE_OUTER)
 					{
-						//GetCurrentInfoEng();
-						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+						pMasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 							pDoc->WorkingInfo.LastJob.sModelUp,
 							pDoc->WorkingInfo.LastJob.sInnerLayerDn,
 							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-						pDoc->m_MasterInner[0].LoadMstInfo();
+						pMasterInner[0].LoadMstInfo();
 					}
 				}
 
 				SetAlignPos();
+				InitReelmap();
 
-				// 20220502 - end
-				InitReelmap();	// 20220421
-
-
-				if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
-					InitReelmapInner();	// 20220421
-
+				if (pMaster[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+					InitReelmapInner();
 
 				ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
+				InitReelmapDisp();
+				//if (m_pDlgMenu01)
+				//{
+				//	m_pDlgMenu01->InitGL();
+				//	m_bDrawGL_Menu01 = TRUE;
+				//	m_pDlgMenu01->RefreshRmap();
+				//	m_pDlgMenu01->InitCadImg();
+				//	m_pDlgMenu01->SetPnlNum();
+				//	m_pDlgMenu01->SetPnlDefNum();
+				//}
 
-				if (m_pDlgMenu01)
-				{
-					m_pDlgMenu01->InitGL();
-					m_bDrawGL_Menu01 = TRUE;
-					m_pDlgMenu01->RefreshRmap();
-					m_pDlgMenu01->InitCadImg();
-					m_pDlgMenu01->SetPnlNum();
-					m_pDlgMenu01->SetPnlDefNum();
-				}
+				InitCamImgDisp();
+				//if (m_pDlgMenu02)
+				//{
+				//	m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg∏¶ Display«‘.
+				//	m_pDlgMenu02->InitCadImg();
+				//}
 
-				if (m_pDlgMenu02)
-				{
-					m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg∏¶ Display«‘.
-					m_pDlgMenu02->InitCadImg();
-				}
-
-				if (pDoc->GetTestMode() == MODE_OUTER) // syd-20231121
-				{
-					if (m_pDlgMenu06)
-					{
-						m_pDlgMenu06->InitGL();
-						m_bDrawGL_Menu06 = TRUE;
-						m_pDlgMenu06->RefreshRmap();
-						m_pDlgMenu06->InitCadImg();
-						m_pDlgMenu06->SetPnlNum();
-						m_pDlgMenu06->SetPnlDefNum();
-					}
-				}
+				//if (pDoc->GetTestMode() == MODE_OUTER) // syd-20231121
+				//{
+				//	if (m_pDlgMenu06)
+				//	{
+				//		m_pDlgMenu06->InitGL();
+				//		m_bDrawGL_Menu06 = TRUE;
+				//		m_pDlgMenu06->RefreshRmap();
+				//		m_pDlgMenu06->InitCadImg();
+				//		m_pDlgMenu06->SetPnlNum();
+				//		m_pDlgMenu06->SetPnlDefNum();
+				//	}
+				//}
 
 			}
 			else
@@ -2803,7 +2578,6 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 							pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ DTS ∏µÂ ¿Œµ•, \r\nªÛ∏È AOI¥¬ ¿œπ› ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
 
 						Stop();
-						TowerLamp(RGB_RED, TRUE);
 						break;
 
 					}
@@ -2812,112 +2586,75 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 
 			if (nNewLot)
 			{
-				if (!pDoc->m_bNewLotShare[0])
-				{
-					pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
-					if (!bDualTest)
-						OpenReelmapFromBuf(m_nShareUpS);
-				}
+				if (!bDualTest)
+					OpenReelmapFromBuf(m_nShareUpS);
+				//if (!pDoc->m_bNewLotShare[0])
+				//{
+				//	pDoc->m_bNewLotShare[0] = TRUE;// Lot Change.
+				//	if (!bDualTest)
+				//		OpenReelmapFromBuf(m_nShareUpS);
+				//}
 			}
 
 			LoadPcrUp(m_nShareUpS);				// Default: From Buffer, TRUE: From Share
 
-			if (pDoc->m_ListBuf[0].nTot <= pDoc->m_ListBuf[1].nTot)
+			if (ListBuf[0].nTot <= ListBuf[1].nTot)
 			{
 				UpdateReelmap(m_nShareUpS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ
 			}
 
-			//if (!bDualTest)
-			//{
-			//	if (m_nShareUpS != m_nShareUpSprev)
-			//	{
-			//		m_nShareUpSprev = m_nShareUpS;
-			//		UpdateReelmap(m_nShareUpS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ 
-			//	}
-			//}
-
 			if (!m_bLastProc)
 			{
-				//if (!IsSetLotEnd())
-				//{
-				//	if (ChkLotEndUp(m_nShareUpS))// ∆ƒ¿œ¿« ≥ªøÎ ¡ﬂø° Lot End (-2) ¿‹∑Æ√≥∏Æ∏¶ √º≈©«‘. (ø¨º” 3Pnl:-2) -> ∑Œ∆Æøœ∑· 
-				//	{
-				//		SetLotEnd(m_nShareUpS - pDoc->AoiDummyShot[0]);
-				//		if (m_nAoiLastSerial[0] < 1)
-				//			m_nAoiLastSerial[0] = m_nShareUpS;
-
-				//		if (!bDualTest)
-				//		{
-				//			m_bLastProc = TRUE;
-				//			m_nLastProcAuto = LAST_PROC;
-				//		}
-				//	}
-				//}
-
 				if (ChkLastProc())
 				{
 					m_nLastProcAuto = LAST_PROC;
 					m_bLastProc = TRUE;
 
-					//if (IsVs())
-					//{
-					//	if (m_nAoiLastSerial[0] < 1)
-					//		m_nAoiLastSerial[0] = m_nShareUpS;
-
-					//	m_nPrevStepAuto = General.nStepAuto;
-					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // ¿‹∑Æ√≥∏Æ 3
-					//	break;
-					//}
-					//else
+					if (bDualTest)
 					{
-						if (bDualTest)
+						if (ChkLastProcFromEng())
 						{
-							if (ChkLastProcFromEng())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->GetCurrentInfoEngShotNum();
-							}
-							else if (ChkLastProcFromUp())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[0].GetLast();
-							}
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
 							else
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[1].GetLast();
-							}
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
+						}
+						else if (ChkLastProcFromUp())
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
 						}
 						else
 						{
-							if (ChkLastProcFromEng())
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->GetCurrentInfoEngShotNum();
-							}
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
 							else
-							{
-								if (IsSetLotEnd())
-									nSerial = GetLotEndSerial();
-								else
-									nSerial = pDoc->m_ListBuf[0].GetLast();
-							}
+								nSerial = ListBuf[1].GetLast();
 						}
-
-						if (!IsSetLotEnd()) // 20160810
+					}
+					else
+					{
+						if (ChkLastProcFromEng())
 						{
-							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
-											   //if (m_nAoiLastSerial[0] < 1)
-											   //m_nAoiLastSerial[0] = nSerial;
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = pDoc->GetCurrentInfoEngShotNum();
 						}
+						else
+						{
+							if (IsSetLotEnd())
+								nSerial = GetLotEndSerial();
+							else
+								nSerial = ListBuf[0].GetLast();
+						}
+					}
+
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
 					}
 				}
 			}
@@ -2930,20 +2667,12 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 					else
 						nSerial = pDoc->GetCurrentInfoEngShotNum();
 
-					//if (m_nLotEndSerial != nSerial)
 					if (!IsSetLotEnd())
 					{
 						SetLotEnd(nSerial);
-						//if (m_nAoiLastSerial[0] < 1)
-						//m_nAoiLastSerial[0] = nSerial;
 					}
 				}
 			}
-		}
-		else
-		{
-			//ClrDispMsg();
-			//AfxMessageBox(_T("Error : m_nShareUpS <= 0"));
 		}
 		break;
 
@@ -2957,13 +2686,13 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 			break;
 		}
 
-		if (m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
 		}
 
-		if (m_bTHREAD_REELMAP_YIELD_DN || m_bTHREAD_REELMAP_YIELD_ALLUP || m_bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
+		if (Thread.bTHREAD_REELMAP_YIELD_DN || Thread.bTHREAD_REELMAP_YIELD_ALLUP || Thread.bTHREAD_REELMAP_YIELD_ALLDN) // Write Reelmap
 		{
 			Sleep(100);
 			break;
@@ -2971,21 +2700,11 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 
 		General.nStepAuto++;
 
-		//if (m_bChkLastProcVs)
-		//{
-		//	if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
-		//		break;
-		//}
-		//else
+		if (IsSetLotEnd())
 		{
-			if (IsSetLotEnd())
-			{
-				//if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
-				if (m_nShareDnS > GetLotEndSerial())
-					break;
-			}
+			if (m_nShareDnS > GetLotEndSerial())
+				break;
 		}
-
 
 		if (m_nShareDnS > 0)
 		{
@@ -2996,12 +2715,12 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 			m_nShareDnCnt++;
 
 
-			bNewModel = GetAoiDnInfo(m_nShareDnS, &nNewLot);
+			bNewModel = pDoc->GetAoiDnInfo(m_nShareDnS, &nNewLot);
 
 			if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
 			{
 				//MsgBox(_T("Ω≈±‘ ∏µ®ø° ¿««— AOI(«œ)ø°º≠ ∑Œ∆Æ ∫–∏Æ∞° µ«æ˙Ω¿¥œ¥Ÿ.\r\n¿Ã¿¸ ∑Œ∆Æ∏¶ ¿‹∑Æ√≥∏Æ «’¥œ¥Ÿ.");
-				InitInfo();
+				DispInfo();
 				ResetMkInfo(1); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
 				ModelChange(1); // 0 : AOI-Up , 1 : AOI-Dn
 
@@ -3019,7 +2738,6 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 							pView->MsgBox(_T("«ˆ¿Á ∏∂≈∑∫Œ¥¬ DTS ∏µÂ ¿Œµ•, \r\n«œ∏È AOI¥¬ ¿œπ› ∏µÂø°º≠ ∞ÀªÁ∏¶ ¡¯«‡«œø¥Ω¿¥œ¥Ÿ."));
 
 						Stop();
-						TowerLamp(RGB_RED, TRUE);
 						break;
 					}
 				}
@@ -3027,93 +2745,55 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 
 			if (nNewLot)
 			{
-				if (!pDoc->m_bNewLotShare[1])
-				{
-					pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
-					if (bDualTest)
-						OpenReelmapFromBuf(m_nShareDnS);
-				}
+				if (bDualTest)
+					OpenReelmapFromBuf(m_nShareDnS);
+				//if (!pDoc->m_bNewLotShare[1])
+				//{
+				//	pDoc->m_bNewLotShare[1] = TRUE;// Lot Change.				
+				//	if (bDualTest)
+				//		OpenReelmapFromBuf(m_nShareDnS);
+				//}
 			}
 
 			LoadPcrDn(m_nShareDnS);
 
-			if (pDoc->m_ListBuf[1].nTot <= pDoc->m_ListBuf[0].nTot)
+			if (ListBuf[1].nTot <= ListBuf[0].nTot)
 			{
 				UpdateReelmap(m_nShareDnS); // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ
 			}
 
-			//if (bDualTest)
-			//{
-			//	if (m_nShareDnS != m_nShareDnSprev)
-			//	{
-			//		m_nShareDnSprev = m_nShareDnS;
-			//		UpdateReelmap(m_nShareDnS);  // Ω√∏ÆæÛ∆ƒ¿œ¿« ¡§∫∏∑Œ ∏±∏ ¿ª ∏∏µÎ  // After inspect bottom side.
-			//	}
-			//}
-
-
 			if (!m_bLastProc)
 			{
-				//if (!IsSetLotEnd())
-				//{
-				//	if (ChkLotEndDn(m_nShareDnS))// ∆ƒ¿œ¿« ≥ªøÎ ¡ﬂø° Lot End (-2) ¿‹∑Æ√≥∏Æ∏¶ √º≈©«‘. (ø¨º” 3Pnl:-2) -> ∑Œ∆Æøœ∑· 
-				//	{
-				//		if (!IsSetLotEnd())
-				//			SetLotEnd(m_nShareDnS - pDoc->AoiDummyShot[1]);
-				//		if (m_nAoiLastSerial[0] < 1)
-				//			m_nAoiLastSerial[0] = m_nShareDnS;
-				//		if (bDualTest)
-				//		{
-				//			m_bLastProc = TRUE;
-				//			m_nLastProcAuto = LAST_PROC;
-				//		}
-				//	}
-				//}
-
 				if (ChkLastProc())
 				{
 					m_nLastProcAuto = LAST_PROC;
 					m_bLastProc = TRUE;
 
-					//if (IsVs())
-					//{
-					//	if (m_nAoiLastSerial[0] < 1)
-					//		m_nAoiLastSerial[0] = m_nShareDnS;
-
-					//	m_nPrevStepAuto = General.nStepAuto;
-					//	General.nStepAuto = LAST_PROC_VS_ALL;		 // ¿‹∑Æ√≥∏Æ 3
-					//	break;
-					//}
-					//else
+					if (ChkLastProcFromEng())
 					{
-						if (ChkLastProcFromEng())
-						{
-							if (IsSetLotEnd())
-								nSerial = GetLotEndSerial();
-							else
-								nSerial = pDoc->GetCurrentInfoEngShotNum();
-						}
-						else if (ChkLastProcFromUp())
-						{
-							if (IsSetLotEnd())
-								nSerial = GetLotEndSerial();
-							else
-								nSerial = pDoc->m_ListBuf[0].GetLast();
-						}
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
 						else
-						{
-							if (IsSetLotEnd())
-								nSerial = GetLotEndSerial();
-							else
-								nSerial = pDoc->m_ListBuf[1].GetLast();
-						}
+							nSerial = pDoc->GetCurrentInfoEngShotNum();
+					}
+					else if (ChkLastProcFromUp())
+					{
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
+						else
+							nSerial = ListBuf[0].GetLast();
+					}
+					else
+					{
+						if (IsSetLotEnd())
+							nSerial = GetLotEndSerial();
+						else
+							nSerial = ListBuf[1].GetLast();
+					}
 
-						if (!IsSetLotEnd()) // 20160810
-						{
-							SetLotEnd(nSerial);//+pDoc->AoiDummyShot[1]); // 3
-											   //if (m_nAoiLastSerial[0] < 1)
-											   //m_nAoiLastSerial[0] = nSerial;
-						}
+					if (!IsSetLotEnd())
+					{
+						SetLotEnd(nSerial);
 					}
 				}
 			}
@@ -3126,20 +2806,12 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 					else
 						nSerial = pDoc->GetCurrentInfoEngShotNum();
 
-					//if (m_nLotEndSerial != nSerial)
 					if (!IsSetLotEnd())
 					{
 						SetLotEnd(nSerial);
-						//if (m_nAoiLastSerial[0] < 1)
-						//m_nAoiLastSerial[0] = nSerial;
 					}
 				}
 			}
-		}
-		else
-		{
-			//ClrDispMsg();
-			//AfxMessageBox(_T("Error : m_nShareDnS <= 0"));
 		}
 
 		break;
@@ -3155,19 +2827,10 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 		{
 			if (m_nShareDnS > 0)
 			{
-				//if (m_bChkLastProcVs)
-				//{
-				//	if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
-				//		break;
-				//}
-				//else
+				if (IsSetLotEnd())
 				{
-					if (IsSetLotEnd())
-					{
-						//if (m_nShareDnS > m_nAoiLastSerial[0] && m_nAoiLastSerial[0] > 0)
-						if (m_nShareDnS > GetLotEndSerial())
-							break;
-					}
+					if (m_nShareDnS > GetLotEndSerial())
+						break;
 				}
 
 				if (pView->m_pDlgFrameHigh)
@@ -3179,29 +2842,16 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 	case AT_LP + 7:
 		if (IsRun())
 		{
-			//if (pDoc->GetTestMode() == MODE_OUTER)
-			//{
-			//	if (m_bTHREAD_UPDATE_REELMAP_INNER_UP) // Write Reelmap
-			//		break;
-
-			//	if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-			//	{
-			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
-			//			break;
-			//	}
-			//}
-
 			if (bDualTest)
 			{
-				if (m_bTHREAD_UPDATE_REELMAP_UP || m_bTHREAD_UPDATE_REELMAP_DN || m_bTHREAD_UPDATE_REELMAP_ALLUP || m_bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+				if (Thread.bTHREAD_UPDATE_REELMAP_UP || Thread.bTHREAD_UPDATE_REELMAP_DN || Thread.bTHREAD_UPDATE_REELMAP_ALLUP || Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
 					break;
 			}
 			else
 			{
-				if (m_bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
+				if (Thread.bTHREAD_UPDATE_REELMAP_UP) // Write Reelmap
 					break;
 			}
-			//SetListBuf(); // 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑Œ π›∫π«ÿº≠ ¿Ã«‘ºˆ∞° »£√‚µ ¿∏∑Œ ¡¬øÏ ∏∂≈∑ ¿Œµ¶Ω∫ µø¿œ «ˆªÛ πﬂª˝.(case AT_LP + 8:)
 			General.nStepAuto++;
 		}
 		break;
@@ -3216,13 +2866,11 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 				{
 					if (m_nShareUpS > 0)
 						MakeItsFile(m_nShareUpS);
-					//UpdateReelmapInner(m_nShareUpS);
 				}
 				else
 				{
 					if (m_nShareDnS > 0)
 						MakeItsFile(m_nShareDnS);
-					//UpdateReelmapInner(m_nShareDnS);
 				}
 			}
 
@@ -3233,31 +2881,14 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 	case AT_LP + 9:
 		if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 		{
-			if (m_bTHREAD_MAKE_ITS_FILE_UP) // makeIts
+			if (Thread.bTHREAD_MAKE_ITS_FILE_UP) // makeIts
 				break;
 
 			if (pDoc->WorkingInfo.LastJob.bDualTest)
 			{
-				if (m_bTHREAD_MAKE_ITS_FILE_DN) // makeIts
+				if (Thread.bTHREAD_MAKE_ITS_FILE_DN) // makeIts
 					break;
 			}
-
-			//if (pDoc->GetTestMode() == MODE_OUTER)
-			//{
-			//	if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-			//	{
-			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
-			//			break;
-			//	}
-			//}
-			//else
-			//{
-			//	if (pDoc->WorkingInfo.LastJob.bDualTest)
-			//	{
-			//		if (m_bTHREAD_UPDATE_REELMAP_INNER_DN || m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP || m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN) // Write Reelmap
-			//			break;
-			//	}
-			//}
 		}
 		General.nStepAuto++;
 		break;
@@ -3269,50 +2900,7 @@ void CManagerProcedure::DoAutoChkShareFolder()	// 20170727-¿‹∑Æ√≥∏Æ Ω√ ∞Ëº”¿˚¿∏∑
 		break;
 
 	case AT_LP + 11:
-		m_bLoadShare[0] = FALSE;
-		m_bLoadShare[1] = FALSE;
 		General.nStepAuto = AT_LP;
-		break;
-
-
-	case LAST_PROC_VS_ALL:			 // ¿‹∑Æ√≥∏Æ 3
-		m_nDummy[0] = 0;
-		m_nDummy[1] = 0;
-		m_bChkLastProcVs = TRUE;
-		TowerLamp(RGB_GREEN, TRUE);
-		DispMain(_T("ªÛ∏ÈVS¿‹∑Æ"), RGB_GREEN);
-		if (m_nAoiLastSerial[0] < 1)
-			m_nAoiLastSerial[0] = GetAoiUpSerial();
-		if (!IsSetLotEnd())
-			SetLotEnd(m_nAoiLastSerial[0]);
-		//m_nAoiLastSerial[1] = GetAoiDnSerial();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 1:
-		if (IsVsUp())
-			General.nStepAuto++;
-		else
-			General.nStepAuto = m_nPrevStepAuto;
-		break;
-
-	case LAST_PROC_VS_ALL + 2:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 3:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 4:
-		//SetDummyUp();
-		General.nStepAuto++;
-		break;
-
-	case LAST_PROC_VS_ALL + 5:
-		General.nStepAuto = m_nPrevStepAuto;
 		break;
 	}
 }
@@ -3334,94 +2922,56 @@ void CManagerProcedure::DoAutoMarkingEngrave()
 {
 	stBtnStatus& BtnStatus = (pView->m_mgrProcedure->m_pEngrave->BtnStatus);
 
-	// ∞¢¿Œ∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
-	if (BtnStatus.EngAuto.IsOnMking && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 3))) // ∞¢¿Œ∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+	//if (BtnStatus.EngAuto.IsOnMking && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 3))) // ∞¢¿Œ∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+	if (BtnStatus.EngAuto.IsOnMking && !(pView->m_mgrFeeding->GetMpeSignal(6, 3))) // ∞¢¿Œ∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnMkIng, TRUE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£ ON (PC On->PC Off)"));
-			MpeWrite(_T("MB440173"), 1); // 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£(PC On->PC Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£ ON (PC On->PC Off)"));
+		pView->MpeWrite(_T("MB440173"), 1); // 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£(PC On->PC Off)
 	}
-	else if (!BtnStatus.EngAuto.IsOnMking && (m_pMpe->m_pMpeSignal[6] & (0x01 << 3)))
+	else if (!BtnStatus.EngAuto.IsOnMking && (pView->m_mgrFeeding->GetMpeSignal(6, 3)))
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnMkIng, FALSE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£ OFF (PC On->PC Off)"));
-			MpeWrite(_T("MB440173"), 0); // 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£(PC On->PC Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£ OFF (PC On->PC Off)"));
+		pView->MpeWrite(_T("MB440173"), 0); // 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£(PC On->PC Off)
 	}
 
 	// ∞¢¿Œ∫Œ ∏∂≈∑øœ∑· ON (PC∞° ON, OFF)
-	if (BtnStatus.EngAuto.IsMkDone && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 4))) // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
+	if (BtnStatus.EngAuto.IsMkDone && !(pView->m_mgrFeeding->GetMpeSignal(6, 4))) // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkDone, TRUE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ ¿€æ˜øœ∑· ON (PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
-			MpeWrite(_T("MB440174"), 1); // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ ¿€æ˜øœ∑· ON (PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+		pView->MpeWrite(_T("MB440174"), 1); // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
 	}
-	else if (!BtnStatus.EngAuto.IsMkDone && (m_pMpe->m_pMpeSignal[6] & (0x01 << 4))) // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
+	else if (!BtnStatus.EngAuto.IsMkDone && (pView->m_mgrFeeding->GetMpeSignal(6, 4))) // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkDone, FALSE);
-		//#ifdef USE_MPE
-		//		if (m_pMpe)
-		//			MpeWrite(_T("MB440174"), 0); // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
-		//#endif
 	}
 
 	// ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£
-	if (BtnStatus.EngAuto.IsOnRead2d && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 8))) // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
+	if (BtnStatus.EngAuto.IsOnRead2d && !(pView->m_mgrFeeding->GetMpeSignal(6, 8))) // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnReading2d, TRUE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£ ON (PC On->PC Off)"));
-			MpeWrite(_T("MB440178"), 1); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£ ON (PC On->PC Off)"));
+		pView->MpeWrite(_T("MB440178"), 1); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
 	}
-	else if (!BtnStatus.EngAuto.IsOnRead2d && (m_pMpe->m_pMpeSignal[6] & (0x01 << 8)))
+	else if (!BtnStatus.EngAuto.IsOnRead2d && (pView->m_mgrFeeding->GetMpeSignal(6, 8)))
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnReading2d, FALSE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£ OFF (PC On->PC Off)"));
-			MpeWrite(_T("MB440178"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£ OFF (PC On->PC Off)"));
+		pView->MpeWrite(_T("MB440178"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
 	}
 
 	// ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£
-	if (BtnStatus.EngAuto.IsRead2dDone && !(m_pMpe->m_pMpeSignal[6] & (0x01 << 9))) // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
+	if (BtnStatus.EngAuto.IsRead2dDone && !(pView->m_mgrFeeding->GetMpeSignal(6, 9))) // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadDone, TRUE);
-#ifdef USE_MPE
-		if (m_pMpe)
-		{
-			pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£ ON (PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
-			MpeWrite(_T("MB440179"), 1); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
-		}
-#endif
+		pDoc->LogAuto(_T("PC: ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£ ON (PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+		pView->MpeWrite(_T("MB440179"), 1); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
 	}
-	else if (!BtnStatus.EngAuto.IsRead2dDone && (m_pMpe->m_pMpeSignal[6] & (0x01 << 9)))
+	else if (!BtnStatus.EngAuto.IsRead2dDone && (pView->m_mgrFeeding->GetMpeSignal(6, 9)))
 	{
 		pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadDone, FALSE);
-		//#ifdef USE_MPE
-		//		if (m_pMpe)
-		//			MpeWrite(_T("MB440179"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
-		//#endif
 	}
 
 }
@@ -3433,33 +2983,8 @@ BOOL CManagerProcedure::IsLotEnd()
 
 BOOL CManagerProcedure::ReloadReelmap(int nSerial)
 {
-	m_nReloadReelmapSerial = nSerial;
-
-	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
-
-	m_bTHREAD_RELOAD_RST_UP = TRUE;
-	if (bDualTest)
-	{
-		m_bTHREAD_RELOAD_RST_DN = TRUE;
-		m_bTHREAD_RELOAD_RST_ALLUP = TRUE;
-		m_bTHREAD_RELOAD_RST_ALLDN = TRUE;
-	}
-
-	if (pDoc->GetTestMode() == MODE_OUTER)
-	{
-		m_bTHREAD_RELOAD_RST_UP_INNER = TRUE;
-		m_bTHREAD_RELOAD_RST_ITS = TRUE;
-		if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-		{
-			m_bTHREAD_RELOAD_RST_DN_INNER = TRUE;
-			m_bTHREAD_RELOAD_RST_ALLUP_INNER = TRUE;
-			m_bTHREAD_RELOAD_RST_ALLDN_INNER = TRUE;
-		}
-	}
-
-	Sleep(100);
-
-	return TRUE;
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->ReloadReelmap(nSerial);
 }
 
 void CManagerProcedure::UpdateRst()
@@ -3469,37 +2994,43 @@ void CManagerProcedure::UpdateRst()
 
 void CManagerProcedure::LotEnd()
 {
-	//if (m_pDlgMenu01)
-	//	m_pDlgMenu01->LotEnd();
-	//if (m_pDlgMenu03)
-	//	m_pDlgMenu03->SwAoiLotEnd(TRUE);
+	stGeneral& General = (pView->m_mgrStatus->General);
 
-	m_bCont = FALSE;
-	SetLotEd();
-
-	//ReloadReelmap();
+	General.bCont = FALSE;
+	pView->SetLotEd();
 	MakeResultMDS();
 
 	if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 	{
-		FinalCopyItsFiles();
+		if (pView->m_mgrReelmap)
+			pView->m_mgrReelmap->StartThreadFinalCopyItsFiles();
 	}
 
-	if (pDoc->m_pReelMap == pDoc->m_pReelMapUp)
-	{
-		DuplicateRmap(RMAP_UP);
-	}
-	else if (pDoc->m_pReelMap == pDoc->m_pReelMapAllUp)
-	{
-		DuplicateRmap(RMAP_ALLUP);
-	}
-	else if (pDoc->m_pReelMap == pDoc->m_pReelMapIts)
-	{
-		DuplicateRmap(RMAP_ITS);
-	}
+	//if (pDoc->m_pReelMap == pDoc->m_pReelMapUp)
+	//{
+	//	DuplicateRmap(RMAP_UP);
+	//}
+	//else if (pDoc->m_pReelMap == pDoc->m_pReelMapAllUp)
+	//{
+	//	DuplicateRmap(RMAP_ALLUP);
+	//}
+	//else if (pDoc->m_pReelMap == pDoc->m_pReelMapIts)
+	//{
+	//	DuplicateRmap(RMAP_ITS);
+	//}
 
-	if (m_pEngrave)
-		m_pEngrave->SwMenu01DispDefImg(TRUE);
+	//if (m_pEngrave)
+	//	m_pEngrave->SwMenu01DispDefImg(TRUE);
+}
+
+BOOL CManagerProcedure::ChkLastProc()
+{
+	if (!pView->m_mgrStatus)
+		return FALSE;
+
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	return General.bLastProc;
 }
 
 BOOL CManagerProcedure::ChkLastProcFromUp()
@@ -3548,4 +3079,4617 @@ void CManagerProcedure::SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg)			/
 	if (!pView->m_mgrFeeding)
 		return;
 	pView->m_mgrFeeding->SetAoiDnAlarmReTestMsg(sAoiDnAlarmReTestMsg);
+}
+
+CString CManagerProcedure::GetAoiUpAlarmRestartMsg()									// m_sAoiUpAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->GetAoiUpAlarmRestartMsg();
+}
+
+CString CManagerProcedure::GetAoiDnAlarmRestartMsg()									// m_sAoiDnAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->GetAoiDnAlarmRestartMsg();
+}
+
+CString CManagerProcedure::GetAoiUpAlarmReTestMsg()									// m_sAoiUpAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->GetAoiUpAlarmReTestMsg();
+}
+
+CString CManagerProcedure::GetAoiDnAlarmReTestMsg()									// m_sAoiDnAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->GetAoiDnAlarmReTestMsg();
+}
+
+CString CManagerProcedure::ReadAoiUpAlarmRestartMsg()									// m_sAoiUpAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->ReadAoiUpAlarmRestartMsg();
+}
+
+CString CManagerProcedure::ReadAoiDnAlarmRestartMsg()									// m_sAoiDnAlarmReStartMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->ReadAoiDnAlarmRestartMsg();
+}
+
+CString CManagerProcedure::ReadAoiUpAlarmReTestMsg()									// m_sAoiUpAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->ReadAoiUpAlarmReTestMsg();
+}
+
+CString CManagerProcedure::ReadAoiDnAlarmReTestMsg()									// m_sAoiDnAlarmReTestMsg
+{
+	if (!pView->m_mgrFeeding)
+		return _T("");
+	return pView->m_mgrFeeding->ReadAoiDnAlarmReTestMsg();
+}
+
+void CManagerProcedure::SetCycTime()
+{
+	DWORD dCur = GetTickCount();
+	if (m_dwCycSt > 0)
+	{
+		m_dwCycTim = (double)(dCur - m_dwCycSt);
+		if (m_dwCycTim < 0.0)
+			m_dwCycTim *= (-1.0);
+	}
+	else
+		m_dwCycTim = 0.0;
+}
+
+int CManagerProcedure::GetCycTime()
+{
+	if (m_dwCycTim < 0)
+		m_dwCycTim = 0;
+
+	int nTim = int(m_dwCycTim);
+	return nTim;
+}
+
+void CManagerProcedure::InitAutoEngSignal()
+{
+	stBtnStatus& BtnStatus = (m_pEngrave->BtnStatus);
+	BtnStatus.EngAuto._Init();
+
+	//m_bEngFdWrite = FALSE;
+	m_bEngFdWriteF = FALSE;
+	//m_bEngTest = FALSE;
+	m_bEngTestF = FALSE;
+
+	pView->MpeWrite(_T("MB440103"), 0); // 2D(GUI) ∞¢¿Œ µø¿€ StartΩ≈»£(PLC On->PC Off)
+	pView->MpeWrite(_T("MB440173"), 0); // 2D(GUI) ∞¢¿Œ µø¿€RunningΩ≈»£(PC On->PC Off)
+	pView->MpeWrite(_T("MB440174"), 0); // ∞¢¿Œ∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
+
+	pView->MpeWrite(_T("MB440105"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı Ω√¿€Ω≈»£(PLC On->PC Off)
+	pView->MpeWrite(_T("MB440178"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜¡ﬂ Ω≈»£(PC On->PC Off)
+	pView->MpeWrite(_T("MB440179"), 0); // ∞¢¿Œ∫Œ 2D ∏Æ¥ı ¿€æ˜øœ∑· Ω≈»£.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)
+
+	pView->MpeWrite(_T("MB440102"), 0); // ∞¢¿Œ∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)
+
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkSt, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadSt, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnMkIng, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqMkDone, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqOnReading2d, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeq2dReadDone, FALSE);
+	pDoc->SetCurrentInfoSignal(_SigInx::_EngAutoSeqFdDone, FALSE);
+}
+
+void CManagerProcedure::MoveInitPos0(BOOL bWait)
+{
+	if (pView->m_mgrPunch)
+		pView->m_mgrPunch->MoveInitPos0(bWait);
+}
+
+void CManagerProcedure::MoveInitPos1(BOOL bWait)
+{
+	if (pView->m_mgrPunch)
+		pView->m_mgrPunch->MoveInitPos1(bWait);
+}
+
+void CManagerProcedure::InitIoWrite()
+{
+	pView->MpeWrite(_T("MB44015E"), 0); // ∫Œ¿˙1 On  (PC∞° ON, OFF) - 20141020
+	pView->MpeWrite(_T("MB44015F"), 0); // ∫Œ¿˙2 On  (PC∞° ON, OFF) - 20141020
+
+	pView->MpeWrite(_T("MB003828"), 0); // ∞ÀªÁ∫Œ ªÛ ∞ÀªÁ Ω√¿€ <-> Y4368 I/F
+	pView->MpeWrite(_T("MB003829"), 0); // ∞ÀªÁ∫Œ ªÛ ∞ÀªÁ ≈◊¿Ã∫Ì ¡¯∞¯ SOL <-> Y4369 I/F
+	pView->MpeWrite(_T("MB00382A"), 0); // ∞ÀªÁ∫Œ ªÛ Reset <-> Y436A I/F
+	pView->MpeWrite(_T("MB00382B"), 0); // ∏∂≈∑∫Œ Lot End <-> Y436B I/F
+
+	pView->MpeWrite(_T("MB003928"), 0); // ∞ÀªÁ∫Œ «œ ∞ÀªÁ Ω√¿€ <-> Y4468 I/F
+	pView->MpeWrite(_T("MB003929"), 0); // ∞ÀªÁ∫Œ «œ ∞ÀªÁ ≈◊¿Ã∫Ì ¡¯∞¯ SOL <-> Y4369 I/F
+	pView->MpeWrite(_T("MB00392A"), 0); // ∞ÀªÁ∫Œ «œ Reset <-> Y436A I/F
+	pView->MpeWrite(_T("MB00392B"), 0); // ∏∂≈∑∫Œ Lot End <-> Y436B I/F
+
+	pView->MpeWrite(_T("MB44015D"), 0); // ¿⁄µø √ ±‚ øÓ¿¸ªÛ≈¬(PC∞° On/Off Ω√≈¥, PLC∞° øÓ¿¸∑•«¡∏¶ ¿Æ≈©µø¿€, on->offΩ√ øÓ¿¸∑•«¡ on, ¥ŸΩ√ øÓ¿¸Ω∫¿ßƒ°∞° ¥≠∑Ø¡ˆ∏È off)
+	pView->MpeWrite(_T("ML45064"), 0); // ∞ÀªÁ∫Œ Feeding ∑—∑Ø Offset(*1000, +:¥ı ∫∏≥ø, -¥˙ ∫∏≥ø, PC∞° æ≤∞Ì PLCø°º≠ ¡ˆøÚ)
+	pView->MpeWrite(_T("ML45066"), 0); // ∏∂≈∑∫Œ Feeding ∑—∑Ø Offset(*1000, +:¥ı ∫∏≥ø, -¥˙ ∫∏≥ø, PC∞° æ≤∞Ì PLCø°º≠ ¡ˆøÚ)
+
+	pView->MpeWrite(_T("MB600000"), 0); // PC∞° PLC¿« Alarm πﬂª˝ø©∫Œ∏¶ »Æ¿Œ
+	pView->MpeWrite(_T("MB600008"), 0); // PC∞° PLC¿« Alarm πﬂª˝ø©∫Œ∏¶ »Æ¿Œ
+	pView->MpeWrite(_T("ML60002"), 0); // æÀ∂˜¿Ã πﬂª˝«— ∆‰¿Ã¡ˆ ¡ˆ¡§(PLC∞° «•Ω√ «“ æÀ∂˜¿« ∆‰¿Ã¡ˆ∏¶ ∞°∏Æ≈¥).
+}
+
+void CManagerProcedure::SetTest(BOOL bOn)
+{
+	if (bOn)
+	{
+		pView->MpeWrite(_T("MB003828"), 1); // ∞ÀªÁ∫Œ ªÛ ∞ÀªÁ Ω√¿€ <-> Y4368 I/F
+		pView->MpeWrite(_T("MB003928"), 1); // ∞ÀªÁ∫Œ «œ ∞ÀªÁ Ω√¿€ <-> Y4468 I/F
+	}
+	else
+	{
+		pView->MpeWrite(_T("MB003828"), 0); // ∞ÀªÁ∫Œ ªÛ ∞ÀªÁ Ω√¿€ <-> Y4368 I/F
+		pView->MpeWrite(_T("MB003928"), 0); // ∞ÀªÁ∫Œ «œ ∞ÀªÁ Ω√¿€ <-> Y4468 I/F
+	}
+}
+
+
+void CManagerProcedure::ClrMkInfo()
+{
+	pView->ClrMkInfo();
+}
+
+void CManagerProcedure::Stop()
+{
+	pView->Stop();
+}
+
+void CManagerProcedure::Winker(int nId, int nDly) // 0:Ready, 1:Reset, 2:Run, 3:Stop
+{
+	if (nId == MN_RUN)
+		pView->MpeWrite(_T("MB44015D"), 1); // ¿⁄µø √ ±‚ øÓ¿¸ªÛ≈¬(PC∞° On/Off Ω√≈¥, PLC∞° øÓ¿¸∑•«¡∏¶ ¿Æ≈©µø¿€, on->offΩ√ øÓ¿¸∑•«¡ on, ¥ŸΩ√ øÓ¿¸Ω∫¿ßƒ°∞° ¥≠∑Ø¡ˆ∏È off)
+}
+
+void CManagerProcedure::ResetWinker() // 0:Ready, 1:Reset, 2:Run, 3:Stop
+{
+	pView->MpeWrite(_T("MB44015D"), 0);	// ¿⁄µø √ ±‚ øÓ¿¸ªÛ≈¬(PC∞° On/Off Ω√≈¥, PLC∞° øÓ¿¸∑•«¡∏¶ ¿Æ≈©µø¿€, on->offΩ√ øÓ¿¸∑•«¡ on, ¥ŸΩ√ øÓ¿¸Ω∫¿ßƒ°∞° ¥≠∑Ø¡ˆ∏È off)
+}
+
+CString CManagerProcedure::GetDispMain()
+{
+	return pView->GetDispMain();
+}
+
+void CManagerProcedure::DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0))
+{
+	pView->DispMain(sMsg, rgb);
+}
+
+void CManagerProcedure::SetListBuf()
+{
+	pView->SetListBuf();
+}
+
+BOOL CManagerProcedure::IsShare()
+{
+	return pView->IsShare();
+}
+
+BOOL CManagerProcedure::IsShareUp()
+{
+	return pView->IsShareUp();
+}
+
+BOOL CManagerProcedure::IsShareDn()
+{
+	return pView->IsShareDn();
+}
+
+int CManagerProcedure::GetShareUp()
+{
+	return pView->GetShareUp();
+}
+
+int CManagerProcedure::GetShareDn()
+{
+	return pView->GetShareDn();
+}
+
+BOOL CManagerProcedure::IsShareVs()
+{
+	return pView->IsShareVs();
+}
+
+BOOL CManagerProcedure::IsShareVsUp()
+{
+	return pView->IsShareVsUp();
+}
+
+BOOL CManagerProcedure::IsShareVsDn()
+{
+	return pView->IsShareVsDn();
+}
+
+int CManagerProcedure::GetShareVsUp()
+{
+	return pView->GetShareVsUp();
+}
+
+int CManagerProcedure::GetShareVsDn()
+{
+	return pView->GetShareVsDn();
+}
+
+void CManagerProcedure::Shift2DummyBuf()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sSrc, sDest;
+	int nSerial;
+
+	sSrc = pDoc->WorkingInfo.System.sPathVrsShareUp;
+	sDest = pDoc->WorkingInfo.System.sPathVsDummyBufUp;
+
+	if (pDoc->m_pFile)
+	{
+		nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+		pDoc->m_pFile->DelPcr(sSrc, nSerial);
+		if (nSerial > 0)
+		{
+			pView->MpeWrite(_T("ML45112"), (long)nSerial);	// ∞ÀªÁ«— Panel¿« AOI ªÛ Serial
+			Sleep(300);
+			pView->MpeWrite(_T("MB44012B"), 1); // AOI ªÛ : PCR∆ƒ¿œ Received
+		}
+	}
+
+	if (bDualTest)
+	{
+		sSrc = pDoc->WorkingInfo.System.sPathVrsShareDn;
+		sDest = pDoc->WorkingInfo.System.sPathVsDummyBufDn;
+
+		if (pDoc->m_pFile)
+		{
+			nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+			pDoc->m_pFile->DelPcr(sSrc, nSerial);
+			if (nSerial > 0)
+			{
+				pView->MpeWrite(_T("ML45114"), (long)pDoc->GetAoiDnAutoSerial() - 1);	// ∞ÀªÁ«— Panel¿« AOI «œ Serial
+				Sleep(300);
+				pView->MpeWrite(_T("MB44012C"), 1); // AOI «œ : PCR∆ƒ¿œ Received
+			}
+		}
+	}
+}
+
+void CManagerProcedure::Shift2Buf()	// πˆ∆€∆˙¥ı¿« ∏∂¡ˆ∏∑ Ω√∏ÆæÛ∞˙ Share∆˙¥ı¿« Ω√∏ÆæÛ¿Ã ø¨º”¿Œ¡ˆ »Æ¿Œ »ƒ ø≈±Ë.
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sSrc, sDest;
+	int nSerial;
+
+	if (pDoc->GetAoiUpVsStatus())
+	{
+		sSrc = pDoc->WorkingInfo.System.sPathVsShareUp;
+		sDest = pDoc->WorkingInfo.System.sPathVrsBufUp;
+		if (pDoc->m_pFile)
+		{
+			nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+			if (nSerial > 0)
+				m_nShareUpS = nSerial;
+			pDoc->m_pFile->DelPcr(sSrc, nSerial);
+		}
+		if (bDualTest)
+		{
+			sSrc = pDoc->WorkingInfo.System.sPathVsShareDn;
+			sDest = pDoc->WorkingInfo.System.sPathVrsBufDn;
+			if (pDoc->m_pFile)
+			{
+				nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+				if (nSerial > 0)
+					m_nShareDnS = nSerial;
+				pDoc->m_pFile->DelPcr(sSrc, nSerial);
+			}
+		}
+
+		SetListBuf();
+	}
+	else
+	{
+		sSrc = pDoc->WorkingInfo.System.sPathVrsShareUp;
+		sDest = pDoc->WorkingInfo.System.sPathVrsBufUp;
+
+		if (pDoc->m_pFile)
+		{
+			nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+			pDoc->m_pFile->DelPcr(sSrc, nSerial);
+			if (nSerial > 0)
+			{
+				m_nShareUpS = nSerial;
+				pView->MpeWrite(_T("ML45112"), (long)nSerial);	// ∞ÀªÁ«— Panel¿« AOI ªÛ Serial
+				Sleep(300);
+				pView->MpeWrite(_T("MB44012B"), 1); // AOI ªÛ : PCR∆ƒ¿œ Received
+			}
+		}
+
+		if (bDualTest)
+		{
+			sSrc = pDoc->WorkingInfo.System.sPathVrsShareDn;
+			sDest = pDoc->WorkingInfo.System.sPathVrsBufDn;
+
+			if (pDoc->m_pFile)
+			{
+				nSerial = pDoc->m_pFile->CopyPcr(sSrc, sDest);
+				pDoc->m_pFile->DelPcr(sSrc, nSerial);
+				if (nSerial > 0)
+				{
+					m_nShareDnS = nSerial;
+					pView->MpeWrite(_T("ML45114"), (long)pDoc->GetAoiDnAutoSerial() - 1);	// ∞ÀªÁ«— Panel¿« AOI «œ Serial
+					Sleep(300);
+					pView->MpeWrite(_T("MB44012C"), 1); // AOI «œ : PCR∆ƒ¿œ Received
+				}
+			}
+		}
+
+		SetListBuf();
+	}
+}
+
+void CManagerProcedure::SetLotEnd(int nSerial)
+{
+	pView->SetLotEnd(nSerial);
+}
+
+BOOL CManagerProcedure::IsSetLotEnd()
+{
+	stGeneral& General = (pView->m_mgrStatus->General);
+	if (General.nLotEndSerial > 0)
+		return TRUE;
+	return FALSE;
+}
+
+int CManagerProcedure::GetLotEndSerial()
+{
+	return pView->GetLotEndSerial();
+}
+
+BOOL CManagerProcedure::ChkStShotNum()
+{
+	CString sMsg;
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	stListBuf* ListBuf = pView->m_mgrStatus->ListBuf;
+
+
+	if (ListBuf[0].nTot == 0)
+	{
+		if (m_nShareUpS > 0 && !(m_nShareUpS % 2))
+		{
+			sMsg.Format(_T("AOI ªÛ∏È¿« Ω√∏ÆæÛ¿Ã ¬¶ºˆ∑Œ Ω√¿€«œø¥Ω¿¥œ¥Ÿ.\r\n- Ω√∏ÆæÛ π¯»£: %d"), m_nShareUpS);
+			pView->MsgBox(sMsg);
+			return FALSE;
+		}
+	}
+
+	if (bDualTest)
+	{
+		if (ListBuf[1].nTot == 0)
+		{
+			if (m_nShareDnS > 0 && !(m_nShareDnS % 2))
+			{
+				sMsg.Format(_T("AOI «œ∏È¿« Ω√∏ÆæÛ¿Ã ¬¶ºˆ∑Œ Ω√¿€«œø¥Ω¿¥œ¥Ÿ.\r\n- Ω√∏ÆæÛ π¯»£: %d"), m_nShareDnS);
+				pView->MsgBox(sMsg);
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+void CManagerProcedure::DispInfo()
+{
+	pView->DispInfo();
+}
+
+void CManagerProcedure::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+{
+	pView->ResetMkInfo(nAoi);
+}
+
+BOOL CManagerProcedure::IsLastJob(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+{
+	switch (nAoi)
+	{
+	case 0: // AOI-Up
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerUp.IsEmpty())
+			return FALSE;
+		break;
+	case 1: // AOI-Dn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	case 2: // AOI-UpDn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerUp.IsEmpty())
+			return FALSE;
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+void CManagerProcedure::SetAlignPos()
+{
+	pView->SetAlignPos();
+}
+
+void CManagerProcedure::InitReelmap()
+{
+	if(pView->m_mgrReelmap)
+		pView->m_mgrReelmap->InitReelmap();
+}
+
+void CManagerProcedure::InitReelmapInner()
+{
+	if (pView->m_mgrReelmap)
+		pView->m_mgrReelmap->InitReelmapInner();
+}
+
+void CManagerProcedure::ModelChange(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn 
+{
+	pView->ModelChange(nAoi);
+}
+
+void CManagerProcedure::InitReelmapDisp()
+{
+	pView->InitReelmapDisp();
+}
+
+void CManagerProcedure::InitCamImgDisp()
+{
+	pView->InitCamImgDisp();
+}
+
+BOOL CManagerProcedure::OpenReelmapFromBuf(int nSerial)
+{
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->OpenReelmapFromBuf(nSerial);
+}
+
+int CManagerProcedure::LoadPcrUp(int nSerial)	// return : 2(Failed), 1(¡§ªÛ), -1(Align Error, ≥Î±§∫“∑Æ), -2(Lot End)
+{
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->LoadPcrUp(nSerial);
+}
+
+int CManagerProcedure::LoadPcrDn(int nSerial)	// return : 2(Failed), 1(¡§ªÛ), -1(Align Error, ≥Î±§∫“∑Æ), -2(Lot End)
+{
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->LoadPcrDn(nSerial);
+}
+
+BOOL CManagerProcedure::UpdateReelmap(int nSerial)
+{
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->UpdateReelmap(nSerial);
+}
+
+BOOL CManagerProcedure::MakeItsFile(int nSerial)
+{
+	if (!pView->m_mgrReelmap)	return FALSE;
+	return pView->m_mgrReelmap->MakeItsFile(nSerial);
+}
+
+void CManagerProcedure::Mk2PtReady()
+{
+	if (!pView->m_mgrPunch) return;
+	CSr1000w*  pSr1000w = pView->m_mgrPunch->m_pSr1000w;
+	stListBuf* ListBuf = pView->m_mgrStatus->ListBuf;
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sMsg;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST:	// PLC MK Ω≈»£ »Æ¿Œ	
+			if (IsRun())
+			{
+				pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)"));
+				pView->MpeWrite(_T("MB440150"), 1);// ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+#ifdef USE_SR1000W
+				if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+				{
+					if (pSr1000w && pSr1000w->IsConnected())
+					{
+						m_sGet2dCodeLot = _T("");
+						m_nGet2dCodeSerial = 0;
+						//Set2dRead(TRUE);
+					}
+					else
+					{
+						Stop();
+						pView->ClrDispMsg();
+						sMsg.Format(_T("2D ∏Æ¥ı±‚∞° ø¨∞·¿Ã µ«¡ˆ æ æ“Ω¿¥œ¥Ÿ."));
+						AfxMessageBox(sMsg);
+						m_nMkStAuto = MK_ST;
+						break;
+					}
+				}
+#endif
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + 1:
+			if (!Thread.bTHREAD_SHIFT2MK)
+			{
+				SetListBuf();
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Start);
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Start) :	// 2
+			if (bDualTest)
+			{
+				if (ListBuf[1].nTot > 0) // AOI-Dn
+				{
+					m_nMkStAuto++;
+
+					m_nBufDnSerial[0] = ListBuf[1].Pop();
+					m_nBufUpSerial[0] = m_nBufDnSerial[0];
+
+					if (ListBuf[1].nTot > 0) // AOI-Dn
+					{
+						m_nBufDnSerial[1] = ListBuf[1].Pop();
+						m_nBufUpSerial[1] = m_nBufDnSerial[1];
+					}
+					else
+					{
+						m_nBufDnSerial[1] = 0;
+						m_nBufUpSerial[1] = 0;
+					}
+				}
+				else
+				{
+					if (!pDoc->GetAoiUpVsStatus())
+					{
+						m_bLotEnd = TRUE;
+						m_nLotEndAuto = LOT_END;
+					}
+				}
+
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (m_nBufUpSerial[0] == 1)
+					{
+						SetLastProc(ID_AOIDN);
+					}
+				}
+			}
+			else
+			{
+				if (ListBuf[0].nTot > 0) // AOI-Up
+				{
+					m_nMkStAuto++;
+					m_nBufUpSerial[0] = ListBuf[0].Pop();
+
+					if (ListBuf[0].nTot > 0) // AOI-Up
+					{
+						m_nBufUpSerial[1] = ListBuf[0].Pop();
+					}
+					else
+						m_nBufUpSerial[1] = 0;
+				}
+				else
+				{
+					if (!pDoc->GetAoiUpVsStatus())
+					{
+						m_bLotEnd = TRUE;
+						m_nLotEndAuto = LOT_END;
+					}
+				}
+
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (m_nBufUpSerial[0] == 1)
+					{
+						SetLastProc(ID_AOIDN);
+					}
+				}
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Start) + 1:
+			if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN && !Thread.bTHREAD_MAKE_ITS_FILE_UP && !Thread.bTHREAD_MAKE_ITS_FILE_DN)
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::ChkSn);
+			}
+			else
+			{
+				if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::ChkSn);
+			}
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtChkSerial()
+{
+	if (!pView->m_mgrStatus)	return;
+	stThread& Thread = (pView->m_mgrStatus->Thread);
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	//CString sNewLot;
+	BOOL bNewModel = FALSE;
+	int nSerial = 0;
+	int nNewLot = 0;
+	int nLastShot = 0;
+	double dFdEnc;
+	CString sLot, sMsg;
+
+	if (Thread.bTHREAD_SHIFT2MK)
+		return;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::ChkSn) :
+			if (m_nBufUpSerial[0] == m_nBufUpSerial[1])
+			{
+				Stop();
+				pView->ClrDispMsg();
+				AfxMessageBox(_T("¡¬/øÏ ∏∂≈∑ Ω√∏ÆæÛ¿Ã ∞∞Ω¿¥œ¥Ÿ."));
+				SetListBuf();
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Start);
+				break;
+			}
+
+			if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN && !Thread.bTHREAD_MAKE_ITS_FILE_UP && !Thread.bTHREAD_MAKE_ITS_FILE_DN)
+				{
+					if (!Thread.bTHREAD_DISP_DEF && !Thread.bTHREAD_DISP_DEF_INNER)
+					{
+						m_nMkStAuto++;
+						Thread.nStepTHREAD_DISP_DEF = 0;
+						Thread.nStepTHREAD_DISP_DEF_INNER = 0;
+
+						Thread.bTHREAD_DISP_DEF = TRUE;				// DispDefImg() : CopyDefImg Start -> Disp Reelmap Start
+						Thread.bTHREAD_DISP_DEF_INNER = TRUE;		// DispDefImgInner() : Disp Reelmap Start
+
+						SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("1"));
+					}
+				}
+			}
+			else
+			{
+				if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN) // Write Reelmap
+				{
+					if (!Thread.bTHREAD_DISP_DEF)
+					{
+						m_nMkStAuto++;
+						Thread.nStepTHREAD_DISP_DEF = 0;
+
+						Thread.bTHREAD_DISP_DEF = TRUE;		// DispDefImg() : CopyDefImg Start -> Disp Reelmap Start
+						SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("1"));
+					}
+				}
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::ChkSn) + 1:
+			m_nMkStAuto++;
+			nSerial = m_nBufUpSerial[0];
+			//sNewLot = m_sNewLotUp;
+
+			if (nSerial > 0)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] < General.nLotEndSerial)
+						nLastShot = m_nBufUpSerial[0];
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] > General.nLotEndSerial)
+					{
+						nLastShot = m_nBufUpSerial[0];
+					}
+				}
+
+				bNewModel = GetAoiUpInfo(nSerial, &nNewLot, TRUE);
+				if (bDualTest)
+				{
+					bNewModel = GetAoiDnInfo(nSerial, &nNewLot, TRUE);
+
+					if (!IsSameUpDnLot() && !General.bContDiffLot)
+					{
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::LotDiff);
+						break;
+					}
+				}
+
+				if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
+				{
+					;
+				}
+				if (nNewLot)
+				{					
+					ChgLot(); // Lot Change.
+#ifdef USE_MPE
+					dFdEnc = (double)pDoc->m_pMpeData[0][0];	// ∏∂≈∑∫Œ Feeding ø£ƒ⁄¥ı ∞™(¥‹¿ß mm )
+					if ((pDoc->WorkingInfo.LastJob.bLotSep || pDoc->m_bDoneChgLot) && (dFdEnc + _tstof(pDoc->WorkingInfo.LastJob.sOnePnlLen)*2.0) > _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen)*1000.0)
+					{
+						pDoc->m_bDoneChgLot = TRUE;
+						SetPathAtBuf();
+					}
+#endif
+				}
+			}
+			else
+			{
+				Stop();
+				MsgBox(_T("πˆ∆€(¡¬) Serial¿Ã ∏¬¡ˆæ Ω¿¥œ¥Ÿ."));
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::ChkSn) + 2:
+			//pDoc->UpdateYieldOnRmap(); // 20230614
+
+#ifdef USE_SR1000W
+			if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (pSr1000w && pSr1000w->IsConnected())
+				{
+					//Set2dRead(TRUE);
+					//Get2dCode(sLot, nSerial);
+					if (m_sGet2dCodeLot != _T("") && m_nGet2dCodeSerial != 0)
+					{
+						if (m_nBufUpSerial[0] == m_nGet2dCodeSerial)
+						{
+							m_nMkStAuto = MK_ST + (Mk2PtIdx::InitMk);			// InitMk()
+						}
+						else
+						{
+							Stop();
+							pView->ClrDispMsg();
+							sMsg.Format(_T("2D∞¢¿Œ Ω√∏ÆæÛ(%d)∞˙ ∞ÀªÁ∆ƒ¿œ Ω√∏ÆæÛ(%d)¿Ã ¥Ÿ∏®¥œ¥Ÿ."), m_nGet2dCodeSerial, m_nBufUpSerial[0]);
+							AfxMessageBox(sMsg);
+							m_nMkStAuto = MK_ST + (Mk2PtIdx::Start);
+							break;
+						}
+					}
+					else
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::InitMk);			// InitMk()
+
+				}
+				else
+				{
+					Stop();
+					pView->ClrDispMsg();
+					sMsg.Format(_T("2D ∏Æ¥ı±‚∞° ø¨∞·¿Ã µ«¡ˆ æ æ“Ω¿¥œ¥Ÿ."));
+					AfxMessageBox(sMsg);
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Start);
+					break;
+				}
+			}
+			else
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::InitMk);					// InitMk()
+#else
+			m_nMkStAuto = MK_ST + (Mk2PtIdx::InitMk);					// InitMk()
+#endif
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtInit()
+{
+	if (Thread.bTHREAD_SHIFT2MK)
+		return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::InitMk) :
+			if (InitMk()) // Ω√∏ÆæÛ¿Ã ¡ı∞° ∂«¥¬ ∞®º“ : TRUE æ∆¥œ∞Ì ∞∞¿∏∏È : FALSE
+			{
+				if (General.bSerialDecrese)
+				{
+					if ((m_nBufUpSerial[0] <= General.nLotEndSerial || m_nBufUpSerial[1] <= General.nLotEndSerial) && General.nLotEndSerial > 0)
+					{
+						pView->MpeWrite(_T("MB440171"), 1); // ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off) - 20160718
+						pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+					}
+				}
+				else
+				{
+					if ((m_nBufUpSerial[0] >= General.nLotEndSerial || m_nBufUpSerial[1] >= General.nLotEndSerial) && General.nLotEndSerial > 0)
+					{
+						pView->MpeWrite(_T("MB440171"), 1); // ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off) - 20160718
+						pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+					}
+				}
+			}
+			else // Same Serial
+			{
+				Stop();
+				MsgBox(_T("Serial ø¨º” µ«¡ˆæ Ω¿¥œ¥Ÿ."));
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+										m_nMkStAuto++;
+										break;
+
+		case MK_ST + (Mk2PtIdx::InitMk) + 1:
+			if (IsRun())
+			{
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam1);	// Move - Cam1 - Pt0
+																//if (MODE_INNER != pDoc->GetTestMode())
+																//	m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam1);	// Move - Cam1 - Pt0
+																//else
+																//	m_nMkStAuto = MK_ST + (Mk2PtIdx::MoveInitPt);
+			}
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtAlignPt0()
+{
+	if (!IsRun())
+		return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::Move0Cam1) :	// Move - Cam1 - Pt0
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[1] < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufDnSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))	// Move - Cam1 - Pt0
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[1] > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufDnSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))	// Move - Cam1 - Pt0
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufUpSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufUpSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
+							m_nMkStAuto++;
+					}
+				}
+			}
+												break;
+		case MK_ST + (Mk2PtIdx::Move0Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam0);
+			break;
+		case MK_ST + (Mk2PtIdx::Move0Cam0) :	// Move - Cam0 - Pt0
+			if (MoveAlign0(0))
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Move0Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Move0Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Align1_0);
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Align1_0) :	// 2PtAlign - Cam1 - Pt0
+			if (!m_bSkipAlign[1][0])
+			{
+				if (TwoPointAlign1(0))
+					m_bFailAlign[1][0] = FALSE;
+				else
+					m_bFailAlign[1][0] = TRUE;
+			}
+											m_nMkStAuto = MK_ST + (Mk2PtIdx::Align0_0);
+											break;
+		case MK_ST + (Mk2PtIdx::Align0_0) :	// 2PtAlign - Cam0 - Pt0
+			if (!m_bSkipAlign[0][0])
+			{
+				if (TwoPointAlign0(0))
+					m_bFailAlign[0][0] = FALSE;
+				else
+					m_bFailAlign[0][0] = TRUE;
+			}
+											m_nMkStAuto++;
+											break;
+		case MK_ST + (Mk2PtIdx::Align0_0) + 1:
+			if (m_bFailAlign[0][0])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][0] = FALSE;
+						m_bSkipAlign[0][0] = TRUE;
+						m_bSkipAlign[0][1] = TRUE;
+						m_bSkipAlign[0][2] = TRUE;
+						m_bSkipAlign[0][3] = TRUE;
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][0] = TRUE;
+						m_bSkipAlign[0][0] = FALSE;
+						m_bSkipAlign[0][1] = FALSE;
+						m_bSkipAlign[0][2] = FALSE;
+						m_bSkipAlign[0][3] = FALSE;
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam0); // TwoPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][0] = TRUE;
+					m_bSkipAlign[0][0] = FALSE;
+					m_bSkipAlign[0][1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam0); // TwoPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][0])
+			{
+				Buzzer(TRUE, 0);
+
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][0] = FALSE;
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][0] = TRUE;
+						m_bSkipAlign[1][0] = FALSE;
+						m_bSkipAlign[1][1] = FALSE;
+						m_bSkipAlign[1][2] = FALSE;
+						m_bSkipAlign[1][3] = FALSE;
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam1); // TwoPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][0] = TRUE;
+					m_bSkipAlign[1][0] = FALSE;
+					m_bSkipAlign[1][1] = FALSE;
+					m_bSkipAlign[1][2] = FALSE;
+					m_bSkipAlign[1][3] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam1); // TwoPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][0] || m_bFailAlign[1][0])
+			{
+				if (!m_bReAlign[0][0] && !m_bReAlign[1][0])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto++; //m_nMkStAuto = MK_ST + 27; // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::DoneMk); // // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+				{
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam1); // TwoPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+				}
+			}
+			else
+				m_nMkStAuto++;
+
+			break;
+		case MK_ST + (Mk2PtIdx::Align0_0) + 2:
+			if (IsRun())
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam1);
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtAlignPt1()
+{
+	if (!IsRun())
+		return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::Move1Cam1) :
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[1] < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufDnSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[1] > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufDnSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufUpSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else if (m_nBufUpSerial[1] == 0)
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+			}
+										   break;
+		case MK_ST + (Mk2PtIdx::Move1Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Move1Cam0) :
+			if (MoveAlign0(1))	// Move - Cam0 - Pt1
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Move1Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Move1Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::Align1_1);
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Align1_1) :	// 2PtAlign - Cam1 - Pt1
+			if (!m_bFailAlign[1][0])
+			{
+				if (!m_bSkipAlign[1][1])
+				{
+					if (!TwoPointAlign1(1))
+						m_bFailAlign[1][1] = TRUE;
+					else
+						m_bFailAlign[1][1] = FALSE;
+				}
+				else
+					m_bFailAlign[1][1] = FALSE;
+			}
+			else
+				m_bFailAlign[1][1] = FALSE;
+
+			m_nMkStAuto = MK_ST + (Mk2PtIdx::Align0_1);
+			break;
+		case MK_ST + (Mk2PtIdx::Align0_1) :	// 2PtAlign - Cam0 - Pt1
+			if (!m_bFailAlign[0][0])
+			{
+				if (!m_bSkipAlign[0][1])
+				{
+					if (!TwoPointAlign0(1))
+						m_bFailAlign[0][1] = TRUE;
+					else
+						m_bFailAlign[0][1] = FALSE;
+				}
+				else
+					m_bFailAlign[0][1] = FALSE;
+			}
+			else
+				m_bFailAlign[0][1] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Align0_1) + 1:
+			if (m_bFailAlign[0][1])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][1] = FALSE;
+						m_bSkipAlign[0][1] = TRUE;
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][1] = TRUE;
+						m_bSkipAlign[0][1] = FALSE;
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam0); // TwoPointAlign0(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][1] = TRUE;
+					m_bSkipAlign[0][1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam0); // TwoPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][1])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][1] = FALSE;
+						m_bSkipAlign[1][1] = TRUE;
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][1] = TRUE;
+						m_bSkipAlign[1][1] = FALSE;
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam1); // TwoPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][1] = TRUE;
+					m_bSkipAlign[1][1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam1); // TwoPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][1] || m_bFailAlign[1][1])
+			{
+				if (!m_bReAlign[0][1] && !m_bReAlign[1][1])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::MoveInitPt); //m_nMkStAuto = MK_ST + 29;  // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::DoneMk); // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Move1Cam1); // TwoPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+			}
+			else
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::MoveInitPt);
+
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtMoveInitPos()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::MoveInitPt) :
+			MoveInitPos0(FALSE);
+			MoveInitPos1(FALSE); // 20220526
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::MoveInitPt) + 1:
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::MoveInitPt) + 2:
+			if (IsMoveDone())
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::ChkElec);
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtElecChk()
+{
+	CString sRst;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::ChkElec) : // DoElecChk
+			if (DoElecChk(sRst))
+			{
+				if (pDoc->WorkingInfo.Probing[0].bUse)
+				{
+					if (sRst == _T("Open"))
+					{
+						if (pDoc->WorkingInfo.Probing[0].bStopOnOpen)
+							m_nMkStAuto = REJECT_ST;
+						else
+							m_nMkStAuto++;
+					}
+					else if (sRst == _T("Error"))
+					{
+						m_nMkStAuto = ERROR_ST;
+					}
+					else
+					{
+						m_nMkStAuto++;
+					}
+				}
+				else
+					m_nMkStAuto++;
+			}
+										   break;
+
+		case MK_ST + (Mk2PtIdx::ChkElec) + 1:
+			if (ChkLightErr())
+			{
+				m_bChkLightErr = FALSE;
+				m_nMkStAuto++;
+			}
+			else
+			{
+				if (MODE_INNER != pDoc->GetTestMode())
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk); 	// Mk ∏∂≈∑ Ω√¿€
+				else
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::Shift2Mk);
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::ChkElec) + 2:
+			if (IsRun())
+			{
+				if (m_pMotion->IsEnable(MS_X0) && m_pMotion->IsEnable(MS_Y0) &&
+					m_pMotion->IsEnable(MS_X1) && m_pMotion->IsEnable(MS_Y1))
+				{
+					if (MODE_INNER != pDoc->GetTestMode())
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk); 	// Mk ∏∂≈∑ Ω√¿€
+					else
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::Shift2Mk);
+				}
+				else
+				{
+					Stop();
+					MsgBox(_T("∏∂≈∑∫Œ ∏º«¿Ã ∫Ò»∞º∫»≠ µ«æ˙Ω¿¥œ¥Ÿ."));
+					TowerLamp(RGB_RED, TRUE);
+				}
+			}
+			else
+			{
+				if (!m_bChkLightErr)
+				{
+					m_bChkLightErr = TRUE;
+					MsgBox(_T("≥Î±§∫“∑Æ ¡§¡ˆ - ±‚∆«¿ª »Æ¿Œ«œººø‰.\r\n∞Ëº”¡¯«‡«œ∑¡∏È øÓ¿¸Ω∫¿ßƒ°∏¶ ¥©∏£ººø‰."));
+				}
+			}
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtDoMarking()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sRst, sMsg;
+	int a, b, nSerial, nPrevSerial;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::DoMk) :				// Mk ∏∂≈∑ Ω√¿€]
+			if (CheckMkPnt())
+			{
+				if (pDoc->GetTestMode() == MODE_OUTER)
+					SetMkIts(TRUE);						// ITS ∏∂≈∑ Ω√¿€
+				else
+					SetMk(TRUE);						// Mk ∏∂≈∑ Ω√¿€
+
+				m_nMkStAuto++;
+			}
+			else
+			{
+				MsgBox(_T("ƒ∑∏∂Ω∫≈Õ¿« ∏∂≈∑¿ßƒ°¡¬«•∞° º≥¡§µ«æÓ ¿÷¡ˆæ Ω¿¥œ¥Ÿ.\r\n»Æ¿Œ«œººø‰."));
+				Stop();
+				TowerLamp(RGB_RED, TRUE);
+			}
+													break;
+
+		case MK_ST + (Mk2PtIdx::DoMk) + 1:
+			if (!m_bUpdateYield)
+			{
+				if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+				{
+					m_bUpdateYield = TRUE;
+					UpdateYield(); // Cam[0],  Cam[1]
+					m_nMkStAuto++;
+				}
+			}
+			else
+			{
+				Sleep(100);
+				m_nMkStAuto++;
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::DoMk) + 2:
+			if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+			{
+				if (!m_bUpdateYieldOnRmap)
+				{
+					if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN)
+					{
+						if (!Thread.bTHREAD_UPDATE_YIELD_UP && !Thread.bTHREAD_UPDATE_YIELD_DN && !Thread.bTHREAD_UPDATE_YIELD_ALLUP && !Thread.bTHREAD_UPDATE_YIELD_ALLDN)
+						{
+							m_bUpdateYieldOnRmap = TRUE;
+							pDoc->UpdateYieldOnRmap(); // 20230614
+							m_nMkStAuto++;
+						}
+						else
+							Sleep(100);
+					}
+					else
+						Sleep(100);
+				}
+				else
+				{
+					Sleep(100);
+					m_nMkStAuto++; // ∏∂≈∑ π◊ verify∞° øœ¿¸»˜ ≥°≥™¡ˆ æ ¿∫ ∞ÊøÏ.
+				}
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::Verify) :
+			if (IsMkDone() && IsMoveDone())
+			{
+				if (IsVerify() && !m_nPrevMkStAuto)
+				{
+					m_nPrevMkStAuto = MK_ST + (Mk2PtIdx::Verify);
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk);		// Mk ∏∂≈∑ Ω√¿€
+					m_bCam = TRUE;
+				}
+				else
+				{
+					if (IsReview())
+					{
+						if (!m_bCam)
+						{
+							m_nPrevStepAuto = MK_ST + (Mk2PtIdx::Verify);
+							m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk);		// Mk ∏∂≈∑ Ω√¿€
+							m_bCam = TRUE;
+							MsgBox(_T("¢∫ Jog πˆ∆∞¿ª ¿ÃøÎ«œø© ∏∂≈∑¿ßƒ°∏¶ »Æ¿Œ«œø© ¡÷ººø‰."));
+						}
+						else
+						{
+							m_bCam = FALSE;
+							m_nMkStAuto = MK_ST + (Mk2PtIdx::DoneMk);	// Mk ∏∂≈∑ øœ∑·
+						}
+					}
+					else
+					{
+						m_nMkStAuto = MK_ST + (Mk2PtIdx::DoneMk);	// Mk ∏∂≈∑ øœ∑·
+					}
+				}
+			}
+			else if (IsReMk())
+			{
+				m_nPrevMkStAuto = MK_ST + (Mk2PtIdx::Verify);
+				m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk);		// Mk ¿ÁΩ√¿€
+			}
+			else
+			{
+				sMsg = _T("");
+				sMsg += m_sDispSts[0];
+				sMsg += _T(",");
+				sMsg += m_sDispSts[1];
+			}
+										break;
+
+		case MK_ST + (Mk2PtIdx::DoneMk) :	 // Align∫Øºˆ √ ±‚»≠
+			if (!IsRun())
+				break;
+
+			//if (Thread.bTHREAD_UPDATE_YIELD_UP || Thread.bTHREAD_UPDATE_YIELD_DN || Thread.bTHREAD_UPDATE_YIELD_ALLUP || Thread.bTHREAD_UPDATE_YIELD_ALLDN)
+			//	break;
+
+			if (m_bInitAuto)
+			{
+				m_bInitAuto = FALSE;
+				MsgBox(_T("∏∂≈∑¿ßƒ°∏¶ »Æ¿Œ«œººø‰."));
+				Stop();
+				TowerLamp(RGB_YELLOW, TRUE);
+				break;
+			}
+
+			if (m_nBufUpSerial[0] == 0)
+			{
+				m_bSkipAlign[0][0] = TRUE;
+				m_bSkipAlign[0][1] = TRUE;
+			}
+			if (m_nBufUpSerial[1] == 0)
+			{
+				m_bSkipAlign[1][0] = TRUE;
+				m_bSkipAlign[1][1] = TRUE;
+			}
+
+			if ((!m_bSkipAlign[0][0] && !m_bSkipAlign[0][1]) && (!m_bSkipAlign[1][0] && !m_bSkipAlign[1][1]))
+				CompletedMk(2); // 0: Only Cam0, 1: Only Cam1, 2: Cam0 and Cam1, 3: None
+			else if ((m_bSkipAlign[0][0] || m_bSkipAlign[0][1]) && (!m_bSkipAlign[1][0] && !m_bSkipAlign[1][1]))
+				CompletedMk(1); // 0: Only Cam0, 1: Only Cam1, 2: Cam0 and Cam1, 3: None
+			else if ((!m_bSkipAlign[0][0] && !m_bSkipAlign[0][1]) && (m_bSkipAlign[1][0] || m_bSkipAlign[1][1]))
+				CompletedMk(0); // 0: Only Cam0, 1: Only Cam1, 2: Cam0 and Cam1, 3: None
+			else
+				CompletedMk(3); // 0: Only Cam0, 1: Only Cam1, 2: Cam0 and Cam1, 3: None
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 1:  // Mk∫Øºˆ √ ±‚»≠
+			m_bReAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bReAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bReAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bReAlign[1][1] = FALSE; // [nCam][nPos] 
+
+			m_bSkipAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[1][1] = FALSE; // [nCam][nPos] 
+
+			m_bFailAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[1][1] = FALSE; // [nCam][nPos] 
+
+			m_bDoMk[0] = TRUE;
+			m_bDoMk[1] = TRUE;
+			m_bDoneMk[0] = FALSE;
+			m_bDoneMk[1] = FALSE;
+			m_bReMark[0] = FALSE;
+			m_bReMark[1] = FALSE;
+			m_bCam = FALSE;
+			m_nPrevMkStAuto = 0;
+
+			m_bUpdateYield = FALSE;
+			m_bUpdateYieldOnRmap = FALSE;
+
+			for (a = 0; a < 2; a++)
+			{
+				for (b = 0; b < MAX_STRIP_NUM; b++)
+				{
+					m_nMkStrip[a][b] = 0;
+					m_bRejectDone[a][b] = FALSE;
+				}
+			}
+
+			m_nSaveMk0Img = 0;
+			m_nSaveMk1Img = 0;
+
+			pView->MpeWrite(_T("MB440150"), 0);	// ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+			pView->MpeWrite(_T("MB440170"), 1);	// ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
+			pDoc->LogAuto(_T("PC: ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+			if (IsNoMk() || IsShowLive())
+				ShowLive(FALSE);
+
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk2PtIdx::DoneMk) + 2:
+			if (pDoc->m_pMpeSignal[0] & (0x01 << 1))	// ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141030
+			{
+				pDoc->LogAuto(_T("PLC: ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+				m_nMkStAuto++;
+				//if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+				//{
+				//	UpdateYield(); // Cam[0],  Cam[1]
+				//	m_nMkStAuto++;
+				//}
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::DoneMk) + 3:
+#ifdef USE_MPE
+			//if (pDoc->m_pMpeSignal[0] & (0x01 << 1))	// ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141030
+		{
+			if (!Thread.bTHREAD_SHIFT2MK)
+			{
+				pView->MpeWrite(_T("MB440101"), 0);	// ∏∂≈∑∫Œ Feedingøœ∑·
+				pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ Feedingøœ∑· OFF"));
+
+				//Shift2Mk();			// PCR ¿Ãµø(Buffer->Marked) // ±‚∑œ(WorkingInfo.LastJob.sSerial)
+				m_bShift2Mk = TRUE;
+				DoShift2Mk();
+
+				SetMkFdLen();
+				SetCycTime();
+				m_dwCycSt = GetTickCount();
+
+				UpdateRst();
+
+				//UpdateWorking();	// Update Working Info...
+				m_nMkStAuto++;
+			}
+		}
+#endif
+		break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 4:
+			//sMsg.Format(_T("%d%d%d%d%d"), Thread.bTHREAD_SHIFT2MK ? 1 : 0, Thread.bTHREAD_REELMAP_YIELD_UP ? 1 : 0, Thread.bTHREAD_REELMAP_YIELD_DN ? 1 : 0, Thread.bTHREAD_REELMAP_YIELD_ALLUP ? 1 : 0, Thread.bTHREAD_REELMAP_YIELD_ALLDN ? 1 : 0);
+			//DispStsBar(sMsg, 0);
+
+			if (!Thread.bTHREAD_SHIFT2MK && !Thread.bTHREAD_REELMAP_YIELD_UP && !Thread.bTHREAD_REELMAP_YIELD_DN && !Thread.bTHREAD_REELMAP_YIELD_ALLUP && !Thread.bTHREAD_REELMAP_YIELD_ALLDN) // Yield Reelmap
+			{
+				if (pDoc->GetTestMode() == MODE_OUTER)
+				{
+					if (Thread.bTHREAD_REELMAP_YIELD_ITS) // Yield Reelmap
+						break;
+				}
+
+				m_nMkStAuto++;
+				//UpdateRst();
+				//UpdateWorking();	// Update Working Info...
+				ChkYield();
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 5:
+			if (!Thread.bTHREAD_SHIFT2MK)
+			{
+				SetListBuf();
+				ChkLotCutPos();
+				UpdateWorking();	// Update Working Info...
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 6:
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 7:
+			m_nMkStAuto++;
+			::WritePrivateProfileString(_T("Last Job"), _T("MkSt"), _T("0"), PATH_WORKING_INFO);
+			break;
+		case MK_ST + (Mk2PtIdx::DoneMk) + 8:
+			m_bMkSt = FALSE;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtShift2Mk() // MODE_INNER
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sRst, sMsg;
+	int a, b, nSerial, nPrevSerial;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::Shift2Mk) :
+			m_nMkStAuto++;
+			//if (!m_bUpdateYield)
+			//{
+			if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+			{
+				//m_bUpdateYield = TRUE;
+				UpdateYield(); // Cam[0],  Cam[1]
+				m_nMkStAuto++;
+			}
+			//}
+			//else
+			//{
+			//	Sleep(100);
+			//	m_nMkStAuto++;
+			//}
+			break;
+
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 1:
+			if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+			{
+				//if (!m_bUpdateYieldOnRmap)
+				//{
+				if (!Thread.bTHREAD_UPDATE_REELMAP_UP && !Thread.bTHREAD_UPDATE_REELMAP_DN && !Thread.bTHREAD_UPDATE_REELMAP_ALLUP && !Thread.bTHREAD_UPDATE_REELMAP_ALLDN)
+				{
+					if (!Thread.bTHREAD_UPDATE_YIELD_UP && !Thread.bTHREAD_UPDATE_YIELD_DN && !Thread.bTHREAD_UPDATE_YIELD_ALLUP && !Thread.bTHREAD_UPDATE_YIELD_ALLDN)
+					{
+						UpdateRst();
+						UpdateWorking();	// Update Working Info...
+
+											//m_bUpdateYieldOnRmap = TRUE;
+						pDoc->UpdateYieldOnRmap(); // 20230614
+						m_nMkStAuto++;
+					}
+					else
+						Sleep(100);
+				}
+				else
+					Sleep(100);
+				//}
+				//else
+				//{
+				//	Sleep(100);
+				//	m_nMkStAuto++; // ∏∂≈∑ π◊ verify∞° øœ¿¸»˜ ≥°≥™¡ˆ æ ¿∫ ∞ÊøÏ.
+				//}
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 2:
+			pView->MpeWrite(_T("MB440150"), 0);	// ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+			pView->MpeWrite(_T("MB440170"), 1);	// ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
+			pDoc->LogAuto(_T("PC: ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 3:
+			if (pDoc->m_pMpeSignal[0] & (0x01 << 1))	// ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141030
+			{
+				pDoc->LogAuto(_T("PLC: ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+				m_nMkStAuto++;
+				//if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+				//{
+				//	UpdateYield(); // Cam[0],  Cam[1]
+				//	m_nMkStAuto++;
+				//}
+			}
+			break;
+
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 4:
+#ifdef USE_MPE
+			//if (pDoc->m_pMpeSignal[0] & (0x01 << 1))	// ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141030
+		{
+			if (!Thread.bTHREAD_SHIFT2MK)
+			{
+				pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ Feedingøœ∑· OFF"));
+				pView->MpeWrite(_T("MB440101"), 0);	// ∏∂≈∑∫Œ Feedingøœ∑·
+				m_bShift2Mk = TRUE;
+				DoShift2Mk();
+
+				SetMkFdLen();
+				SetCycTime();
+				m_dwCycSt = GetTickCount();
+
+				m_nMkStAuto++;
+			}
+		}
+#endif
+		break;
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 5:
+			if (!Thread.bTHREAD_UPDATAE_YIELD[0] && !Thread.bTHREAD_UPDATAE_YIELD[1])
+			{
+				if (!Thread.bTHREAD_SHIFT2MK && !Thread.bTHREAD_REELMAP_YIELD_UP && !Thread.bTHREAD_REELMAP_YIELD_DN && !Thread.bTHREAD_REELMAP_YIELD_ALLUP && !Thread.bTHREAD_REELMAP_YIELD_ALLDN) // Yield Reelmap
+				{
+					if (pDoc->GetTestMode() == MODE_OUTER)
+					{
+						if (Thread.bTHREAD_REELMAP_YIELD_ITS) // Yield Reelmap
+							break;
+					}
+
+					m_nMkStAuto++;
+					UpdateRst();
+					UpdateWorking();	// Update Working Info...
+					ChkYield();
+				}
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 6:
+			if (!Thread.bTHREAD_SHIFT2MK)
+			{
+				SetListBuf();
+				ChkLotCutPos();
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 7:
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 8:
+			m_nMkStAuto++;
+			::WritePrivateProfileString(_T("Last Job"), _T("MkSt"), _T("0"), PATH_WORKING_INFO);
+			break;
+		case MK_ST + (Mk2PtIdx::Shift2Mk) + 9:
+			m_bMkSt = FALSE;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtLotDiff()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk2PtIdx::LotDiff) :
+			Stop();
+			TowerLamp(RGB_YELLOW, TRUE);
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::LotDiff) + 1:
+			//if(IDYES == DoMyMsgBox(_T("ªÛ∏È∞˙ «œ∏È¿« Lot∞° ¥Ÿ∏®¥œ¥Ÿ.\r\n∞Ëº” ¿€æ˜¿ª ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ªÛ∏È∞˙ «œ∏È¿« Lot∞° ¥Ÿ∏®¥œ¥Ÿ.\r\n∞Ëº” ¿€æ˜¿ª ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				General.bContDiffLot = TRUE;
+			}
+			else
+			{
+				General.bContDiffLot = FALSE;
+				m_bLotEnd = TRUE;
+				m_nLotEndAuto = LOT_END;
+			}
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk2PtIdx::LotDiff) + 2:
+			if (IsRun())
+			{
+				if (General.bContDiffLot)
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::ChkSn);
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk2PtIdx::LotDiff) + 3:
+			General.bContDiffLot = FALSE;
+			m_bLotEnd = TRUE;
+			m_nLotEndAuto = LOT_END;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtReject()
+{
+	int a, b;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case REJECT_ST:
+			Buzzer(TRUE, 0);
+			TowerLamp(RGB_RED, TRUE);
+			Stop();
+
+			//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈© ∫“∑Æ¿‘¥œ¥Ÿ.\r\n∏Æ¡ß √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈© ∫“∑Æ¿‘¥œ¥Ÿ.\r\n∏Æ¡ß √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				m_bAnswer[0] = TRUE;
+				m_nMkStAuto++;
+			}
+			else
+			{
+				//if(IDYES == DoMyMsgBox(_T("∏Æ¡ß √≥∏Æ∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDYES == MsgBox(_T("∏Æ¡ß √≥∏Æ∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					m_bAnswer[1] = TRUE;
+					m_nMkStAuto++;
+				}
+			}
+
+			Buzzer(FALSE, 0);
+			break;
+		case REJECT_ST + 1:
+			if (IsRun())
+			{
+				if (m_bAnswer[0])
+				{
+					m_bAnswer[0] = FALSE;
+					m_nMkStAuto++;
+				}
+				else if (m_bAnswer[1])
+				{
+					m_bAnswer[1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk);	// Mk ∏∂≈∑ Ω√¿€
+				}
+				else
+					m_nMkStAuto = REJECT_ST;
+			}
+			break;
+		case REJECT_ST + 2:
+			SetReject();
+			m_nMkStAuto++;
+			break;
+		case REJECT_ST + 3:
+			m_nMkStAuto++;
+			break;
+		case REJECT_ST + 4:
+			if (IsMkDone() && IsMoveDone())
+			{
+				if (IsVerify() && !m_nPrevMkStAuto)
+				{
+					m_nPrevMkStAuto = REJECT_ST + 4;
+					m_nMkStAuto = REJECT_ST + 2;		// Mk ∏∂≈∑ Ω√¿€
+					m_bCam = TRUE;
+
+					m_bDoneMk[0] = FALSE;
+					m_bDoneMk[1] = FALSE;
+
+					for (a = 0; a < 2; a++)
+					{
+						for (b = 0; b < MAX_STRIP_NUM; b++)
+						{
+							m_nMkStrip[a][b] = 0;
+							m_bRejectDone[a][b] = FALSE;
+						}
+					}
+				}
+				else
+				{
+					if (IsReview())
+					{
+						if (!m_bCam)
+						{
+							m_nPrevStepAuto = REJECT_ST + 4;
+							m_nMkStAuto = REJECT_ST + 2;		// Mk ∏∂≈∑ Ω√¿€
+							m_bCam = TRUE;
+							MsgBox(_T("¢∫ Jog πˆ∆∞¿ª ¿ÃøÎ«œø© ∏∂≈∑¿ßƒ°∏¶ »Æ¿Œ«œø© ¡÷ººø‰."));
+						}
+						else
+						{
+							m_bCam = FALSE;
+							m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+											//sMsg = _T("");
+											//DispStsBar(sMsg, 0);
+						}
+					}
+					else
+					{
+						m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+										//sMsg = _T("");
+										//DispStsBar(sMsg, 0);
+					}
+				}
+			}
+			break;
+		case REJECT_ST + 5:
+			m_nMkStAuto = MK_ST + (Mk2PtIdx::DoneMk);				// Align∫Øºˆ √ ±‚»≠
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk2PtErrStop()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case ERROR_ST:
+			Stop();
+			TowerLamp(RGB_RED, TRUE);
+
+			//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈© Error¿‘¥œ¥Ÿ.\r\n¥ŸΩ√ ºÓ∆Æ √º≈©∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈© Error¿‘¥œ¥Ÿ.\r\n¥ŸΩ√ ºÓ∆Æ √º≈©∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				m_bAnswer[0] = TRUE;
+				m_nMkStAuto++;
+			}
+			else
+			{
+				//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈©∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈©∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					m_bAnswer[1] = TRUE;
+					m_nMkStAuto++;
+				}
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case ERROR_ST + 1:
+			m_nMkStAuto++;
+			break;
+		case ERROR_ST + 2:
+			if (IsRun())
+			{
+				if (m_bAnswer[0])
+				{
+					m_bAnswer[0] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::ChkElec); // DoElecChk
+				}
+				else if (m_bAnswer[1])
+				{
+					m_bAnswer[1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk2PtIdx::DoMk);	// Mk ∏∂≈∑ Ω√¿€
+				}
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case ERROR_ST + 3:
+			m_nMkStAuto = ERROR_ST;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::MarkingWith2PointAlign()
+{
+	Mk2PtReady();
+	Mk2PtChkSerial();
+	Mk2PtInit();
+	Mk2PtAlignPt0();
+	Mk2PtAlignPt1();
+	Mk2PtMoveInitPos();
+	Mk2PtElecChk();
+	if (MODE_INNER != pDoc->GetTestMode())
+		Mk2PtDoMarking();
+	else
+		Mk2PtShift2Mk();
+	Mk2PtLotDiff();
+	Mk2PtReject();
+	Mk2PtErrStop();
+}
+
+void CManagerProcedure::Mk4PtReady()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	stListBuf* ListBuf = pView->m_mgrStatus->ListBuf;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST:	// PLC MK Ω≈»£ »Æ¿Œ	
+			if (IsRun())
+			{
+				SetListBuf();
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + 1:
+			pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)"));
+			pView->MpeWrite(_T("MB440150"), 1);// ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Start) :	// 2
+			if (bDualTest)
+			{
+				if (ListBuf[1].nTot > 0) // AOI-Dn
+				{
+					m_nMkStAuto++;
+
+					m_nBufDnSerial[0] = ListBuf[1].Pop();
+					m_nBufUpSerial[0] = m_nBufDnSerial[0];
+					if (ListBuf[1].nTot > 0) // AOI-Dn
+					{
+						m_nBufDnSerial[1] = ListBuf[1].Pop();
+						m_nBufUpSerial[1] = m_nBufDnSerial[1];
+					}
+					else
+					{
+						m_nBufDnSerial[1] = 0;
+						m_nBufUpSerial[1] = 0;
+					}
+				}
+				else
+				{
+					if (!pDoc->GetAoiUpVsStatus())
+					{
+						m_bLotEnd = TRUE;
+						m_nLotEndAuto = LOT_END;
+					}
+				}
+
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (m_nBufUpSerial[0] == 1)
+					{
+						SetLastProc(ID_AOIDN);
+					}
+				}
+			}
+			else
+			{
+				if (ListBuf[0].nTot > 0) // AOI-Up
+				{
+					m_nMkStAuto++;
+					m_nBufUpSerial[0] = ListBuf[0].Pop();
+					if (ListBuf[0].nTot > 0) // AOI-Up
+						m_nBufUpSerial[1] = ListBuf[0].Pop();
+					else
+						m_nBufUpSerial[1] = 0;
+				}
+				else
+				{
+					if (!pDoc->GetAoiUpVsStatus())
+					{
+						m_bLotEnd = TRUE;
+						m_nLotEndAuto = LOT_END;
+					}
+				}
+
+				if (pDoc->WorkingInfo.LastJob.bSampleTest)
+				{
+					if (m_nBufUpSerial[0] == 1)
+					{
+						SetLastProc(ID_AOIDN);
+					}
+				}
+			}
+											break;
+		case MK_ST + (Mk4PtIdx::Start) + 1:
+			m_nMkStAuto++;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtChkSerial()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sNewLot;
+	BOOL bNewModel = FALSE;
+	int nSerial = 0;
+	int nNewLot = 0;
+	double dFdEnc;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::ChkSn) :
+			if (m_nBufUpSerial[0] == m_nBufUpSerial[1])
+			{
+				Stop();
+				pView->ClrDispMsg();
+				AfxMessageBox(_T("¡¬/øÏ ∏∂≈∑ Ω√∏ÆæÛ¿Ã ∞∞Ω¿¥œ¥Ÿ."));
+				SetListBuf();
+				m_nMkStAuto = MK_ST + (Mk4PtIdx::Start);
+				break;
+			}
+
+									   if (!Thread.bTHREAD_DISP_DEF)
+									   {
+										   m_nMkStAuto++;
+										   Thread.nStepTHREAD_DISP_DEF = 0;
+										   Thread.bTHREAD_DISP_DEF = TRUE;		// DispDefImg() : CopyDefImg Start
+										   SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("1"));
+									   }
+									   break;
+
+		case MK_ST + (Mk4PtIdx::ChkSn) + 1:
+			m_nMkStAuto = MK_ST + (Mk4PtIdx::InitMk);			// InitMk()
+			nSerial = m_nBufUpSerial[0];
+			sNewLot = m_sNewLotUp;
+
+			if (nSerial > 0)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] < General.nLotEndSerial)
+					{
+						nSerial = m_nBufUpSerial[0]; // Test
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[1] > General.nLotEndSerial)
+					{
+						nSerial = m_nBufUpSerial[0]; // Test
+					}
+				}
+
+				bNewModel = GetAoiUpInfo(nSerial, &nNewLot, TRUE);
+				if (bDualTest)
+				{
+					bNewModel = GetAoiDnInfo(nSerial, &nNewLot, TRUE);
+
+					if (!IsSameUpDnLot() && !General.bContDiffLot)
+					{
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::LotDiff);
+						break;
+					}
+				}
+
+				if (bNewModel)	// AOI ¡§∫∏(AoiCurrentInfoPath) -> AOI Feeding Offset
+				{
+					;
+				}
+				if (nNewLot)
+				{
+					// Lot Change.
+					ChgLot();
+#ifdef USE_MPE
+					dFdEnc = (double)pDoc->m_pMpeData[0][0];	// ∏∂≈∑∫Œ Feeding ø£ƒ⁄¥ı ∞™(¥‹¿ß mm )
+					if ((pDoc->WorkingInfo.LastJob.bLotSep || pDoc->m_bDoneChgLot) && (dFdEnc + _tstof(pDoc->WorkingInfo.LastJob.sOnePnlLen)*2.0) > _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen)*1000.0)
+					{
+						pDoc->m_bDoneChgLot = TRUE;
+						SetPathAtBuf();
+					}
+#endif
+				}
+			}
+			else
+			{
+				Stop();
+				MsgBox(_T("πˆ∆€(¡¬) Serial¿Ã ∏¬¡ˆæ Ω¿¥œ¥Ÿ."));
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtInit()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::InitMk) :
+			if (InitMk())	// Ω√∏ÆæÛ¿Ã ¡ı∞° ∂«¥¬ ∞®º“ : TRUE æ∆¥œ∞Ì ∞∞¿∏∏È : FALSE
+			{
+				if (General.bSerialDecrese)
+				{
+					if ((m_nBufUpSerial[0] <= General.nLotEndSerial || m_nBufUpSerial[1] <= General.nLotEndSerial) && General.nLotEndSerial > 0)
+					{
+						pView->MpeWrite(_T("MB440171"), 1); // ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off) - 20160718
+						pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+					}
+				}
+				else
+				{
+					if ((m_nBufUpSerial[0] >= General.nLotEndSerial || m_nBufUpSerial[1] >= General.nLotEndSerial) && General.nLotEndSerial > 0)
+					{
+						pView->MpeWrite(_T("MB440171"), 1); // ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off) - 20160718
+						pDoc->LogAuto(_T("PC: ∏∂≈∑∫Œ ¿€æ˜øœ∑·.(PC∞° On, PLC∞° »Æ¿Œ »ƒ Off)"));
+					}
+				}
+			}
+			else
+			{
+				Stop();
+				MsgBox(_T("Serial ø¨º” µ«¡ˆæ Ω¿¥œ¥Ÿ."));
+				TowerLamp(RGB_YELLOW, TRUE);
+			}
+										m_nMkStAuto++;
+										break;
+
+		case MK_ST + (Mk4PtIdx::InitMk) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtAlignPt0()
+{
+	if (!IsRun())
+		return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::Move0Cam1) :	// Move - Cam1 - Pt0
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] - 1 < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] + 1 > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] - 1 < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] + 1 > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(0))
+							m_nMkStAuto++;
+					}
+				}
+			}
+												break;
+		case MK_ST + (Mk4PtIdx::Move0Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move0Cam0) :	// Move - Cam0 - Pt0
+			if (MoveAlign0(0))
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move0Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move0Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk4PtIdx::Align1_0) :	// 4PtAlign - Cam1 - Pt0
+			if (!m_bSkipAlign[1][0])
+			{
+				if (FourPointAlign1(0))
+					m_bFailAlign[1][0] = FALSE;
+				else
+					m_bFailAlign[1][0] = TRUE;
+			}
+											m_nMkStAuto++;
+											break;
+		case MK_ST + (Mk4PtIdx::Align0_0) :	// 4PtAlign - Cam0 - Pt0
+			if (!m_bSkipAlign[0][0])
+			{
+				if (FourPointAlign0(0))
+					m_bFailAlign[0][0] = FALSE;
+				else
+					m_bFailAlign[0][0] = TRUE;
+			}
+											m_nMkStAuto++;
+											break;
+		case MK_ST + (Mk4PtIdx::Align0_0) + 1:
+			if (m_bFailAlign[0][0])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][0] = FALSE;
+						m_bSkipAlign[0][0] = TRUE;
+						m_bSkipAlign[0][1] = TRUE;
+						m_bSkipAlign[0][2] = TRUE;
+						m_bSkipAlign[0][3] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][0] = TRUE;
+						m_bSkipAlign[0][0] = FALSE;
+						m_bSkipAlign[0][1] = FALSE;
+						m_bSkipAlign[0][2] = FALSE;
+						m_bSkipAlign[0][3] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_0); // FourPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move0Cam0); // FourPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][0] = TRUE;
+					m_bSkipAlign[0][0] = FALSE;
+					m_bSkipAlign[0][1] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_0); // FourPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move0Cam0); // FourPointAlign0(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][0])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][0] = FALSE;
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][0] = TRUE;
+						m_bSkipAlign[1][0] = FALSE;
+						m_bSkipAlign[1][1] = FALSE;
+						m_bSkipAlign[1][2] = FALSE;
+						m_bSkipAlign[1][3] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_0); // FourPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move0Cam1); // FourPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][0] = TRUE;
+					m_bSkipAlign[1][0] = FALSE;
+					m_bSkipAlign[1][1] = FALSE;
+					m_bSkipAlign[1][2] = FALSE;
+					m_bSkipAlign[1][3] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_0); // FourPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move0Cam1); // FourPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][0] || m_bFailAlign[1][0])
+			{
+				if (!m_bReAlign[0][0] && !m_bReAlign[1][0])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto++; //m_nMkStAuto = MK_ST + 27; // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::DoneMk); // // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+				{
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_0); // TwoPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move0Cam1); // TwoPointAlign1(0) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+				}
+			}
+			else
+				m_nMkStAuto++;
+
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_0) + 2:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtAlignPt1()
+{
+	if (!IsRun())
+		return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::Move1Cam1) :
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] - 1 < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] + 1 > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] - 1 < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] + 1 > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(1))	// Move - Cam1 - Pt1
+							m_nMkStAuto++;
+					}
+				}
+			}
+										   break;
+		case MK_ST + (Mk4PtIdx::Move1Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move1Cam0) :
+			if (MoveAlign0(1))	// Move - Cam0 - Pt1
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move1Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move1Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk4PtIdx::Align1_1) :	// 4PtAlign - Cam1 - Pt1
+			if (!m_bFailAlign[1][0])
+			{
+				if (!m_bSkipAlign[1][1])
+				{
+					if (!FourPointAlign1(1))
+						m_bFailAlign[1][1] = TRUE;
+					else
+						m_bFailAlign[1][1] = FALSE;
+				}
+				else
+					m_bFailAlign[1][1] = FALSE;
+			}
+			else
+				m_bFailAlign[1][1] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_1) :	// 4PtAlign - Cam0 - Pt1
+			if (!m_bFailAlign[0][0])
+			{
+				if (!m_bSkipAlign[0][1])
+				{
+					if (!FourPointAlign0(1))
+						m_bFailAlign[0][1] = TRUE;
+					else
+						m_bFailAlign[0][1] = FALSE;
+				}
+				else
+					m_bFailAlign[0][1] = FALSE;
+			}
+			else
+				m_bFailAlign[0][1] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_1) + 1:
+			if (m_bFailAlign[0][1])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][1] = FALSE;
+						m_bSkipAlign[0][1] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][1] = TRUE;
+						m_bSkipAlign[0][1] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_1); // FourPointAlign0(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move1Cam0); // FourPointAlign0(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][1] = TRUE;
+					m_bSkipAlign[0][1] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move1Cam0); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][1])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][1] = FALSE;
+						m_bSkipAlign[1][1] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][1] = TRUE;
+						m_bSkipAlign[1][1] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move1Cam1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][1] = TRUE;
+					m_bSkipAlign[1][1] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move1Cam1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][1] || m_bFailAlign[1][1])
+			{
+				if (!m_bReAlign[0][1] && !m_bReAlign[1][1])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto++;//m_nMkStAuto = MK_ST + 29;  // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::DoneMk); // // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move1Cam1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+																 //m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_1); // FourPointAlign1(1) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+			}
+			else
+				m_nMkStAuto++;
+
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtAlignPt2()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::Move2Cam1) :
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] - 1 < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(2))	// Move - Cam1 - Pt2
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] + 1 > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(2))	// Move - Cam1 - Pt2
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] - 1 < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(2))	// Move - Cam1 - Pt2
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] + 1 > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(2))	// Move - Cam1 - Pt2
+							m_nMkStAuto++;
+					}
+				}
+			}
+										   break;
+		case MK_ST + (Mk4PtIdx::Move2Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move2Cam0) :
+			if (MoveAlign0(2))	// Move - Cam0 - Pt2
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move2Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move2Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk4PtIdx::Align1_2) :	// 4PtAlign - Cam1 - Pt2
+			if (!m_bFailAlign[1][0])
+			{
+				if (!m_bSkipAlign[1][1])
+				{
+					if (!m_bSkipAlign[1][2])
+					{
+						if (!FourPointAlign1(2))
+							m_bFailAlign[1][2] = TRUE;
+						else
+							m_bFailAlign[1][2] = FALSE;
+					}
+					else
+						m_bFailAlign[1][2] = FALSE;
+				}
+				else
+					m_bFailAlign[1][2] = FALSE;
+			}
+			else
+				m_bFailAlign[1][2] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_2) :	// 4PtAlign - Cam0 - Pt2
+			if (!m_bFailAlign[0][0])
+			{
+				if (!m_bSkipAlign[0][1])
+				{
+					if (!m_bSkipAlign[0][2])
+					{
+						if (!FourPointAlign0(2))
+							m_bFailAlign[0][2] = TRUE;
+						else
+							m_bFailAlign[0][2] = FALSE;
+					}
+					else
+						m_bFailAlign[0][2] = FALSE;
+				}
+				else
+					m_bFailAlign[0][2] = FALSE;
+			}
+			else
+				m_bFailAlign[0][2] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_2) + 1:
+			if (m_bFailAlign[0][2])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][2] = FALSE;
+						m_bSkipAlign[0][2] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][2] = TRUE;
+						m_bSkipAlign[0][2] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_2); // FourPointAlign0(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move2Cam0); // FourPointAlign0(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][2] = TRUE;
+					m_bSkipAlign[0][2] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_2); // FourPointAlign0(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move2Cam0); // FourPointAlign0(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][2])
+			{
+				Buzzer(TRUE, 0);
+				TowerLamp(RGB_YELLOW, TRUE);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][2] = FALSE;
+						m_bSkipAlign[1][2] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][2] = TRUE;
+						m_bSkipAlign[1][2] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_2); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move2Cam1); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						//TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][2] = TRUE;
+					m_bSkipAlign[1][2] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_2); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move2Cam1); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					//TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][2] || m_bFailAlign[1][2])
+			{
+				if (!m_bReAlign[0][2] && !m_bReAlign[1][2])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto++;//m_nMkStAuto = MK_ST + 29;  // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::DoneMk); // // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move2Cam1); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+																 //m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_2); // FourPointAlign1(2) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+			}
+			else
+				m_nMkStAuto++;
+
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtAlignPt3()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::Move3Cam1) :
+			if (bDualTest)
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] - 1 < General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(3))	// Move - Cam1 - Pt3
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufDnSerial[0] + 1 > General.nLotEndSerial)	// AOI«œ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(3))	// Move - Cam1 - Pt3
+							m_nMkStAuto++;
+					}
+				}
+			}
+			else
+			{
+				if (General.bSerialDecrese)
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] - 1 < General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(3))	// Move - Cam1 - Pt3
+							m_nMkStAuto++;
+					}
+				}
+				else
+				{
+					if (m_bLastProc && m_nBufUpSerial[0] + 1 > General.nLotEndSerial)	// AOIªÛ∏È Serial
+					{
+						m_bSkipAlign[1][0] = TRUE;
+						m_bSkipAlign[1][1] = TRUE;
+						m_bSkipAlign[1][2] = TRUE;
+						m_bSkipAlign[1][3] = TRUE;
+						m_bDoMk[1] = FALSE;
+						m_bDoneMk[1] = TRUE;
+						m_nMkStAuto++;
+					}
+					else
+					{
+						if (MoveAlign1(3))	// Move - Cam1 - Pt3
+							m_nMkStAuto++;
+					}
+				}
+			}
+										   break;
+		case MK_ST + (Mk4PtIdx::Move3Cam1) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move3Cam0) :
+			if (MoveAlign0(3))	// Move - Cam0 - Pt3
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move3Cam0) + 1:
+			if (IsRun())
+				m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Move3Cam0) + 2:
+			if (IsMoveDone())
+			{
+				Sleep(100);
+				m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk4PtIdx::Align1_3) :	// 4PtAlign - Cam1 - Pt3
+			if (!m_bFailAlign[1][0])
+			{
+				if (!m_bSkipAlign[1][1])
+				{
+					if (!m_bSkipAlign[1][2])
+					{
+						if (!m_bSkipAlign[1][3])
+						{
+							if (!FourPointAlign1(3))
+								m_bFailAlign[1][3] = TRUE;
+							else
+								m_bFailAlign[1][3] = FALSE;
+						}
+						else
+							m_bFailAlign[1][3] = FALSE;
+					}
+					else
+						m_bFailAlign[1][3] = FALSE;
+				}
+				else
+					m_bFailAlign[1][3] = FALSE;
+			}
+			else
+				m_bFailAlign[1][3] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_3) :	// 4PtAlign - Cam0 - Pt3
+			if (!m_bFailAlign[0][0])
+			{
+				if (!m_bSkipAlign[0][1])
+				{
+					if (!m_bSkipAlign[0][2])
+					{
+						if (!m_bSkipAlign[0][3])
+						{
+							if (!FourPointAlign0(3))
+								m_bFailAlign[0][3] = TRUE;
+							else
+								m_bFailAlign[0][3] = FALSE;
+						}
+						else
+							m_bFailAlign[0][3] = FALSE;
+					}
+					else
+						m_bFailAlign[0][3] = FALSE;
+				}
+				else
+					m_bFailAlign[0][3] = FALSE;
+			}
+			else
+				m_bFailAlign[0][3] = FALSE;
+
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::Align0_3) + 1:
+			if (m_bFailAlign[0][3])
+			{
+				Buzzer(TRUE, 0);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[0][3] = FALSE;
+						m_bSkipAlign[0][3] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(¡¬)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[0] = FALSE;
+							m_bDoneMk[0] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[0] = TRUE;
+							m_bDoneMk[0] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[0][3] = TRUE;
+						m_bSkipAlign[0][3] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_3); // FourPointAlign0(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move3Cam0); // FourPointAlign0(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[0][3] = TRUE;
+					m_bSkipAlign[0][3] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align0_3); // FourPointAlign0(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move3Cam0); // FourPointAlign0(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+			if (m_bFailAlign[1][3])
+			{
+				Buzzer(TRUE, 0);
+
+				//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ¥ŸΩ√ ¡§∑ƒ«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					Buzzer(FALSE, 0);
+
+					//if(IDYES == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+					if (IDYES == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄ ¡§∑ƒ¿ª ¡§∏ª æ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+					{
+						m_bReAlign[1][3] = FALSE;
+						m_bSkipAlign[1][3] = TRUE;
+						//if(IDNO == DoMyMsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+						if (IDNO == MsgBox(_T("ƒ´∏ﬁ∂Û(øÏ)¿« ∞ÀªÁ∆«≥⁄¿ª ∫“∑Æ∏∂≈∑ «œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+						{
+							m_bDoMk[1] = FALSE;
+							m_bDoneMk[1] = TRUE;
+						}
+						else
+						{
+							m_bDoMk[1] = TRUE;
+							m_bDoneMk[1] = FALSE;
+						}
+					}
+					else
+					{
+						m_bReAlign[1][3] = TRUE;
+						m_bSkipAlign[1][3] = FALSE;
+						//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_3); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Move3Cam1); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+						Stop();
+						TowerLamp(RGB_YELLOW, TRUE);
+					}
+				}
+				else
+				{
+					Buzzer(FALSE, 0);
+
+					m_bReAlign[1][3] = TRUE;
+					m_bSkipAlign[1][3] = FALSE;
+					//m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_3); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move3Cam1); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+					Stop();
+					TowerLamp(RGB_YELLOW, TRUE);
+				}
+			}
+
+			if (m_bFailAlign[0][3] || m_bFailAlign[1][3])
+			{
+				if (!m_bReAlign[0][3] && !m_bReAlign[1][3])
+				{
+					if (m_bDoMk[0] || m_bDoMk[1])
+						m_nMkStAuto++;//m_nMkStAuto = MK_ST + 29;  // MoveInitPos0()
+					else
+					{
+						if (!IsInitPos0())
+							MoveInitPos0();
+						if (!IsInitPos1())
+							MoveInitPos1();
+
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::DoneMk); // // ∫“∑Æ¿ÃπÃ¡ˆ Display, Align∫Øºˆ √ ±‚»≠ (Skip 65 : Mk())
+					}
+				}
+				else
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::Move3Cam1); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+																 //m_nMkStAuto = MK_ST + (Mk4PtIdx::Align1_3); // FourPointAlign1(3) ¿∏∑Œ ¡¯«‡. - ƒ´∏ﬁ∂Û ¿Á¡§∑ƒ
+			}
+			else
+				m_nMkStAuto++;
+
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtMoveInitPos()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::MoveInitPt) :
+			MoveInitPos0();
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::MoveInitPt) + 1:
+			if (m_bDoMk[1])
+				MoveInitPos1();
+			else
+				MoveMkEdPos1();
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::MoveInitPt) + 2:
+			if (IsMoveDone())
+				m_nMkStAuto++;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtElecChk()
+{
+	CString sRst;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::ChkElec) : // DoElecChk
+			if (DoElecChk(sRst))
+			{
+				if (pDoc->WorkingInfo.Probing[0].bUse)
+				{
+					if (sRst == _T("Open"))
+					{
+						if (pDoc->WorkingInfo.Probing[0].bStopOnOpen)
+							m_nMkStAuto = REJECT_ST;
+						else
+							m_nMkStAuto++;
+					}
+					else if (sRst == _T("Error"))
+					{
+						m_nMkStAuto = ERROR_ST;
+					}
+					else
+					{
+						m_nMkStAuto++;
+					}
+				}
+				else
+					m_nMkStAuto++;
+			}
+										   break;
+
+		case MK_ST + (Mk4PtIdx::ChkElec) + 1:
+			if (ChkLightErr())
+			{
+				m_bChkLightErr = FALSE;
+				m_nMkStAuto++;
+			}
+			else
+				m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);	// Mk ∏∂≈∑ Ω√¿€
+			break;
+
+		case MK_ST + (Mk4PtIdx::ChkElec) + 2:
+			if (IsRun())
+			{
+				if (m_pMotion->IsEnable(MS_X0) && m_pMotion->IsEnable(MS_Y0) &&
+					m_pMotion->IsEnable(MS_X1) && m_pMotion->IsEnable(MS_Y1))
+				{
+					if (MODE_INNER != pDoc->GetTestMode())
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk); 	// Mk ∏∂≈∑ Ω√¿€
+					else
+						m_nMkStAuto = MK_ST + (Mk4PtIdx::Shift2Mk);
+				}
+				else
+				{
+					Stop();
+					MsgBox(_T("∏∂≈∑∫Œ ∏º«¿Ã ∫Ò»∞º∫»≠ µ«æ˙Ω¿¥œ¥Ÿ."));
+					TowerLamp(RGB_RED, TRUE);
+				}
+			}
+			else
+			{
+				if (!m_bChkLightErr)
+				{
+					m_bChkLightErr = TRUE;
+					MsgBox(_T("≥Î±§∫“∑Æ ¡§¡ˆ - ±‚∆«¿ª »Æ¿Œ«œººø‰.\r\n∞Ëº”¡¯«‡«œ∑¡∏È øÓ¿¸Ω∫¿ßƒ°∏¶ ¥©∏£ººø‰."));
+				}
+			}
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtDoMarking()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sRst, sMsg;
+	int a, b, nSerial, nPrevSerial;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::DoMk) :				// Mk ∏∂≈∑ Ω√¿€
+			if (pDoc->GetTestMode() == MODE_OUTER)
+				SetMkIts(TRUE);						// ITS ∏∂≈∑ Ω√¿€
+			else
+				SetMk(TRUE);						// Mk ∏∂≈∑ Ω√¿€
+
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk4PtIdx::DoMk) + 1:
+			Sleep(100);
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk4PtIdx::Verify) :
+			if (IsMkDone() && IsMoveDone())
+			{
+				if (IsVerify() && !m_nPrevMkStAuto)
+				{
+					m_nPrevMkStAuto = MK_ST + (Mk4PtIdx::Verify);
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);		// Mk ∏∂≈∑ Ω√¿€
+					m_bCam = TRUE;
+				}
+				else
+				{
+					if (IsReview())
+					{
+						if (!m_bCam)
+						{
+							m_nPrevStepAuto = MK_ST + (Mk4PtIdx::Verify);
+							m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);		// Mk ∏∂≈∑ Ω√¿€
+							m_bCam = TRUE;
+							MsgBox(_T("¢∫ Jog πˆ∆∞¿ª ¿ÃøÎ«œø© ∏∂≈∑¿ßƒ°∏¶ »Æ¿Œ«œø© ¡÷ººø‰."));
+						}
+						else
+						{
+							m_bCam = FALSE;
+							m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+											//sMsg = _T("");
+											//DispStsBar(sMsg, 0);
+						}
+					}
+					else
+					{
+						m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+										//sMsg = _T("");
+										//DispStsBar(sMsg, 0);
+					}
+				}
+			}
+			else if (IsReMk())
+			{
+				m_nPrevMkStAuto = MK_ST + (Mk4PtIdx::Verify);
+				m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);		// Mk ¿ÁΩ√¿€
+			}
+			else
+			{
+				sMsg = _T("");
+				sMsg += m_sDispSts[0];
+				sMsg += _T(",");
+				sMsg += m_sDispSts[1];
+				//DispStsBar(sMsg, 0);
+			}
+										break;
+
+		case MK_ST + (Mk4PtIdx::DoneMk) :	 // Align∫Øºˆ √ ±‚»≠
+			m_bReAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bReAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bReAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bReAlign[1][1] = FALSE; // [nCam][nPos] 
+
+			m_bSkipAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bSkipAlign[1][1] = FALSE; // [nCam][nPos] 
+
+			m_bFailAlign[0][0] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[0][1] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[1][0] = FALSE; // [nCam][nPos] 
+			m_bFailAlign[1][1] = FALSE; // [nCam][nPos] 
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::DoneMk) + 1:  // Mk∫Øºˆ √ ±‚»≠
+			m_bDoMk[0] = TRUE;
+			m_bDoMk[1] = TRUE;
+			m_bDoneMk[0] = FALSE;
+			m_bDoneMk[1] = FALSE;
+			m_bReMark[0] = FALSE;
+			m_bReMark[1] = FALSE;
+			m_bCam = FALSE;
+			m_nPrevMkStAuto = 0;
+
+			for (a = 0; a < 2; a++)
+			{
+				for (b = 0; b < MAX_STRIP_NUM; b++)
+				{
+					m_nMkStrip[a][b] = 0;
+					m_bRejectDone[a][b] = FALSE;
+				}
+			}
+
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk4PtIdx::DoneMk) + 2:
+			if (IsVs() && bDualTest)
+			{
+				if (m_nBufTot[1] < 4 && m_pBufSerial[1][m_nBufTot[1] - 1] < GetLotEndSerial())
+				{
+					Sleep(300);
+					break;
+				}
+			}
+
+			pView->MpeWrite(_T("MB440150"), 0);	// ∏∂≈∑∫Œ ∏∂≈∑¡ﬂ ON (PC∞° ON, OFF)
+			pView->MpeWrite(_T("MB440170"), 1);	// ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141029
+			pDoc->LogAuto(_T("PC: ∏∂≈∑øœ∑·(PLC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+			if (IsNoMk() || IsShowLive())
+				ShowLive(FALSE);
+
+			m_nMkStAuto++;
+			break;
+
+		case MK_ST + (Mk4PtIdx::DoneMk) + 3:
+#ifdef USE_MPE
+			if (pDoc->m_pMpeSignal[0] & (0x01 << 1))	// ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)-20141030
+			{
+				pDoc->LogAuto(_T("PLC: ∏∂≈∑∫Œ Feedingøœ∑·(PLC∞° OnΩ√≈∞∞Ì PC∞° »Æ¿Œ«œ∞Ì ResetΩ√≈¥.)"));
+				pView->MpeWrite(_T("MB440101"), 0);	// ∏∂≈∑∫Œ Feedingøœ∑·
+
+				Shift2Mk();			// PCR ¿Ãµø(Buffer->Marked) // ±‚∑œ(WorkingInfo.LastJob.sSerial)
+				UpdateRst();
+				SetMkFdLen();
+
+				SetCycTime();
+				m_dwCycSt = GetTickCount();
+
+				UpdateWorking();	// Update Working Info...
+				ChkYield();
+				m_nMkStAuto++;
+			}
+#endif
+			break;
+		case MK_ST + (Mk4PtIdx::DoneMk) + 4:
+			ChkLotCutPos();
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::DoneMk) + 5:
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::DoneMk) + 6:
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::DoneMk) + 7:
+			m_nMkStAuto++;
+			::WritePrivateProfileString(_T("Last Job"), _T("MkSt"), _T("0"), PATH_WORKING_INFO);
+			break;
+
+		case MK_ST + (Mk4PtIdx::DoneMk) + 8:
+			m_bMkSt = FALSE;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtLotDiff()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case MK_ST + (Mk4PtIdx::LotDiff) :
+			Stop();
+			TowerLamp(RGB_YELLOW, TRUE);
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::LotDiff) + 1:
+			//if(IDYES == DoMyMsgBox(_T("ªÛ∏È∞˙ «œ∏È¿« Lot∞° ¥Ÿ∏®¥œ¥Ÿ.\r\n∞Ëº” ¿€æ˜¿ª ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ªÛ∏È∞˙ «œ∏È¿« Lot∞° ¥Ÿ∏®¥œ¥Ÿ.\r\n∞Ëº” ¿€æ˜¿ª ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				General.bContDiffLot = TRUE;
+			}
+			else
+			{
+				General.bContDiffLot = FALSE;
+				m_bLotEnd = TRUE;
+				m_nLotEndAuto = LOT_END;
+			}
+			m_nMkStAuto++;
+			break;
+		case MK_ST + (Mk4PtIdx::LotDiff) + 2:
+			if (IsRun())
+			{
+				if (General.bContDiffLot)
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::ChkSn);
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case MK_ST + (Mk4PtIdx::LotDiff) + 3:
+			General.bContDiffLot = FALSE;
+			m_bLotEnd = TRUE;
+			m_nLotEndAuto = LOT_END;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtReject()
+{
+	int a, b;
+
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case REJECT_ST:
+			Buzzer(TRUE, 0);
+			TowerLamp(RGB_RED, TRUE);
+			Stop();
+
+			//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈© ∫“∑Æ¿‘¥œ¥Ÿ.\r\n∏Æ¡ß √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈© ∫“∑Æ¿‘¥œ¥Ÿ.\r\n∏Æ¡ß √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				m_bAnswer[0] = TRUE;
+				m_nMkStAuto++;
+			}
+			else
+			{
+				//if(IDYES == DoMyMsgBox(_T("∏Æ¡ß √≥∏Æ∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDYES == MsgBox(_T("∏Æ¡ß √≥∏Æ∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					m_bAnswer[1] = TRUE;
+					m_nMkStAuto++;
+				}
+			}
+
+			Buzzer(FALSE, 0);
+			break;
+		case REJECT_ST + 1:
+			if (IsRun())
+			{
+				if (m_bAnswer[0])
+				{
+					m_bAnswer[0] = FALSE;
+					m_nMkStAuto++;
+				}
+				else if (m_bAnswer[1])
+				{
+					m_bAnswer[1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);	// Mk ∏∂≈∑ Ω√¿€
+				}
+				else
+					m_nMkStAuto = REJECT_ST;
+			}
+			break;
+		case REJECT_ST + 2:
+			SetReject();
+			m_nMkStAuto++;
+			break;
+		case REJECT_ST + 3:
+			m_nMkStAuto++;
+			break;
+		case REJECT_ST + 4:
+			if (IsMkDone() && IsMoveDone())
+			{
+				if (IsVerify() && !m_nPrevMkStAuto)
+				{
+					m_nPrevMkStAuto = REJECT_ST + 4;
+					m_nMkStAuto = REJECT_ST + 2;		// Mk ∏∂≈∑ Ω√¿€
+					m_bCam = TRUE;
+
+					m_bDoneMk[0] = FALSE;
+					m_bDoneMk[1] = FALSE;
+
+					for (a = 0; a < 2; a++)
+					{
+						for (b = 0; b < MAX_STRIP_NUM; b++)
+						{
+							m_nMkStrip[a][b] = 0;
+							m_bRejectDone[a][b] = FALSE;
+						}
+					}
+				}
+				else
+				{
+					if (IsReview())
+					{
+						if (!m_bCam)
+						{
+							m_nPrevStepAuto = REJECT_ST + 4;
+							m_nMkStAuto = REJECT_ST + 2;		// Mk ∏∂≈∑ Ω√¿€
+							m_bCam = TRUE;
+							MsgBox(_T("¢∫ Jog πˆ∆∞¿ª ¿ÃøÎ«œø© ∏∂≈∑¿ßƒ°∏¶ »Æ¿Œ«œø© ¡÷ººø‰."));
+						}
+						else
+						{
+							m_bCam = FALSE;
+							m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+											//sMsg = _T("");
+											//DispStsBar(sMsg, 0);
+						}
+					}
+					else
+					{
+						m_nMkStAuto++;	// Mk ∏∂≈∑ øœ∑·
+
+										//sMsg = _T("");
+										//DispStsBar(sMsg, 0);
+					}
+				}
+			}
+			break;
+		case REJECT_ST + 5:
+			m_nMkStAuto = MK_ST + (Mk4PtIdx::DoneMk);				// Align∫Øºˆ √ ±‚»≠
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::Mk4PtErrStop()
+{
+	if (m_bMkSt && IsBuffer())
+	{
+		switch (m_nMkStAuto)
+		{
+		case ERROR_ST:
+			Stop();
+			TowerLamp(RGB_RED, TRUE);
+
+			//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈© Error¿‘¥œ¥Ÿ.\r\n¥ŸΩ√ ºÓ∆Æ √º≈©∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+			if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈© Error¿‘¥œ¥Ÿ.\r\n¥ŸΩ√ ºÓ∆Æ √º≈©∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+			{
+				m_bAnswer[0] = TRUE;
+				m_nMkStAuto++;
+			}
+			else
+			{
+				//if(IDYES == DoMyMsgBox(_T("ºÓ∆Æ √º≈©∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), MB_YESNO))
+				if (IDYES == MsgBox(_T("ºÓ∆Æ √º≈©∏¶ √Îº“«œø¥Ω¿¥œ¥Ÿ.\r\n∫“∑Æ∏∏ ∏∂≈∑ √≥∏Æ∏¶ ¡¯«‡«œΩ√∞⁄Ω¿¥œ±Ó?"), 0, MB_YESNO))
+				{
+					m_bAnswer[1] = TRUE;
+					m_nMkStAuto++;
+				}
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case ERROR_ST + 1:
+			m_nMkStAuto++;
+			break;
+		case ERROR_ST + 2:
+			if (IsRun())
+			{
+				if (m_bAnswer[0])
+				{
+					m_bAnswer[0] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::ChkElec); // DoElecChk
+				}
+				else if (m_bAnswer[1])
+				{
+					m_bAnswer[1] = FALSE;
+					m_nMkStAuto = MK_ST + (Mk4PtIdx::DoMk);	// Mk ∏∂≈∑ Ω√¿€
+				}
+				else
+					m_nMkStAuto++;
+			}
+			break;
+		case ERROR_ST + 3:
+			m_nMkStAuto = ERROR_ST;
+			break;
+		}
+	}
+}
+
+void CManagerProcedure::MarkingWith4PointAlign()
+{
+	Mk4PtReady();
+	Mk4PtChkSerial();
+	Mk4PtInit();
+	Mk4PtAlignPt0();
+	Mk4PtAlignPt1();
+	Mk4PtAlignPt2();
+	Mk4PtAlignPt3();
+	Mk4PtMoveInitPos();
+	Mk4PtElecChk();
+	Mk4PtDoMarking();
+	Mk4PtLotDiff();
+	Mk4PtReject();
+	Mk4PtErrStop();
+}
+
+void CManagerProcedure::MakeResultMDS()
+{
+	if (pView->m_mgrReelmap)
+		pView->m_mgrReelmap->MakeResultMDS();
+}
+
+BOOL CManagerProcedure::IsBuffer(int nNum)
+{
+	return pView->IsBuffer(nNum);
+}
+
+void CManagerProcedure::SetLastProc(int nFromMachine)
+{
+	if (!pView->m_mgrStatus)	return;
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	switch (nFromMachine)
+	{
+	case ID_AOIDN:
+		General.nLotEndSerial = _tstoi(pDoc->WorkingInfo.LastJob.sSampleTestShotNum);
+		General.bLastProcFromUp = FALSE;
+		General.bLastProcFromEng = FALSE;
+		General.bLastProc = TRUE;
+
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->m_bLastProc = TRUE;
+
+		pView->MpeWrite(_T("MB440186"), 1);			// ¿‹∑Æ√≥∏Æ AOI(«œ) ∫Œ≈Õ(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141112
+		pView->MpeWrite(_T("MB440181"), 1);			// ¿‹∑Æ√≥∏Æ(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)-20141031
+		pDoc->LogAuto(_T("PC: ¿‹∑Æ√≥∏Æ AOI(«œ) ∫Œ≈Õ(PC∞° OnΩ√≈∞∞Ì, PLC∞° »Æ¿Œ«œ∞Ì OffΩ√≈¥)"));
+		break;
+	default:
+		break;
+	}
+}
+
+BOOL CManagerProcedure::IsSameUpDnLot()
+{
+	if (!pView->m_mgrStatus)	return FALSE;
+	stPcrShare* PcrShare = (pView->m_mgrStatus->PcrShare);
+
+	if (PcrShare[0].sLot == PcrShare[1].sLot)
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CManagerProcedure::GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption)		// ≥ª√˛ø°º≠¿« ITS Ω√∏ÆæÛ¿« ¡§∫∏
+{
+	TCHAR szData[512];
+	CString str, sName, sPath, Path[3];
+
+	Path[0] = WorkingInfo.System.sPathItsFile;
+	Path[1] = WorkingInfo.LastJob.sModelUp;
+	//Path[1] = m_sEngModel;
+	Path[2] = m_sItsCode;
+
+	sName.Format(_T("%s.txt"), pDoc->m_sItsCode);
+	sPath.Format(_T("%s%s\\%s\\%s"), Path[0], Path[1], Path[2], sName); // ITS_Code.txt
+
+	if (sPath.IsEmpty())
+		return FALSE;
+
+	CString strTemp;
+	CFileFind finder;
+	if (finder.FindFile(sPath) == FALSE)
+	{
+		Path[1] = m_sEngModel;
+		sPath.Format(_T("%s%s\\%s\\%s"), Path[0], Path[1], Path[2], sName); // ITS_Code.txt
+		if (finder.FindFile(sPath) == FALSE)
+		{
+			strTemp.Format(_T("GetItsSerialInfo - Didn't find file.\r\n%s"), sPath);
+			pView->MsgBox(strTemp);
+			return FALSE;
+		}
+	}
+
+	if (nItsSerial == 0)
+		nItsSerial = SearchFirstShotOnIts();
+
+	CString sItsSerail;
+	sItsSerail.Format(_T("%d"), nItsSerial);
+
+	// ITS_Code.txt ∆ƒ¿œ¿« ¡§∫∏
+	//int nTestMode;
+	//CString sProcessCode;
+
+
+	// Option 1
+	if (nOption == 0 || nOption == 1)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Dual Test"), NULL, szData, sizeof(szData), sPath))
+			bDualTest = (_ttoi(szData) > 0) ? TRUE : FALSE;
+		else
+			bDualTest = FALSE;
+
+		WorkingInfo.LastJob.bDualTestInner = bDualTest;
+	}
+
+	// Option 2
+	if (nOption == 0 || nOption == 2)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Lot"), NULL, szData, sizeof(szData), sPath))
+			sLot = CString(szData);
+		else
+			sLot = _T("");
+
+		WorkingInfo.LastJob.sInnerLotUp = WorkingInfo.LastJob.sInnerLotDn = sLot;
+	}
+
+	// Option 3
+	if (nOption == 0 || nOption == 3)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Layer Up"), NULL, szData, sizeof(szData), sPath))
+			sLayerUp = CString(szData);
+		else
+			sLayerUp = _T("");
+
+		WorkingInfo.LastJob.sInnerLayerUp = sLayerUp;
+	}
+
+	// Option 4
+	if (nOption == 0 || nOption == 4)
+	{
+		if (bDualTest)
+		{
+			if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Layer Dn"), NULL, szData, sizeof(szData), sPath))
+				sLayerDn = CString(szData);
+			else
+				sLayerDn = _T("");
+		}
+		else
+			sLayerDn = _T("");
+
+		WorkingInfo.LastJob.sInnerLayerDn = sLayerDn;
+	}
+
+	return TRUE;
+}
+
+BOOL CManagerProcedure::GetAoiUpInfo(int nSerial, int *pNewLot, BOOL bFromBuf) // TRUE: CHANGED, FALSE: NO CHANGED 
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.11"));
+		return 0;
+	}
+
+	BOOL Info0;//, Info1;
+	Info0 = GetAoiInfoUp(nSerial, pNewLot, bFromBuf);
+
+	if (Info0)
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CManagerProcedure::GetAoiDnInfo(int nSerial, int *pNewLot, BOOL bFromBuf) // TRUE: CHANGED, FALSE: NO CHANGED 
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.12"));
+		return 0;
+	}
+
+	BOOL Info1;
+	Info1 = GetAoiInfoDn(nSerial, pNewLot, bFromBuf);
+	if (Info1)
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CManagerProcedure::GetAoiInfoUp(int nSerial, int *pNewLot, BOOL bFromBuf) // TRUE: CHANGED, FALSE: NO CHANGED 
+{
+	if (!pView->m_mgrStatus)	return FALSE;
+	stPcrShare* PcrShare = (pView->m_mgrStatus->PcrShare);
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	if (nSerial < 1)
+	{
+		strFileData.Format(_T("PCR∆ƒ¿œ¿Ã º≥¡§µ«¡ˆ æ æ“Ω¿¥œ¥Ÿ."));
+		pView->MsgBox(strFileData);
+		return(FALSE);
+	}
+
+	CString sPath;
+
+#ifdef TEST_MODE
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), WorkingInfo.System.sPathVrsBufUp, nSerial);
+#endif
+
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData = CharToString(FileData);
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCR ∆ƒ¿œ¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(FALSE);
+	}
+
+	// Error Code											// 1(¡§ªÛ), -1(Align Error, ≥Î±§∫“∑Æ), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[0].sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[0].sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[0].sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[0].sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);;
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	if (PcrShare[0].sModel.IsEmpty() || PcrShare[0].sLayer.IsEmpty() || PcrShare[0].sLot.IsEmpty())
+	{
+		pView->MsgBox(_T("Error - Aoi Information."));
+		return FALSE;
+	}
+
+	BOOL bUpdate = FALSE;
+
+	if (WorkingInfo.LastJob.sLotUp != PcrShare[0].sLot || WorkingInfo.LastJob.sEngItsCode != PcrShare[0].sItsCode)
+	{
+		bUpdate = TRUE;
+		WorkingInfo.LastJob.sLotUp = PcrShare[0].sLot;
+		m_sItsCode = WorkingInfo.LastJob.sEngItsCode = PcrShare[0].sItsCode;
+	}
+
+	if (WorkingInfo.LastJob.sModelUp != PcrShare[0].sModel || WorkingInfo.LastJob.sLayerUp != PcrShare[0].sLayer || pView->m_bInitAutoLoadMstInfo)
+	{
+		bUpdate = TRUE;
+		WorkingInfo.LastJob.sModelUp = PcrShare[0].sModel;
+		WorkingInfo.LastJob.sLayerUp = PcrShare[0].sLayer;
+
+		if (General.bBufEmptyF[0])
+		{
+			if (!General.bBufEmpty[0])
+				General.bBufEmptyF[0] = FALSE;
+
+			m_nAoiCamInfoStrPcs[0] = GetAoiUpCamMstInfo();
+			if (m_nAoiCamInfoStrPcs[0] > -1)
+			{
+				if ((m_nAoiCamInfoStrPcs[0] == 1 ? TRUE : FALSE) != WorkingInfo.System.bStripPcsRgnBin)
+				{
+					return FALSE;
+				}
+			}
+
+			pView->m_bInitAutoLoadMstInfo = FALSE;
+			return TRUE;
+		}
+
+		if (pView->m_bInitAutoLoadMstInfo)
+		{
+			pView->m_bInitAutoLoadMstInfo = FALSE;
+			return TRUE;
+		}
+	}
+
+	if (bUpdate)
+	{
+		WriteChangedModel();
+
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->UpdateData();
+
+		if (m_pReelMapUp)
+			m_pReelMapUp->ResetReelmapPath();
+
+		if (GetTestMode() == MODE_OUTER)
+		{
+			BOOL bDualTestInner;
+			CString sLot, sLayerUp, sLayerDn, str;
+			if (!pDoc->GetItsSerialInfo(nSerial, bDualTestInner, sLot, sLayerUp, sLayerDn))
+			{
+				str.Format(_T("It is trouble to read GetItsSerialInfo()."));
+				pView->MsgBox(str);
+				return FALSE; // TRUE: CHANGED, FALSE: NO CHANGED 
+			}
+
+			if (m_pReelMapInnerUp)
+				m_pReelMapInnerUp->ResetReelmapPath();
+
+			if (bDualTestInner)
+			{
+				if (m_pReelMapInnerDn)
+					m_pReelMapInnerDn->ResetReelmapPath();
+				if (m_pReelMapInnerAllUp)
+					m_pReelMapInnerAllUp->ResetReelmapPath();
+				if (m_pReelMapInnerAllDn)
+					m_pReelMapInnerAllDn->ResetReelmapPath();
+			}
+		}
+	}
+
+	return FALSE; // TRUE: CHANGED, FALSE: NO CHANGED 
+}
+
+BOOL CManagerProcedure::GetAoiInfoDn(int nSerial, int *pNewLot, BOOL bFromBuf) // TRUE: CHANGED, FALSE: NO CHANGED 
+{
+	if (!pView->m_mgrStatus)	return FALSE;
+	stPcrShare* PcrShare = (pView->m_mgrStatus->PcrShare);
+	stGeneral& General = (pView->m_mgrStatus->General);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return TRUE;
+
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp;// , i;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	if (nSerial < 1)
+	{
+		strFileData.Format(_T("PCR∆ƒ¿œ¿Ã º≥¡§µ«¡ˆ æ æ“Ω¿¥œ¥Ÿ."));
+		pView->MsgBox(strFileData);
+		return(FALSE);
+	}
+
+	CString sPath;
+
+#ifdef TEST_MODE
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), WorkingInfo.System.sPathVrsBufDn, nSerial);
+#endif
+
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData.Format(_T("%s"), CharToString(FileData));
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCR ∆ƒ¿œ¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(FALSE);
+	}
+
+	// Error Code											// 1(¡§ªÛ), -1(Align Error, ≥Î±§∫“∑Æ), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[1].sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[1].sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[1].sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	PcrShare[1].sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	if (PcrShare[1].sModel.IsEmpty() || PcrShare[1].sLayer.IsEmpty() || PcrShare[1].sLot.IsEmpty())
+	{
+		pView->MsgBox(_T("Error - Aoi Information."));
+		return FALSE;
+	}
+
+	BOOL bUpdate = FALSE;
+
+	if (WorkingInfo.LastJob.sLotDn != PcrShare[1].sLot || WorkingInfo.LastJob.sEngItsCode != PcrShare[1].sItsCode)
+	{
+		bUpdate = TRUE;
+		WorkingInfo.LastJob.sLotDn = PcrShare[1].sLot;
+		m_sItsCode = WorkingInfo.LastJob.sEngItsCode = PcrShare[1].sItsCode;
+	}
+
+	if (WorkingInfo.LastJob.sModelDn != PcrShare[1].sModel || WorkingInfo.LastJob.sLayerDn != PcrShare[1].sLayer)
+	{
+		bUpdate = TRUE;
+		WorkingInfo.LastJob.sModelDn = PcrShare[1].sModel;
+		WorkingInfo.LastJob.sLayerDn = PcrShare[1].sLayer;
+
+		if (General.bBufEmptyF[1])
+		{
+			if (!General.bBufEmpty[1])
+				General.bBufEmptyF[1] = FALSE;
+
+			m_nAoiCamInfoStrPcs[1] = GetAoiDnCamMstInfo();
+			if (m_nAoiCamInfoStrPcs[1] > -1)
+			{
+				if ((m_nAoiCamInfoStrPcs[1] == 1 ? TRUE : FALSE) != WorkingInfo.System.bStripPcsRgnBin)
+				{
+					return FALSE;
+				}
+			}
+
+			return TRUE;
+		}
+	}
+
+	if (bUpdate)
+	{
+		WriteChangedModel();
+
+		if (pView->m_pDlgMenu01)
+			pView->m_pDlgMenu01->UpdateData();
+
+		if (m_pReelMapDn)
+			m_pReelMapDn->ResetReelmapPath();
+
+		if (m_pReelMapAllUp)
+			m_pReelMapAllUp->ResetReelmapPath();
+
+		if (m_pReelMapAllDn)
+			m_pReelMapAllDn->ResetReelmapPath();
+	}
+
+	return FALSE;
 }

@@ -484,6 +484,79 @@ void CMyFile::ShowError() //Show error message
 /////////////////////////////////////////////////////////////////////////////
 // for R2R
 
+int CMyFile::CopyPcr(CString sSrc, CString sDest)  // return : Serial
+{
+	CString sFolder, sRemain, sSrcFolder, sFile;
+	CString sLot, sFilePath, sDestFolder;
+	CFileFind cFile;
+	BOOL bExist;
+	int nPos;
+
+	// 파일명을 얻음.
+	nPos = sDest.ReverseFind('\\');
+	sFile = sDest.Right(sDest.GetLength() - nPos - 1);
+	if (sFile.Find(_T("."), 0) != -1)
+	{
+		nPos = sFile.Find(_T("."), 0);
+		sFile.Delete(nPos, sFile.GetLength() - nPos);
+	}
+	sFolder = ParseFolderName(sDest, sRemain);
+	if (sFolder.IsEmpty()) return -1; // 폴더가 존재하지 않음.
+	sDestFolder = sRemain + _T("\\") + sFolder + _T("\\");
+
+	sFolder = ParseFolderName(sSrc, sRemain);
+	if (sFolder.IsEmpty()) return -1; // 폴더가 존재하지 않음.
+	sSrcFolder = sRemain + _T("\\") + sFolder + _T("\\");
+
+	bExist = cFile.FindFile(sSrcFolder + _T("*.pcr"));
+	if (!bExist)
+	{
+		return -2; // pcr파일이 존재하지 않음.
+	}
+
+	int nCopyed = 0, nSerial;
+
+	BeginWaitCursor();
+	while (bExist)
+	{
+
+		bExist = cFile.FindNextFile();
+		if (cFile.IsDots()) continue;
+		if (!cFile.IsDirectory())
+		{
+			// 파일명을 얻음.
+			sFile = cFile.GetFileName();
+
+			// 파일 Path를 얻음.
+			sFilePath = cFile.GetFilePath();
+
+			m_sError = _T("No error");
+			m_dwError = 0; // 에러코드 초기화.
+			m_bAskIfReadOnly = FALSE; // File을 Read Only로 하지 않음.
+			m_bOverwriteMode = TRUE; // File을 Over Write로.
+			m_bAborted = FALSE; // 파일관련 처리를 Abort하지 않는다.
+			m_iRecursionLimit = -1; // 하위폴더의 갯수를 초기화한다. 양수부터 의미 있음.
+
+			sDest = sDestFolder + sFile;
+			if (!Copy(sFilePath, sDest))
+			{
+				ShowError();
+				return -3; // Copy 실패.
+			}
+
+			nCopyed++;
+			nSerial = _tstoi(sFile);
+			break;
+		}
+	}
+	EndWaitCursor();
+
+	if (nCopyed > 0)
+		return nSerial;
+
+	return 0;
+}
+
 int CMyFile::CopyPcrAll(CString sSrc, CString sDest)  // return : Serial
 {
 	CString sFolder, sRemain, sSrcFolder, sFile;
@@ -566,6 +639,26 @@ BOOL CMyFile::IsPcrExist(CString strPath)
 		return FALSE;
 
 	return TRUE;
+}
+
+void CMyFile::DelPcr(CString strPath, int nSerial)
+{
+	CString strFileName;
+	CString strFilePath;
+	CFileFind cFile;
+	BOOL bExist;
+
+	strFilePath.Format(_T("%s%04d.pcr"), strPath, nSerial);
+	bExist = cFile.FindFile(strFilePath);
+	if (!bExist)
+		return;
+
+	if (!DeleteFolerOrFile(strFilePath))
+	{
+		ShowError(); // 실패.
+	}
+
+	return; // Sucess.
 }
 
 void CMyFile::DelPcrAll(CString strPath)

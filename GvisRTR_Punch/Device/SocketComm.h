@@ -79,13 +79,40 @@ typedef struct tagSocketData {
 #define STRING_LENGTH	    40
 #define PROTOCOL_DEFAULT_LENGTH 52
 
+#ifndef ID_NONE
 #define ID_NONE			-1
+#endif
+
 // Client
-#define ID_SR1000W		0	// Device is server.
-#define ID_MDX2500		1	// Device is server.
+#ifndef ID_SR1000W
+#define ID_SR1000W		0
+#endif
+
+// Client
+#ifndef ID_MDX2500
+#define ID_MDX2500		1
+#endif
+
+// Client
+#ifndef ID_PUNCH
 #define ID_PUNCH		2
+#endif
+
 // Server
-#define ID_ENGRAVE		2
+#ifndef ID_ENGRAVE
+#define ID_ENGRAVE		3
+#endif
+
+// Client
+#ifndef ID_AOIUP
+#define ID_AOIUP		4
+#endif
+
+// Client
+#ifndef ID_AOIDN
+#define ID_AOIDN		5
+#endif
+
 
 #define WM_UPDATE_CONNECTION	(WM_USER+0x1234)
 

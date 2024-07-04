@@ -251,7 +251,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgAoiF[EMG_B_AOI_UP] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 검사부 상 후면 스위치"));
 	}
 	else if (!Status.bEmgAoi[EMG_B_AOI_UP] && Status.bEmgAoiF[EMG_B_AOI_UP])
@@ -267,7 +267,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgAoiF[EMG_F_AOI_DN] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 검사부 하 전면 스위치"));
 	}
 	else if (!Status.bEmgAoi[EMG_F_AOI_DN] && Status.bEmgAoiF[EMG_F_AOI_DN])
@@ -283,7 +283,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgAoiF[EMG_B_AOI_DN] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 검사부 하 후면 스위치"));
 	}
 	else if (!Status.bEmgAoi[EMG_B_AOI_DN] && Status.bEmgAoiF[EMG_B_AOI_DN])
@@ -300,7 +300,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgMkF[EMG_M_MK] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 마킹부 메인 스위치"));
 	}
 	else if (!Status.bEmgMk[EMG_M_MK] && Status.bEmgMkF[EMG_M_MK])
@@ -316,7 +316,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgMkF[EMG_B_MK] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 마킹부 스위치"));
 	}
 	else if (!Status.bEmgMk[EMG_B_MK] && Status.bEmgMkF[EMG_B_MK])
@@ -332,7 +332,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgUcF = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 언코일러부 스위치"));
 	}
 	else if (!Status.bEmgUc && Status.bEmgUcF)
@@ -348,7 +348,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgRcF = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 리코일러부 스위치"));
 	}
 	else if (!Status.bEmgRc && Status.bEmgRcF)
@@ -364,7 +364,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgEngvF[0] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 각인부 모니터"));
 	}
 	else if (!Status.bEmgEngv[0] && Status.bEmgEngvF[0])
@@ -380,7 +380,7 @@ void CManagerFeeding::ChkEmg()
 		Status.bEmgEngvF[1] = TRUE;
 		Buzzer(TRUE, 0);
 		Stop();
-		pView->DispMain(_T("정 지"), RGB_RED);
+		DispMain(_T("정 지"), RGB_RED);
 		pView->MsgBox(_T("비상정지 - 각인부 스위치"));
 	}
 	else if (!Status.bEmgEngv[1] && Status.bEmgEngvF[1])
@@ -401,7 +401,7 @@ BOOL CManagerFeeding::ChkSaftySen() // 감지 : TRUE , 비감지 : FALSE
 			Status.bSensSaftyMkF = TRUE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 마킹부 안전센서가 감지되었습니다."));
 		}
 		else if (!Status.bSensSaftyMk && Status.bSensSaftyMkF)
@@ -435,7 +435,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Buzzer(TRUE, 0);
 			Stop();
 			//pView->DispStsBar(_T("정지-5"), 0);
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 전면 중앙 도어 Open"));
 		}
 
@@ -452,7 +452,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_FL_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 전면 좌측 도어 Open"));
 		}
 
@@ -469,7 +469,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_FR_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 전면 우측 도어 Open"));
 		}
 
@@ -486,7 +486,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BM_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 후면 중앙 도어 Open"));
 		}
 
@@ -503,7 +503,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BL_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 후면 좌측 도어 Open"));
 		}
 
@@ -520,7 +520,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BR_AOI_UP] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 상 후면 우측 도어 Open"));
 		}
 	}
@@ -540,7 +540,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_FM_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 전면 중앙 도어 Open"));
 		}
 
@@ -557,7 +557,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_FL_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 전면 좌측 도어 Open"));
 		}
 
@@ -574,7 +574,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_FR_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 전면 우측 도어 Open"));
 		}
 
@@ -591,7 +591,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BM_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 후면 중앙 도어 Open"));
 		}
 
@@ -608,7 +608,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BL_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 후면 좌측 도어 Open"));
 		}
 
@@ -625,7 +625,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorAoiF[DOOR_BR_AOI_DN] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 검사부 하 후면 우측 도어 Open"));
 		}
 	}
@@ -645,7 +645,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorMkF[DOOR_FL_MK] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 마킹부 전면 좌측 도어 Open"));
 		}
 
@@ -662,7 +662,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorMkF[DOOR_FR_MK] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 마킹부 전면 우측 도어 Open"));
 		}
 
@@ -679,7 +679,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorMkF[DOOR_BL_MK] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 마킹부 후면 좌측 도어 Open"));
 		}
 
@@ -696,7 +696,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorMkF[DOOR_BR_MK] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 마킹부 후면 우측 도어 Open"));
 		}
 	}
@@ -716,7 +716,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorEngvF[DOOR_FL_ENGV] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 각인부 전면 좌측 도어 Open"));
 		}
 
@@ -733,7 +733,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorEngvF[DOOR_FR_ENGV] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 각인부 전면 우측 도어 Open"));
 		}
 
@@ -750,7 +750,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorEngvF[DOOR_BL_ENGV] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 각인부 후면 좌측 도어 Open"));
 		}
 
@@ -767,7 +767,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorEngvF[DOOR_BR_ENGV] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 각인부 후면 우측 도어 Open"));
 		}
 	}
@@ -787,7 +787,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorUcF[DOOR_FL_UC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 언코일러부 전면 좌측 도어 Open"));
 		}
 
@@ -804,7 +804,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorUcF[DOOR_FR_UC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 언코일러부 측면 도어 Open"));
 		}
 
@@ -821,7 +821,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorUcF[DOOR_BL_UC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 언코일러부 후면 좌측 도어 Open"));
 		}
 
@@ -838,7 +838,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorUcF[DOOR_BR_UC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 언코일러부 후면 우측 도어 Open"));
 		}
 	}
@@ -858,7 +858,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorReF[DOOR_FR_RC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 리코일러부 전면 우측 도어 Open"));
 		}
 
@@ -875,7 +875,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorReF[DOOR_S_RC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 리코일러부 측면 도어 Open"));
 		}
 
@@ -892,7 +892,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorReF[DOOR_BL_RC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 리코일러부 후면 좌측 도어 Open"));
 		}
 
@@ -909,7 +909,7 @@ unsigned long CManagerFeeding::ChkDoor() // 0: All Closed , Open Door Index : Do
 			Status.bDoorReF[DOOR_BR_RC] = FALSE;
 			Buzzer(TRUE, 0);
 			Stop();
-			pView->DispMain(_T("정 지"), RGB_RED);
+			DispMain(_T("정 지"), RGB_RED);
 			pView->MsgBox(_T("일시정지 - 리코일러부 후면 우측 도어 Open"));
 		}
 	}
@@ -2043,7 +2043,7 @@ void CManagerFeeding::MonDispMain()
 	{
 		if (sDispMain != _T("운전중"))
 		{
-			pView->DispMain(_T("운전중"), RGB_GREEN);
+			DispMain(_T("운전중"), RGB_GREEN);
 		}
 	}
 
@@ -2052,7 +2052,7 @@ void CManagerFeeding::MonDispMain()
 		bDispStop = FALSE;
 		if (sDispMain != _T("운전준비"))
 		{
-			pView->DispMain(_T("운전준비"), RGB_GREEN);
+			DispMain(_T("운전준비"), RGB_GREEN);
 		}
 	}
 	else
@@ -2067,39 +2067,39 @@ void CManagerFeeding::MonDispMain()
 					{
 						if (sDispMain != _T("양면샘플"))
 						{
-							pView->DispMain(_T("양면샘플"), RGB_GREEN);
+							DispMain(_T("양면샘플"), RGB_GREEN);
 						}
 					}
 					else
 					{
 						if (sDispMain != _T("단면샘플"))
 						{
-							pView->DispMain(_T("단면샘플"), RGB_GREEN);
+							DispMain(_T("단면샘플"), RGB_GREEN);
 						}
 					}
 				}
 				else if (pDoc->GetTestMode() == MODE_INNER)
 				{
 					if (sDispMain != _T("내층검사"))
-						pView->DispMain(_T("내층검사"), RGB_GREEN);
+						DispMain(_T("내층검사"), RGB_GREEN);
 				}
 				else if (pDoc->GetTestMode() == MODE_OUTER)
 				{
 					if (sDispMain != _T("외층검사"))
-						pView->DispMain(_T("외층검사"), RGB_GREEN);
+						DispMain(_T("외층검사"), RGB_GREEN);
 				}
 				else if (pDoc->WorkingInfo.LastJob.bDualTest)
 				{
 					if (sDispMain != _T("양면검사"))
 					{
-						pView->DispMain(_T("양면검사"), RGB_GREEN);
+						DispMain(_T("양면검사"), RGB_GREEN);
 					}
 				}
 				else
 				{
 					if (sDispMain != _T("단면검사"))
 					{
-						pView->DispMain(_T("단면검사"), RGB_GREEN);
+						DispMain(_T("단면검사"), RGB_GREEN);
 					}
 				}
 			}
@@ -2123,7 +2123,7 @@ void CManagerFeeding::MonDispMain()
 		{
 			if (sDispMain != _T("정 지"))
 			{
-				pView->DispMain(_T("정 지"), RGB_RED);
+				DispMain(_T("정 지"), RGB_RED);
 			}
 		}
 	}
@@ -2341,7 +2341,7 @@ void CManagerFeeding::SetLed(int nIdx, BOOL bOn)
 
 void CManagerFeeding::Stop()
 {
-	pView->DispMain(_T("정 지"), RGB_RED);
+	DispMain(_T("정 지"), RGB_RED);
 	MpeWrite(_T("MB440162"), 1);
 }
 
@@ -2540,4 +2540,73 @@ void CManagerFeeding::SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg)			// 
 void CManagerFeeding::SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg)			// m_sAoiDnAlarmReTestMsg
 {
 	m_sAoiDnAlarmReTestMsg = sAoiDnAlarmReTestMsg;
+}
+
+CString CManagerFeeding::GetAoiUpAlarmRestartMsg()
+{
+	return m_sAoiUpAlarmReStartMsg;
+}
+
+CString CManagerFeeding::ReadAoiUpAlarmRestartMsg()
+{
+	CString sMsg = _T("Not Find Message.");
+	TCHAR szData[512];
+	CString sPath = PATH_ALARM;
+	if (0 < ::GetPrivateProfileString(_T("11"), _T("27"), NULL, szData, sizeof(szData), sPath))
+		sMsg = CString(szData);
+
+	return sMsg;
+}
+
+CString CManagerFeeding::GetAoiUpAlarmReTestMsg()
+{
+	return m_sAoiUpAlarmReTestMsg;
+}
+
+CString CManagerFeeding::ReadAoiUpAlarmReTestMsg()
+{
+	CString sMsg = _T("Not Find Message.");
+	TCHAR szData[512];
+	CString sPath = PATH_ALARM;
+	if (0 < ::GetPrivateProfileString(_T("20"), _T("9"), NULL, szData, sizeof(szData), sPath))
+		sMsg = CString(szData);
+
+	return sMsg;
+}
+
+CString CManagerFeeding::GetAoiDnAlarmRestartMsg()
+{
+	return m_sAoiDnAlarmReStartMsg;
+}
+
+CString CManagerFeeding::ReadAoiDnAlarmRestartMsg()
+{
+	CString sMsg = _T("Not Find Message.");
+	TCHAR szData[512];
+	CString sPath = PATH_ALARM;
+	if (0 < ::GetPrivateProfileString(_T("11"), _T("28"), NULL, szData, sizeof(szData), sPath))
+		sMsg = CString(szData);
+
+	return sMsg;
+}
+
+CString CManagerFeeding::GetAoiDnAlarmReTestMsg()
+{
+	return m_sAoiDnAlarmReTestMsg;
+}
+
+CString CManagerFeeding::ReadAoiDnAlarmReTestMsg()
+{
+	CString sMsg = _T("Not Find Message.");
+	TCHAR szData[512];
+	CString sPath = PATH_ALARM;
+	if (0 < ::GetPrivateProfileString(_T("20"), _T("10"), NULL, szData, sizeof(szData), sPath))
+		sMsg = CString(szData);
+
+	return sMsg;
+}
+
+void CManagerFeeding::DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0))
+{
+	pView->DispMain(sMsg, rgb);
 }

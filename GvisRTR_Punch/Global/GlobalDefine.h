@@ -521,20 +521,34 @@ typedef enum {KOREAN=0, ENGLISH=1, JAPANESE=2} LANG;
 #define ID_NONE			-1
 #endif
 
+// Client
 #ifndef ID_SR1000W
 #define ID_SR1000W		0
 #endif
 
+// Client
 #ifndef ID_MDX2500
 #define ID_MDX2500		1
 #endif
 
+// Client
 #ifndef ID_PUNCH
 #define ID_PUNCH		2
 #endif
 
+// Server
 #ifndef ID_ENGRAVE
-#define ID_ENGRAVE		2
+#define ID_ENGRAVE		3
+#endif
+
+// Client
+#ifndef ID_AOIUP
+#define ID_AOIUP		4
+#endif
+
+// Client
+#ifndef ID_AOIDN
+#define ID_AOIDN		5
 #endif
 
 
@@ -627,21 +641,19 @@ enum ALIGN_METHODE { ONE_POINT = 1, TWO_POINT, THREE_POINT, FOUR_POINT };
 
 enum WORK_MODE { MODE_NONE = 0, MODE_INNER = 1, MODE_OUTER = 2 };
 
-
-
 struct stSystem
 {
-	CString sMcName, sPassword;
+	CString sMcName;
 	CString sPathCamSpecDir;
 
 	CString sPathAoiUp, sPathAoiUpDts, sPathAoiUpCurrInfo, sPathAoiUpVrsData, sPathAoiUpOffset, sPathAoiUpDefImg;
 	CString sPathAoiUpLocalSpec, sPathAoiUpCamInfo;
 	CString sPathVrsShareUp, sPathVrsBufUp;
-	CString sPathVsShareUp;
+	CString sPathVsShareUp, sPathVsDummyBufUp;
 	CString sPathAoiDn, sPathAoiDnDts, sPathAoiDnCurrInfo, sPathAoiDnVrsData, sPathAoiDnOffset, sPathAoiDnDefImg;
 	CString sPathAoiDnLocalSpec, sPathAoiDnCamInfo;
 	CString sPathVrsShareDn, sPathVrsBufDn;
-	CString sPathVsShareDn;
+	CString sPathVsShareDn, sPathVsDummyBufDn;
 
 	CString sPathEng, sPathEngCurrInfo, sPathEngOffset, sPathMkCurrInfo, sPathMkCurrInfoBuf;
 	CString sPathMkSignalInfo, sPathEngSignalInfo, sPathAoiUpStatusInfo, sPathAoiDnStatusInfo;
@@ -666,24 +678,21 @@ struct stSystem
 	BOOL bStripPcsRgnBin;
 	BOOL bUseDTS, bUseITS;
 
-	int m_nSapp3Code[10];	// Sapp3 code
-
-
 	stSystem()
 	{
-		sMcName = _T(""); sPassword = _T("GVIS");
+		sMcName = _T("");
 		sPathCamSpecDir = _T("");
 
 		sPathAoiUp = _T(""); sPathAoiUpDts = _T(""); sPathAoiUpCurrInfo = _T(""); sPathAoiUpDefImg = _T("");
 		sPathAoiUpOffset = _T(""); sPathAoiUpVrsData = _T(""); sPathAoiUpCamInfo = _T("");
 		sPathAoiUpLocalSpec = _T("");
 		sPathVrsShareUp = _T(""); sPathVrsBufUp = _T("");
-		sPathVsShareUp = _T("");
+		sPathVsShareUp = _T(""); sPathVsDummyBufUp = _T("");
 		sPathAoiDn = _T(""); sPathAoiDnDts = _T(""); sPathAoiDnCurrInfo = _T(""); sPathAoiDnDefImg = _T("");
 		sPathAoiDnOffset = _T(""); sPathAoiDnVrsData = _T(""); sPathAoiDnCamInfo = _T("");
 		sPathAoiDnLocalSpec = _T("");
 		sPathVrsShareDn = _T(""); sPathVrsBufDn = _T("");
-		sPathVsShareDn = _T("");
+		sPathVsShareDn = _T(""); sPathVsDummyBufDn = _T("");
 
 		sPathEng = _T(""); sPathEngCurrInfo = _T(""); sPathEngOffset = _T(""); sPathMkCurrInfo = _T("");
 		sPathMkSignalInfo = _T(""); sPathEngSignalInfo = _T("");
@@ -763,7 +772,7 @@ struct stLastJob
 	BOOL bDispMkPcs, bStopFixDef, bMkSftySen, bAoiSftySen;
 	CString sJogSpd, sLotSerial; //sLightVal, 
 	BOOL bLightOn, bMkOnePnl, bAoiOnePnl, bEngraveOnePnl;
-	BOOL bVerify, bReview;
+	BOOL bVerify;// , bReview;
 	int nVerifyPeriod;
 	CString sVerifyLen;
 	//CString sDistAoiMk;
@@ -1074,8 +1083,6 @@ struct stYield
 		;
 	}
 };
-
-
 
 struct stSliceIo
 {

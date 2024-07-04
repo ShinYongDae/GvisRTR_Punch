@@ -22,6 +22,7 @@ CDlgMenu01::CDlgMenu01(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DLG_MENU_01, pParent)
 {
 	m_pRect = NULL;
+	m_bLastProc = FALSE;
 	Create();
 }
 
@@ -96,6 +97,19 @@ void CDlgMenu01::DelImg()
 
 		myBtn[i].DelImgList();
 	}
+}
+
+void CDlgMenu01::Reset()
+{
+	m_bLastProc = FALSE;
+
+	if (MODE_INNER != pDoc->GetTestMode())
+		m_bLastProcFromUp = TRUE;
+	else
+		m_bLastProcFromEng = TRUE;
+
+	ResetSerial();
+	ResetLastProc();
 }
 
 void CDlgMenu01::InitGui()
@@ -992,4 +1006,116 @@ void CDlgMenu01::EnableItsMode(BOOL bEnable)
 		myStcTitle[53].SetText(_T("상면")); // IDC_STC_ST_UP
 		myStcTitle[54].SetText(_T("하면")); // IDC_STC_ST_DN
 	}
+}
+
+void CDlgMenu01::DispLotEndSerial(int nSerial)
+{
+	CString str = _T("");
+
+	if (nSerial > 0)
+		str.Format(_T("%d"), nSerial);
+
+	myStcData[84].SetWindowText(str);
+}
+
+void CDlgMenu01::ResetLotTime()
+{
+	pDoc->WorkingInfo.Lot.StTime.nYear = 0;
+	pDoc->WorkingInfo.Lot.StTime.nMonth = 0;
+	pDoc->WorkingInfo.Lot.StTime.nDay = 0;
+	pDoc->WorkingInfo.Lot.StTime.nHour = 0;
+	pDoc->WorkingInfo.Lot.StTime.nMin = 0;
+	pDoc->WorkingInfo.Lot.StTime.nSec = 0;
+
+	pDoc->WorkingInfo.Lot.CurTime.nYear = 0;
+	pDoc->WorkingInfo.Lot.CurTime.nMonth = 0;
+	pDoc->WorkingInfo.Lot.CurTime.nDay = 0;
+	pDoc->WorkingInfo.Lot.CurTime.nHour = 0;
+	pDoc->WorkingInfo.Lot.CurTime.nMin = 0;
+	pDoc->WorkingInfo.Lot.CurTime.nSec = 0;
+
+	pDoc->WorkingInfo.Lot.EdTime.nYear = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nMonth = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nDay = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nHour = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nMin = 0;
+	pDoc->WorkingInfo.Lot.EdTime.nSec = 0;
+
+	myStcData[21].SetText(_T(""));
+	myStcData[22].SetText(_T(""));
+	myStcData[23].SetText(_T(""));
+}
+
+void CDlgMenu01::UpdateData()
+{
+	CString sVal;
+
+	myStcData[0].SetText(pDoc->WorkingInfo.LastJob.sSelUserName);	// 운용자
+	pDoc->SetMkMenu01(_T("Info"), _T("Operator"), pDoc->WorkingInfo.LastJob.sSelUserName);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (bDualTest)
+	{
+		myStcData[75].SetText(pDoc->WorkingInfo.LastJob.sLayerDn);		// 하면레이어
+		pDoc->SetMkMenu01(_T("Info"), _T("LayerDn"), pDoc->WorkingInfo.LastJob.sLayerDn);
+	}
+
+	myStcData[1].SetText(pDoc->WorkingInfo.LastJob.sModelUp);		// 모델
+	pDoc->SetMkMenu01(_T("Info"), _T("Model"), pDoc->WorkingInfo.LastJob.sModelUp);
+
+	if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
+		myStcData[91].SetText(pDoc->m_sItsCode);					// ITS CODE
+	else
+		myStcData[91].SetText(_T(""));
+
+	myStcData[3].SetText(pDoc->WorkingInfo.LastJob.sLotUp);			// 로트
+	pDoc->SetMkMenu01(_T("Info"), _T("Lot"), pDoc->WorkingInfo.LastJob.sLotUp);
+	myStcData[2].SetText(pDoc->WorkingInfo.LastJob.sLayerUp);		// 상면레이어
+	pDoc->SetMkMenu01(_T("Info"), _T("LayerUp"), pDoc->WorkingInfo.LastJob.sLayerUp);
+
+	double dTotLen = _tstof(pDoc->WorkingInfo.LastJob.sReelTotLen) * 1000.0;
+	double dLotLen = _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen) * 1000.0;
+
+	sVal.Format(_T("%.1f"), dTotLen / 1000.0);
+	myStcData[4].SetText(sVal);			// 전체릴길이
+
+	double dFdTotLen = pView->GetMkFdLen();
+
+	sVal.Format(_T("%d"), (int)(dFdTotLen / dTotLen * 100.0));
+	myStcData[5].SetText(sVal);			// 전체진행율
+
+	sVal.Format(_T("%d"), (int)(dFdTotLen / dTotLen * 100.0));
+	//myStcData[6].SetText(sVal);			// 로트진행율
+	myStcData[6].SetText(_T(""));		// 로트진행율
+
+	myStcData[10].SetText(pDoc->WorkingInfo.LastJob.sStripOutRatio);	// 스트립 양폐율[%]
+	myStcData[10].SetBkColor(RGB_WHITE);
+
+	sVal.Format(_T("%d"), pDoc->WorkingInfo.LastJob.nVerifyPeriod);
+	myStcData[14].SetText(sVal);
+
+	myStcData[11].SetText(pDoc->WorkingInfo.LastJob.sCustomNeedRatio);	// 고객출하수율
+	myStcData[11].SetBkColor(RGB_WHITE);
+
+	if (pDoc->WorkingInfo.LastJob.bTempPause)
+	{
+		myBtn[0].SetCheck(TRUE);
+		myStcData[9].SetText(pDoc->WorkingInfo.LastJob.sTempPauseLen);	// 일시정지길이
+	}
+	else
+	{
+		myBtn[0].SetCheck(FALSE);
+		myStcData[9].SetText(pDoc->WorkingInfo.LastJob.sTempPauseLen);	// 일시정지길이
+	}
+
+	myBtn[2].SetCheck(pDoc->WorkingInfo.LastJob.bVerify);
+	GetDlgItem(IDC_STC_REVIEW_LEN)->SetWindowText(pDoc->WorkingInfo.LastJob.sVerifyLen);
+	pDoc->SetMkMenu01(_T("Data"), _T("VerifyLen"), pDoc->WorkingInfo.LastJob.sVerifyLen);
+
+	((CButton*)GetDlgItem(IDC_CHK_2LAYER))->SetCheck(pDoc->WorkingInfo.LastJob.bUse2Layer);
+
+	if (pDoc->WorkingInfo.LastJob.bUse380mm)
+		GetDlgItem(IDC_STC_380mm)->ShowWindow(SW_SHOW);
+	else
+		GetDlgItem(IDC_STC_380mm)->ShowWindow(SW_HIDE);
 }

@@ -27,6 +27,15 @@ public:
 	stMkIo MkIo;
 	CMyFile *m_pFile;
 
+	int m_nAoiCamInfoStrPcs[2]; // [0] : Up, [1] : Dn
+	
+	// For ITS
+	BOOL m_bEngDualTest;
+	CString m_sItsCode;
+	CString m_sEngLotNum, m_sEngProcessNum;
+	CString m_sEngModel, m_sEngLayerUp;
+	CString m_sEngLayerDn;
+	int m_nWritedItsSerial;
 
 // 작업입니다.
 public:
@@ -78,6 +87,23 @@ public:
 	void SetFdJogAcc(double dVel);
 	double GetOnePnlVel();
 	double GetFdJogVel();
+	double GetEngraveToq();
+	BOOL GetCurrentInfoEng();
+	int GetCurrentInfoEngShotNum();
+	CString GetCamPxlRes();
+	CString GetProcessNum();
+
+	int CopyPcrAll();
+	int CopyPcrUp();
+	int CopyPcrDn();
+	void DelPcrAll();
+	void DelPcrUp();
+	void DelPcrDn();
+	void DelSharePcr();
+	void DelSharePcrUp();
+	void DelSharePcrDn();
+	void DelShareVsPcrUp();
+	void DelShareVsPcrDn();
 
 // 재정의입니다.
 public:

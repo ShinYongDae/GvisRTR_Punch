@@ -202,6 +202,10 @@
     <ClInclude Include="Device\FileOperation.h" />
     <ClInclude Include="Device\HardwareInfoDefine.h" />
     <ClInclude Include="Device\HardwareInfoEx.h" />
+    <ClInclude Include="Device\LibMil.h" />
+    <ClInclude Include="Device\LibMilBuf.h" />
+    <ClInclude Include="Device\LibMilDisp.h" />
+    <ClInclude Include="Device\LibMilDraw.h" />
     <ClInclude Include="Device\Light.h" />
     <ClInclude Include="Device\Motion.h" />
     <ClInclude Include="Device\MotionParam.h" />
@@ -215,9 +219,13 @@
     <ClInclude Include="Device\safelock.h" />
     <ClInclude Include="Device\Smac.h" />
     <ClInclude Include="Device\SocketComm.h" />
+    <ClInclude Include="Device\Sr1000w.h" />
+    <ClInclude Include="Device\Sr1000wDef.h" />
     <ClInclude Include="Device\TcpIpClient.h" />
     <ClInclude Include="Device\type_def.h" />
     <ClInclude Include="Device\VerifySys.h" />
+    <ClInclude Include="Device\vic7defs.h" />
+    <ClInclude Include="Device\Vicdefs.h" />
     <ClInclude Include="Device\Vision.h" />
     <ClInclude Include="Dialog\DlgFrameHigh.h" />
     <ClInclude Include="Dialog\DlgInfo.h" />
@@ -264,6 +272,7 @@
     <ClInclude Include="Process\CamMasterDefine.h" />
     <ClInclude Include="Process\DataFile.h" />
     <ClInclude Include="Process\DataMarking.h" />
+    <ClInclude Include="Process\freeimage.h" />
     <ClInclude Include="Process\IniFile.h" />
     <ClInclude Include="Process\MyFile.h" />
     <ClInclude Include="Process\PcsRgn.h" />
@@ -282,6 +291,10 @@
     <ClCompile Include="Device\Engrave.cpp" />
     <ClCompile Include="Device\FileOperation.cpp" />
     <ClCompile Include="Device\HardwareInfoEx.cpp" />
+    <ClCompile Include="Device\LibMil.cpp" />
+    <ClCompile Include="Device\LibMilBuf.cpp" />
+    <ClCompile Include="Device\LibMilDisp.cpp" />
+    <ClCompile Include="Device\LibMilDraw.cpp" />
     <ClCompile Include="Device\Light.cpp" />
     <ClCompile Include="Device\Motion.cpp" />
     <ClCompile Include="Device\MpDevice.cpp" />
@@ -291,6 +304,7 @@
     <ClCompile Include="Device\Rs232.cpp" />
     <ClCompile Include="Device\Smac.cpp" />
     <ClCompile Include="Device\SocketComm.cpp" />
+    <ClCompile Include="Device\Sr1000w.cpp" />
     <ClCompile Include="Device\TcpIpClient.cpp" />
     <ClCompile Include="Device\VerifySys.cpp" />
     <ClCompile Include="Device\Vision.cpp" />

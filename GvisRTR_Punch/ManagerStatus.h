@@ -1,6 +1,10 @@
 #pragma once
 #include "afxwin.h"
 
+#ifndef MAX_STRIP
+	#define MAX_STRIP				4
+#endif
+
 #define BUF_SZ						50
 
 struct stGeneral
@@ -10,16 +14,21 @@ struct stGeneral
 	BOOL bContDiffLot, bDoneChgLot, bUseRTRYShiftAdjust;
 	BOOL bUpdateYield, bUpdateYieldOnRmap;
 	BOOL bSkipAlign, bReAlign;
-	BOOL bFailAlign, bDoMk, bDoneMk, bReMark, bRejectDone, bAnswer;
+	BOOL bFailAlign, bDoMk, bDoneMk, bReMark, bAnswer;
 	BOOL bInitAuto, bLoadMstInfo;
 	BOOL bBufEmpty[2], bBufEmptyF[2];							// [0] : Up, [1] : Dn
 	BOOL bCont, bAoiTest[2], bWaitPcr[2], bAoiFdWrite[2], bEngTest, bEngFdWrite;
-	BOOL bReadyDone;
+	BOOL bReadyDone, bStopF_Verify, bInitAutoLoadMstInfo;
 
 	int nLotEndAuto, nMkStAuto, nPrevMkStAuto, nLastProcAuto, nTestMode, nLotEndSerial;
-	int nStepAuto, nPrevStepAuto, nMkStrip, nSaveMk0Img, nSaveMk1Img;
+	int nStepAuto, nPrevStepAuto, nSaveMk0Img, nSaveMk1Img;
 	int nTotMk[2], nPrevTotMk[2], nMkPcs[2], nPrevMkPcs[2];		// [0] : Up, [1] : Dn
 	int nAoiCamInfoStrPcs[2];									// [0] : Up, [1] : Dn
+
+	int nStepMk[4], nMkPcs[4]; 	// [0] Auto-Left, [1] Auto-Right, [2] Manual-Left, [3] Manual-Right  ; m_nStepMk(마킹Sequence), nMkOrderIdx(마킹한 count)
+	int nMkStrip[2][MAX_STRIP]; // [nCam][nStrip] - [좌/우][] : 스트립에 펀칭한 피스 수 count
+	BOOL bRejectDone[2][MAX_STRIP]; // Shot[2], Strip[4] - [좌/우][] : 스트립에 펀칭한 피스 수 count가 스트립 폐기 설정수 완료 여부 
+	int nEjectBufferLastShot;
 
 	CString sNewLotUp;
 
@@ -31,23 +40,31 @@ struct stGeneral
 		bUpdateYield = FALSE; bUpdateYieldOnRmap = FALSE;
 		bSkipAlign = FALSE; bReAlign = FALSE;
 		bFailAlign = FALSE; bDoMk = FALSE; bDoneMk = FALSE;
-		bReMark = FALSE; bRejectDone = FALSE; bAnswer = FALSE;
+		bReMark = FALSE; bAnswer = FALSE;
 		bInitAuto = FALSE; bLoadMstInfo = FALSE;
 		bBufEmpty[0] = FALSE; bBufEmptyF[0] = FALSE;
 		bBufEmpty[1] = FALSE; bBufEmptyF[1] = FALSE;
 		bCont = FALSE; bAoiTest[0] = FALSE; bAoiTest[1] = FALSE; bWaitPcr[0] = FALSE; bWaitPcr[1] = FALSE;
 		bAoiFdWrite[0] = FALSE; bAoiFdWrite[1] = FALSE; bEngTest = FALSE; bEngFdWrite = FALSE;
-		bReadyDone = FALSE;
+		bReadyDone = FALSE; bStopF_Verify = FALSE; bInitAutoLoadMstInfo = FALSE;
 
 		nLotEndAuto = 0; nMkStAuto = 0; nPrevMkStAuto = 0;
 		nLastProcAuto = 0; nTestMode = 0; nLotEndSerial = 0;
-		nStepAuto = 0; nPrevStepAuto = 0; nMkStrip = 0;
+		nStepAuto = 0; nPrevStepAuto = 0; 
 		nSaveMk0Img = 0; nSaveMk1Img = 0;
 		nTotMk[0] = 0; nTotMk[1] = 0;
 		nPrevTotMk[0] = 0; nPrevTotMk[1] = 0;
 		nMkPcs[0] = 0; nMkPcs[1] = 0;
 		nPrevMkPcs[0] = 0; nPrevMkPcs[1] = 0;
 		nAoiCamInfoStrPcs[0] = -1; nAoiCamInfoStrPcs[1] = -1;
+
+		nStepMk[0] = 0; nStepMk[1] = 0; nStepMk[2] = 0; nStepMk[3] = 0;
+		nMkPcs[0] = 0; nMkPcs[1] = 0; nMkPcs[2] = 0; nMkPcs[3] = 0;
+		nMkStrip[0][0] = 0; nMkStrip[0][1] = 0; nMkStrip[0][2] = 0; nMkStrip[0][3] = 0;
+		bRejectDone[0][0] = FALSE; bRejectDone[0][1] = FALSE; bRejectDone[0][2] = FALSE; bRejectDone[0][3] = FALSE;
+		nMkStrip[1][0] = 0; nMkStrip[1][1] = 0; nMkStrip[1][2] = 0; nMkStrip[1][3] = 0;
+		bRejectDone[1][0] = FALSE; bRejectDone[1][1] = FALSE; bRejectDone[1][2] = FALSE; bRejectDone[1][3] = FALSE;
+		nEjectBufferLastShot = -1;
 
 		sNewLotUp = _T("");
 	}
@@ -150,6 +167,19 @@ struct stListBuf
 
 };
 
+struct stPcrShare
+{
+	BOOL bExist;
+	int nSerial;
+	CString sModel, sLayer, sLot, sItsCode, sPrcsCode;
+
+	stPcrShare()
+	{
+		bExist = FALSE;
+		nSerial = 0;
+		sModel = _T(""); sLayer = _T(""); sLot = _T(""); sItsCode = _T(""); sPrcsCode = _T("");
+	}
+};
 
 class CManagerStatus : public CWnd
 {
@@ -171,6 +201,7 @@ public:
 	stThread Thread;
 	stEngrave Engrave;
 	stListBuf ListBuf[2]; // [0]:AOI-Up , [1]:AOI-Dn
+	stPcrShare PcrShare[2], PcrShareVs[2];
 
 	// 작업입니다.
 public:

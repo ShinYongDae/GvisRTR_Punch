@@ -7,6 +7,7 @@
 #include "Device/Smac.h"
 #include "Device/Vision.h"
 #include "Device/Light.h"
+#include "Device/SR1000W.h"
 
 #define TIM_INIT_PUNCH			0
 #define TIM_SCAN_STATUS			10
@@ -50,6 +51,7 @@ public:
 public:
 	BOOL m_bAuto, m_bManual, m_bOneCycle;
 	stStatusPunch Status;
+	CSr1000w* m_pSr1000w;
 
 
 	// 작업입니다.
@@ -67,6 +69,8 @@ public:
 	void ResetMotion();
 	void ResetMotion(int nMsId);
 	void StopFeeding(BOOL bStop = TRUE);
+	void MoveInitPos0(BOOL bWait = TRUE);
+	void MoveInitPos1(BOOL bWait = TRUE);
 
 	// 보조작업입니다.
 public:

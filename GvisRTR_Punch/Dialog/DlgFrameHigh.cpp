@@ -307,6 +307,72 @@ void CDlgFrameHigh::AtDlgHide()
 
 }
 
+void CDlgFrameHigh::Reset()
+{
+	SetMkLastShot(0);
+	SetAoiLastShot(0, 0);
+	SetAoiLastShot(1, 0);
+	SetEngraveLastShot(0);
+}
+
+void CDlgFrameHigh::SetMkLastShot(int nSerial)
+{
+	if (nSerial < 0)
+	{
+		return;
+	}
+
+	m_nMkLastShot = nSerial;
+
+	CString str;
+	str.Format(_T("%d"), nSerial);
+	myStc[6].SetText(str);
+
+	CString sPath = PATH_WORKING_INFO;
+	pDoc->WorkingInfo.LastJob.sMkLastShot = str;
+	::WritePrivateProfileString(_T("Last Job"), _T("Mk Last Shot"), str, sPath);
+}
+
+void CDlgFrameHigh::SetAoiLastShot(int nAoi, int nSerial)
+{
+	if (nSerial < 0 || nAoi < 0 || nAoi > 1)
+	{
+		return;
+	}
+
+	m_nAoiLastShot[nAoi] = nSerial;
+
+	CString str;
+	str.Format(_T("%d"), nSerial);
+	//myStc[6].SetText(str);
+
+	CString sPath = PATH_WORKING_INFO;
+	pDoc->WorkingInfo.LastJob.sAoiLastShot[nAoi] = str;
+	if (nAoi == 0)
+		::WritePrivateProfileString(_T("Last Job"), _T("AoiUp Last Shot"), str, sPath);
+	else if (nAoi == 1)
+		::WritePrivateProfileString(_T("Last Job"), _T("AoiDn Last Shot"), str, sPath);
+}
+
+void CDlgFrameHigh::SetEngraveLastShot(int nSerial)
+{
+	if (nSerial < 0)
+	{
+		return;
+	}
+
+	m_nEngraveLastShot = nSerial;
+
+	CString str;
+	str.Format(_T("%d"), nSerial);
+	//str.Format(_T("%d"), 0);
+	//myStc[6].SetText(str);
+
+	CString sPath = PATH_WORKING_INFO;
+	pDoc->WorkingInfo.LastJob.sEngraveLastShot = str;
+	::WritePrivateProfileString(_T("Last Job"), _T("Engrave Last Shot"), str, sPath);
+}
+
 void CDlgFrameHigh::ChkMenu01()
 {
 	// TODO: Add your control notification handler code here
@@ -484,22 +550,4 @@ void CDlgFrameHigh::SetChk(int nID)
 int CDlgFrameHigh::GetLastShotMk()
 {
 	return m_nMkLastShot;
-}
-
-void CDlgFrameHigh::SetMkLastShot(int nSerial)
-{
-	if (nSerial < 0)
-	{
-		return;
-	}
-
-	m_nMkLastShot = nSerial;
-
-	CString str;
-	str.Format(_T("%d"), nSerial);
-	myStc[6].SetText(str);
-
-	CString sPath = PATH_WORKING_INFO;
-	pDoc->WorkingInfo.LastJob.sMkLastShot = str;
-	::WritePrivateProfileString(_T("Last Job"), _T("Mk Last Shot"), str, sPath);
 }

@@ -67,8 +67,6 @@ class CGvisRTR_PunchView : public CFormView
 	__int64 m_nBufSerialSorting[2][100];	// [0]: AOI-Up , [1]: AOI-Dn
 
 	DWORD m_dwLotSt, m_dwLotEd;
-	BOOL m_bSerialDecrese;
-	int m_nLotEndSerial;
 
 	void InitMgr();
 	void CreateMgr();
@@ -102,7 +100,6 @@ class CGvisRTR_PunchView : public CFormView
 	void DispTime();					// 7
 	void ChkShare();					// 2, 4
 	void ChkBuf();						// 1, 3
-	void SetListBuf();
 	CString GetTime(stLotTime &LotTime);
 	void ChkShareUp();
 	void ChkShareDn();
@@ -168,6 +165,7 @@ public:
 	void SetMyMsgOk();
 	void SetAlarm(CString sMsg);
 	void ClrAlarm();
+	void SetListBuf();
 
 	CDlgInfo *m_pDlgInfo;
 	CDlgFrameHigh *m_pDlgFrameHigh;
@@ -192,10 +190,21 @@ public:
 	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
 	void DispStsBar(CString sMsg, int nIdx = 0);
 	BOOL IsRun();
+	void InitReelmapDisp();
+	void InitCamImgDisp();
+
+	void DispInfo();
+	void ClrMkInfo();
+
+	void ResetMkInfo(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+	void SetAlignPos();
+	void SetAlignPosUp();
+	void SetAlignPosDn();
 
 	void SetDualTest(BOOL bOn);
 	void SetTestMode(int nMode);
 	int GetLotEndSerial();
+	void SetLotEnd(int nSerial);
 
 	void SetLotSt();
 	void SetLotEd();
@@ -231,13 +240,16 @@ public:
 	BOOL IsShare();
 	BOOL IsShareUp();
 	BOOL IsShareDn();
-	BOOL GetShareUp();
-	BOOL GetShareDn();
+	int GetShareUp();
+	int GetShareDn();
 	BOOL IsShareVs();
 	BOOL IsShareVsUp();
 	BOOL IsShareVsDn();
-	BOOL GetShareVsUp();
-	BOOL GetShareVsDn();
+	int GetShareVsUp();
+	int GetShareVsDn();
+
+	void ModelChange(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn
+	void UpdateProcessNum(CString sProcessNum);
 
 	// ManagerFeeding
 	BOOL GetMpeSignal(int nSection, int nName);
@@ -258,6 +270,12 @@ public:
 	void SetAoiUpOffset(CfPoint &OfSt);
 	void SetAoiDnOffset(CfPoint &OfSt);
 	void SetEngOffset(CfPoint &OfSt);
+	void DispLotEndSerial(int nSerial);
+	void DispLotEnd(BOOL bOn);
+	void DispLotStTime();
+	BOOL IsReady();
+	BOOL IsAuto();
+	BOOL IsAoiLdRun();
 
 	// ManagerProcedure
 	void Auto();

@@ -126,7 +126,6 @@ class CManagerFeeding : public CWnd
 	void DoAtuoGetEngStSignal();
 	void DoAtuoGet2dReadStSignal();
 
-
 public:
 	CManagerFeeding(CWnd* pParent = NULL);
 	~CManagerFeeding();
@@ -172,6 +171,15 @@ public:
 	void SetAoiDnAlarmRestartMsg(CString sAoiDnAlarmReStartMsg);		// m_sAoiDnAlarmReStartMsg
 	void SetAoiUpAlarmReTestMsg(CString sAoiUpAlarmReTestMsg);			// m_sAoiUpAlarmReTestMsg
 	void SetAoiDnAlarmReTestMsg(CString sAoiDnAlarmReTestMsg);			// m_sAoiDnAlarmReTestMsg
+	CString GetAoiUpAlarmRestartMsg();									// m_sAoiUpAlarmReStartMsg
+	CString GetAoiDnAlarmRestartMsg();									// m_sAoiDnAlarmReStartMsg
+	CString GetAoiUpAlarmReTestMsg();									// m_sAoiUpAlarmReTestMsg
+	CString GetAoiDnAlarmReTestMsg();									// m_sAoiDnAlarmReTestMsg
+	CString ReadAoiUpAlarmRestartMsg();									// m_sAoiUpAlarmReStartMsg
+	CString ReadAoiDnAlarmRestartMsg();									// m_sAoiDnAlarmReStartMsg
+	CString ReadAoiUpAlarmReTestMsg();									// m_sAoiUpAlarmReTestMsg
+	CString ReadAoiDnAlarmReTestMsg();									// m_sAoiDnAlarmReTestMsg
+	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
 
 	// 생성된 메시지 맵 함수
 protected:

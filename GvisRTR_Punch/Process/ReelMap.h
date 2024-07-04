@@ -232,24 +232,7 @@ public:
 	void StopThreadReloadReelmap();
 
 	BOOL MakeHeader(CString sPath);
-
 	BOOL GetNodeXYonRmap(int &nNodeX, int &nNodeY, CString sPath);
-
-	BOOL m_bThreadAliveFinalCopyItsFiles, m_bRtnThreadFinalCopyItsFiles;
-	CThreadTask m_ThreadTaskFinalCopyItsFiles; // CThreadTask class, handles the threading code
-	void StartThreadFinalCopyItsFiles();
-	static BOOL ThreadProcFinalCopyItsFiles(LPVOID lpContext);
-	void StopThreadFinalCopyItsFiles();
-	BOOL FinalCopyItsFiles();
-	BOOL CopyItsFile(CString sPathSrc, CString sPathDest);
-
-	// ITS
-	CString GetPathReelmapIts();
-	BOOL MakeItsReelmapHeader();	// ³»¿ÜÃþ ¸ÓÂ¡µÈ ¸±¸Ê Çìµå
-	BOOL WriteIts(int nItsSerial);
-	BOOL MakeItsFile(int nSerial, int nLayer);		// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
-	CString GetItsFileData(int nSerial, int nLayer);	// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
-	BOOL MakeDirIts();
 
 	//stResult m_stResult;
 	void ResetReelmapPath();

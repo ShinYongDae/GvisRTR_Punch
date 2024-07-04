@@ -42,6 +42,9 @@ CGvisRTR_PunchDoc::CGvisRTR_PunchDoc()
 	m_bOffLogAuto = FALSE;
 	m_bOffLogPLC = FALSE;
 
+	m_nAoiCamInfoStrPcs[0] = 0;
+	m_nAoiCamInfoStrPcs[1] = 0;
+
 	LoadWorkingInfo();
 }
 
@@ -644,10 +647,10 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 		WorkingInfo.System.sReViewMkLen = CString(_T(""));
 	}
 
-	if (0 < ::GetPrivateProfileString(_T("System"), _T("USE_REVIEW_MARKING"), NULL, szData, sizeof(szData), sPath))
-		WorkingInfo.System.bReViewMk = _ttoi(szData) ? TRUE : FALSE;
-	else
-		WorkingInfo.System.bReViewMk = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("System"), _T("USE_REVIEW_MARKING"), NULL, szData, sizeof(szData), sPath))
+	//	WorkingInfo.System.bReViewMk = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	WorkingInfo.System.bReViewMk = FALSE;
 
 	if (0 < ::GetPrivateProfileString(_T("System"), _T("MAX_DISP_DEF_IMAGE"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.System.sMaxDispDefImg = CString(szData);
@@ -1140,10 +1143,10 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 	else
 		WorkingInfo.LastJob.nVerifyPeriod = 0;
 
-	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Use Review"), NULL, szData, sizeof(szData), sPath))
-		WorkingInfo.LastJob.bReview = _ttoi(szData) ? TRUE : FALSE;
-	else
-		WorkingInfo.LastJob.bReview = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Use Review"), NULL, szData, sizeof(szData), sPath))
+	//	WorkingInfo.LastJob.bReview = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	WorkingInfo.LastJob.bReview = FALSE;
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Shot Num for Furge"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.LastJob.sFurgeNum = CString(szData);
@@ -1222,10 +1225,10 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 		WorkingInfo.LastJob.sEngraveOrderNum = _T("");
 
 
-	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Sample Test Shot Num"), NULL, szData, sizeof(szData), sPath))
-		WorkingInfo.LastJob.sSampleTestShotNum = CString(szData);
-	else
-		WorkingInfo.LastJob.sSampleTestShotNum = _T("");
+	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Sample Test Shot Num"), NULL, szData, sizeof(szData), sPath))
+	//	WorkingInfo.LastJob.sSampleTestShotNum = CString(szData);
+	//else
+	//	WorkingInfo.LastJob.sSampleTestShotNum = _T("");
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Align Methode"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.LastJob.nAlignMethode = _ttoi(szData);
@@ -4343,25 +4346,261 @@ void CGvisRTR_PunchDoc::SetMarkingToq(double dToq)
 												//#endif
 }
 
-double CGvisRTR_PunchDoc::GetMarkingToq()
-{
-	return (_tstof(WorkingInfo.Motion.sMkTq));
-}
-
-void CGvisRTR_PunchDoc::SetEngraveToq(double dToq)
-{
-	CString sData, sPath = PATH_WORKING_INFO;
-	sData.Format(_T("%.3f"), dToq);
-	WorkingInfo.Motion.sEngraveTq = sData;
-	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_TENSION_SERVO_TORQUE"), sData, sPath);
-	//#ifdef USE_MPE
-	//	long lData = (long)(dToq * 1000.0);
-	//	pView->MpeWrite(_T("ML45050"), lData);	// 각인부 Tension 모터 토크값 (단위 Kgf * 1000)
-	//#endif
-}
-
 double CGvisRTR_PunchDoc::GetEngraveToq()
 {
 	return (_tstof(WorkingInfo.Motion.sEngraveTq));
 }
 
+BOOL CGvisRTR_PunchDoc::GetCurrentInfoEng()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sPath = WorkingInfo.System.sPathEngCurrInfo;
+	TCHAR szData[512];
+	BOOL bRtn = FALSE;
+
+#ifdef TEST_MODE
+	return bRtn;
+#endif
+
+	if (sPath.IsEmpty() || (GetTestMode() != MODE_INNER && GetTestMode() != MODE_OUTER))
+		return bRtn;
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Dual Test"), NULL, szData, sizeof(szData), sPath))
+		m_bEngDualTest = _ttoi(szData) > 0 ? TRUE : FALSE;
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Its Code"), NULL, szData, sizeof(szData), sPath))
+		m_sItsCode = CString(szData);
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Current Lot"), NULL, szData, sizeof(szData), sPath))
+		m_sEngLotNum = CString(szData);
+	//WorkingInfo.LastJob.sLotUp = CString(szData);
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Process Unit Code"), NULL, szData, sizeof(szData), sPath))
+		m_sEngProcessNum = CString(szData);
+	//WorkingInfo.LastJob.sProcessNum = CString(szData);
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Current Model Up"), NULL, szData, sizeof(szData), sPath))
+		m_sEngModel = CString(szData);
+	//WorkingInfo.LastJob.sModelUp = CString(szData);
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Current Layer Up"), NULL, szData, sizeof(szData), sPath))
+		m_sEngLayerUp = CString(szData);
+	//WorkingInfo.LastJob.sLayerUp = CString(szData);
+
+	if (bDualTest)
+	{
+		WorkingInfo.LastJob.sLotDn = WorkingInfo.LastJob.sLotUp;
+
+		//if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Current Model Dn"), NULL, szData, sizeof(szData), sPath))
+		//WorkingInfo.LastJob.sModelDn = CString(szData);
+
+		if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Current Layer Dn"), NULL, szData, sizeof(szData), sPath))
+			m_sEngLayerDn = CString(szData);
+		//WorkingInfo.LastJob.sLayerDn = CString(szData);
+	}
+
+	if (m_sItsCode.IsEmpty() || m_sEngLotNum.IsEmpty() || m_sEngModel.IsEmpty() || m_sEngLayerUp.IsEmpty())
+		return bRtn;
+
+	return TRUE;
+}
+
+int CGvisRTR_PunchDoc::GetCurrentInfoEngShotNum()
+{
+	CString sPath = WorkingInfo.System.sPathEngCurrInfo;
+	TCHAR szData[512];
+#ifdef TEST_MODE
+	return 0;
+#endif
+
+	if (sPath.IsEmpty())
+		return 0;
+
+	if (0 < ::GetPrivateProfileString(_T("Work"), _T("Shot Num"), NULL, szData, sizeof(szData), sPath))
+		return(_ttoi(szData));
+
+	return 0;
+}
+
+int CGvisRTR_PunchDoc::CopyPcrAll()  // from share to buffer ; return : Serial
+{
+	int nS0, nS1;
+	nS0 = CopyPcrUp();
+	nS1 = CopyPcrDn();
+	if (nS0 > 0 || nS1 > 0)
+		return TRUE;
+	return FALSE;
+}
+
+int CGvisRTR_PunchDoc::CopyPcrUp()  // return : Serial
+{
+	int nSerial;
+	CString sSrc = WorkingInfo.System.sPathVrsShareUp;
+	CString sDest = WorkingInfo.System.sPathVrsBufUp;
+
+	if (m_pFile)
+		nSerial = m_pFile->CopyPcrAll(sSrc, sDest);
+
+	return nSerial;
+}
+
+int CGvisRTR_PunchDoc::CopyPcrDn()  // return : Serial
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return 0;
+
+	int nSerial;
+	CString sSrc = WorkingInfo.System.sPathVrsShareDn;
+	CString sDest = WorkingInfo.System.sPathVrsBufDn;
+
+	if (m_pFile)
+		nSerial = m_pFile->CopyPcrAll(sSrc, sDest);
+
+	return nSerial;
+}
+
+void CGvisRTR_PunchDoc::DelSharePcr()
+{
+	DelSharePcrUp();
+	DelSharePcrDn();
+}
+
+void CGvisRTR_PunchDoc::DelSharePcrUp()
+{
+	CString sPath = WorkingInfo.System.sPathVrsShareUp;
+
+	if (m_pFile)
+	{
+		while (m_pFile->IsPcrExist(sPath))
+		{
+			m_pFile->DelPcrAll(sPath);
+			Sleep(30);
+		}
+	}
+}
+
+void CGvisRTR_PunchDoc::DelSharePcrDn()
+{
+	CString sPath = WorkingInfo.System.sPathVrsShareDn;
+
+	while (m_pFile->IsPcrExist(sPath))
+	{
+		if (m_pFile)
+			m_pFile->DelPcrAll(sPath);
+		Sleep(30);
+	}
+}
+
+void CGvisRTR_PunchDoc::DelShareVsPcrUp()
+{
+	CString sPath = WorkingInfo.System.sPathVsShareUp;
+
+	if (m_pFile)
+	{
+		while (m_pFile->IsPcrExist(sPath))
+		{
+			m_pFile->DelPcrAll(sPath);
+			Sleep(30);
+		}
+	}
+}
+
+void CGvisRTR_PunchDoc::DelShareVsPcrDn()
+{
+	CString sPath = WorkingInfo.System.sPathVsShareDn;
+
+	while (m_pFile->IsPcrExist(sPath))
+	{
+		if (m_pFile)
+			m_pFile->DelPcrAll(sPath);
+		Sleep(30);
+	}
+}
+
+void CGvisRTR_PunchDoc::DelPcrAll()
+{
+	DelSharePcrUp();
+	DelSharePcrDn();
+	DelShareVsPcrUp();
+	DelShareVsPcrDn();
+
+	DelPcrUp();
+	DelPcrDn();
+
+	pView->m_bIsBuf[0] = FALSE;
+	pView->m_bIsBuf[1] = FALSE;
+
+}
+
+void CGvisRTR_PunchDoc::DelPcrUp()
+{
+	CString sPath;
+
+	if (m_pFile)
+	{
+		sPath = WorkingInfo.System.sPathVrsShareUp;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVrsBufUp;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVsShareUp;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVsDummyBufUp;
+		m_pFile->DelPcrAll(sPath);
+	}
+}
+
+void CGvisRTR_PunchDoc::DelPcrDn()
+{
+	CString sPath;
+
+	if (m_pFile)
+	{
+		sPath = WorkingInfo.System.sPathVrsShareDn;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVrsBufDn;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVsShareDn;
+		m_pFile->DelPcrAll(sPath);
+		sPath = WorkingInfo.System.sPathVsDummyBufDn;
+		m_pFile->DelPcrAll(sPath);
+	}
+}
+
+CString CGvisRTR_PunchDoc::GetCamPxlRes()
+{
+	CString sRes = _T("");
+	CString sPath;
+#ifdef TEST_MODE
+	sPath = PATH_PIN_IMG_;
+#else
+	if (pDoc->WorkingInfo.System.sPathCamSpecDir.Right(1) != "\\")
+		sPath.Format(_T("%s\\%s\\%s.mst"), pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerUp);
+	else
+		sPath.Format(_T("%s%s\\%s.mst"), pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerUp);
+#endif
+
+	int nPos = sPath.ReverseFind('-');
+	if (nPos > 0)
+	{
+		sRes = sPath.Right(sPath.GetLength() - (nPos + 1));
+		nPos = sRes.ReverseFind('.');
+		if (nPos > 0)
+			sRes = sRes.Left(nPos);
+		WorkingInfo.Vision[0].sCamPxlRes = sRes;
+		WorkingInfo.Vision[1].sCamPxlRes = sRes;
+	}
+	return sRes;
+}
+
+CString CGvisRTR_PunchDoc::GetProcessNum()
+{
+	CString sPath = WorkingInfo.System.sPathAoiUpCurrInfo;
+	TCHAR szData[200];
+	CString sCode = _T("");
+
+	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Process Unit Code"), NULL, szData, sizeof(szData), sPath))
+		sCode = CString(szData);
+
+	return sCode;
+}

@@ -24,7 +24,8 @@ CManagerPunch::CManagerPunch(CWnd* pParent)
 	m_pVision[0] = NULL;			// Camera & MIL
 	m_pVision[1] = NULL;			// Camera & MIL
 	m_pVisionInner[0] = NULL;		// Camera & MIL
-	m_pVisionInner[1] = NULL;		// Camera & MIL
+	m_pVisionInner[1] = NULL;		// Camera & MIL						
+	m_pSr1000w = NULL;				// client for SR-1000W
 
 	Reset();
 
@@ -368,3 +369,47 @@ void CManagerPunch::StopFeeding(BOOL bStop)
 		pView->MpeWrite(_T("MB440115"), 0); // 마킹부Feeding금지 해제
 }
 
+void CManagerPunch::MoveInitPos0(BOOL bWait)
+{
+	if (!m_pMotion)
+		return;
+
+	double pTgtPos[2];
+	pTgtPos[0] = _tstof(pDoc->WorkingInfo.Motion.sStPosX[0]);
+	pTgtPos[1] = _tstof(pDoc->WorkingInfo.Motion.sStPosY[0]);
+	double dCurrX = m_dEnc[AXIS_X0];
+	double dCurrY = m_dEnc[AXIS_Y0];
+
+	double fLen, fVel, fAcc, fJerk;
+	fLen = sqrt(((pTgtPos[0] - dCurrX) * (pTgtPos[0] - dCurrX)) + ((pTgtPos[1] - dCurrY) * (pTgtPos[1] - dCurrY)));
+	if (fLen > 0.001)
+	{
+		m_pMotion->GetSpeedProfile0(TRAPEZOIDAL, AXIS_X0, fLen, fVel, fAcc, fJerk);
+		if (bWait)
+			m_pMotion->Move0(MS_X0Y0, pTgtPos, fVel, fAcc, fAcc, ABS, WAIT);
+		else
+			m_pMotion->Move0(MS_X0Y0, pTgtPos, fVel, fAcc, fAcc, ABS, NO_WAIT);
+	}
+}
+
+void CManagerPunch::MoveInitPos1(BOOL bWait)
+{
+	if (!m_pMotion)	return;
+
+	double pTgtPos[2];
+	pTgtPos[0] = _tstof(pDoc->WorkingInfo.Motion.sStPosX[1]);
+	pTgtPos[1] = _tstof(pDoc->WorkingInfo.Motion.sStPosY[1]);
+	double dCurrX = m_dEnc[AXIS_X1];
+	double dCurrY = m_dEnc[AXIS_Y1];
+
+	double fLen, fVel, fAcc, fJerk;
+	fLen = sqrt(((pTgtPos[0] - dCurrX) * (pTgtPos[0] - dCurrX)) + ((pTgtPos[1] - dCurrY) * (pTgtPos[1] - dCurrY)));
+	if (fLen > 0.001)
+	{
+		m_pMotion->GetSpeedProfile1(TRAPEZOIDAL, AXIS_X1, fLen, fVel, fAcc, fJerk);
+		if (bWait)
+			m_pMotion->Move1(MS_X1Y1, pTgtPos, fVel, fAcc, fAcc, ABS, WAIT);
+		else
+			m_pMotion->Move1(MS_X1Y1, pTgtPos, fVel, fAcc, fAcc, ABS, NO_WAIT);
+	}
+}
