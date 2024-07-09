@@ -15,14 +15,15 @@ CReelYield::CReelYield(int nLayer, int nPnl, int nPcs, CWnd* pParent)
 	nTotPcs = nPcs;
 	nDir = ROT_NONE;
 
+	m_pPnlBuf = NULL;
+	m_nPnlBuf = 0;
+
 	Init();
 }
-
 
 CReelYield::~CReelYield()
 {
 }
-
 
 void CReelYield::Init()
 {
@@ -581,15 +582,16 @@ BOOL CReelYield::Read(int nSerial, CString sPath)
 
 BOOL CReelYield::Write(int nSerial, CString sPath)
 {
-	CReelMap* pReelmap = (CReelMap*)m_pParent;
+	CManagerReelmap* mgrReelmap = (CManagerReelmap*)m_pParent;
+	CPcsRgn* pPcsRgn = mgrReelmap->m_Master[0].m_pPcsRgn;
 
 	m_nBeforeSerial = nSerial;
 
 	int dwStart = GetTickCount();
 	int nNodeX = 0, nNodeY = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = m_pPcsRgn->nCol;
-	nNodeY = m_pPcsRgn->nRow;
+	nNodeX = pPcsRgn->nCol;
+	nNodeY = pPcsRgn->nRow;
 #endif
 	CString sDefNum, strData;
 	int nPnl, nRow, nCol, nDefCode, nStrip;
@@ -625,9 +627,9 @@ BOOL CReelYield::Write(int nSerial, CString sPath)
 	{
 		for (nCol = 0; nCol < nNodeX; nCol++)
 		{
-			if (pReelmap->m_pPnlBuf)
+			if (m_pPnlBuf)
 			{
-				nDefCode = (int)pReelmap->m_pPnlBuf[nPnl][nRow][nCol] < 0 ? 0 : (int)pReelmap->m_pPnlBuf[nPnl][nRow][nCol];
+				nDefCode = (int)m_pPnlBuf[nPnl][nRow][nCol] < 0 ? 0 : (int)m_pPnlBuf[nPnl][nRow][nCol];
 				nDefA[nDefCode]++;
 
 				nStrip = int(nRow / (nNodeY / MAX_STRIP));

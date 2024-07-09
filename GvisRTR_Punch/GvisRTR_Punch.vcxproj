@@ -196,6 +196,7 @@
   <ItemGroup>
     <ClInclude Include="Device\Aoi.h" />
     <ClInclude Include="Device\BufferControl.h" />
+    <ClInclude Include="Device\CamIRayple.h" />
     <ClInclude Include="Device\EasyThread.h" />
     <ClInclude Include="Device\Engrave.h" />
     <ClInclude Include="Device\EngraveDef.h" />
@@ -215,6 +216,8 @@
     <ClInclude Include="Device\NmcDevice.h" />
     <ClInclude Include="Device\NMC_Motion.h" />
     <ClInclude Include="Device\NMC_RTR.h" />
+    <ClInclude Include="Device\Render.h" />
+    <ClInclude Include="Device\RGBConvert.h" />
     <ClInclude Include="Device\Rs232.h" />
     <ClInclude Include="Device\safelock.h" />
     <ClInclude Include="Device\Smac.h" />
@@ -222,6 +225,7 @@
     <ClInclude Include="Device\Sr1000w.h" />
     <ClInclude Include="Device\Sr1000wDef.h" />
     <ClInclude Include="Device\TcpIpClient.h" />
+    <ClInclude Include="Device\Tool.h" />
     <ClInclude Include="Device\type_def.h" />
     <ClInclude Include="Device\VerifySys.h" />
     <ClInclude Include="Device\vic7defs.h" />
@@ -243,6 +247,7 @@
     <ClInclude Include="Dialog\DlgMyMsgSub02.h" />
     <ClInclude Include="Dialog\DlgMyPassword.h" />
     <ClInclude Include="Dialog\DlgOption01.h" />
+    <ClInclude Include="Dialog\DlgProgress.h" />
     <ClInclude Include="Dialog\freeimage.h" />
     <ClInclude Include="Dialog\GVGL.h" />
     <ClInclude Include="Dialog\Label.h" />
@@ -287,6 +292,7 @@
   <ItemGroup>
     <ClCompile Include="Device\Aoi.cpp" />
     <ClCompile Include="Device\BufferControl.cpp" />
+    <ClCompile Include="Device\CamIRayple.cpp" />
     <ClCompile Include="Device\EasyThread.cpp" />
     <ClCompile Include="Device\Engrave.cpp" />
     <ClCompile Include="Device\FileOperation.cpp" />
@@ -301,11 +307,13 @@
     <ClCompile Include="Device\MyFileErrMap.cpp" />
     <ClCompile Include="Device\NmcAxis.cpp" />
     <ClCompile Include="Device\NmcDevice.cpp" />
+    <ClCompile Include="Device\Render.cpp" />
     <ClCompile Include="Device\Rs232.cpp" />
     <ClCompile Include="Device\Smac.cpp" />
     <ClCompile Include="Device\SocketComm.cpp" />
     <ClCompile Include="Device\Sr1000w.cpp" />
     <ClCompile Include="Device\TcpIpClient.cpp" />
+    <ClCompile Include="Device\Tool.cpp" />
     <ClCompile Include="Device\VerifySys.cpp" />
     <ClCompile Include="Device\Vision.cpp" />
     <ClCompile Include="Dialog\DlgFrameHigh.cpp" />
@@ -324,6 +332,7 @@
     <ClCompile Include="Dialog\DlgMyMsgSub02.cpp" />
     <ClCompile Include="Dialog\DlgMyPassword.cpp" />
     <ClCompile Include="Dialog\DlgOption01.cpp" />
+    <ClCompile Include="Dialog\DlgProgress.cpp" />
     <ClCompile Include="Dialog\GVGL.cpp" />
     <ClCompile Include="Dialog\Label.cpp" />
     <ClCompile Include="Dialog\MyBtn.cpp" />

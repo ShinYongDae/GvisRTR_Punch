@@ -274,7 +274,6 @@ public:
 	void DispLotEnd(BOOL bOn);
 	void DispLotStTime();
 	BOOL IsReady();
-	BOOL IsAuto();
 	BOOL IsAoiLdRun();
 
 	// ManagerProcedure

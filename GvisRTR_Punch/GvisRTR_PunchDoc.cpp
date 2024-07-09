@@ -2641,64 +2641,64 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 	// Sapp3code =====================================================================================
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("OPEN"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_OPEN] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_OPEN] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_OPEN] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_OPEN] = 0;
 
 	// 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("SHORT_USHORT"), NULL, szData, sizeof(szData), sPath))
-	// 		m_nSapp3Code[SAPP3_SHORT_USHORT] = _ttoi(szData);
+	// 		WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT_USHORT] = _ttoi(szData);
 	// 	else
-	// 		m_nSapp3Code[SAPP3_SHORT_USHORT] = 0;
+	// 		WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT_USHORT] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("SHORT"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_SHORT] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_SHORT] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("USHORT"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_USHORT] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_USHORT] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_USHORT] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_USHORT] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("NICK"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_NICK] = _tstoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_NICK] = _tstoi(szData);
 	else
-		m_nSapp3Code[SAPP3_NICK] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_NICK] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("SPACE_EXTRA_PROTRUSION"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] = 0;
 
 	// 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("PINHOLE_PAD"), NULL, szData, sizeof(szData), sPath))
-	// 		m_nSapp3Code[SAPP3_PINHOLE_PAD] = _ttoi(szData);
+	// 		WorkingInfo.System.m_nSapp3Code[SAPP3_PINHOLE_PAD] = _ttoi(szData);
 	// 	else
-	// 		m_nSapp3Code[SAPP3_PINHOLE_PAD] = 0;
+	// 		WorkingInfo.System.m_nSapp3Code[SAPP3_PINHOLE_PAD] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("PINHOLE"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_PINHOLE] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_PINHOLE] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_PINHOLE] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_PINHOLE] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("PAD"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_PAD] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_PAD] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_PAD] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_PAD] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("HOPEN"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_HOPEN] = _ttoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_HOPEN] = _ttoi(szData);
 	else
-		m_nSapp3Code[SAPP3_HOPEN] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_HOPEN] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("HMISS_HPOS_HBAD"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] = _tstoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] = _tstoi(szData);
 	else
-		m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Sapp3Code"), _T("VHOPEN_NOVH_VHALIGN_VHDEF"), NULL, szData, sizeof(szData), sPath))
-		m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] = _tstoi(szData);
+		WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] = _tstoi(szData);
 	else
-		m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] = 0;
+		WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] = 0;
 
 
 	return TRUE;

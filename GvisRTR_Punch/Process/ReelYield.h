@@ -63,10 +63,12 @@ public:
 
 	// 특성입니다.
 public:
+	CWnd* m_pParent;
 	stResult m_stResult;
 	stYield m_stYield;
+	short ***m_pPnlBuf;	// DefCode 3D Array : [nSerial-1][nRow][nCol] on File -> [nSerial-1][NodeX][NodeY] : Rotated Cw 90 
+	int m_nPnlBuf;															// 메모리에 할당된 총 Shot수
 
-	CWnd* m_pParent;
 	int m_nLayer;
 	int nTotPnl;
 	int nTotPcs;

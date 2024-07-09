@@ -415,8 +415,8 @@ void CManagerProcedure::InitAuto(BOOL bInit)
 
 	m_bDoMk[0] = TRUE;			// [nCam]
 	m_bDoMk[1] = TRUE;			// [nCam]
-	m_bDoneMk[0] = FALSE;		// [nCam]
-	m_bDoneMk[1] = FALSE;		// [nCam]
+	//m_bDoneMk[0] = FALSE;		// [nCam]
+	//m_bDoneMk[1] = FALSE;		// [nCam]
 	m_bReMark[0] = FALSE;		// [nCam]
 	m_bReMark[1] = FALSE;		// [nCam]
 
@@ -3238,7 +3238,6 @@ void CManagerProcedure::SetTest(BOOL bOn)
 	}
 }
 
-
 void CManagerProcedure::ClrMkInfo()
 {
 	pView->ClrMkInfo();
@@ -3956,6 +3955,9 @@ void CManagerProcedure::Mk2PtInit()
 
 void CManagerProcedure::Mk2PtAlignPt0()
 {
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[0].MasterInfo;
+	stGeneral& General = (pView->m_mgrStatus->General);
+
 	if (!IsRun())
 		return;
 
@@ -3992,8 +3994,16 @@ void CManagerProcedure::Mk2PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))	// Move - Cam1 - Pt0
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -4020,8 +4030,16 @@ void CManagerProcedure::Mk2PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))	// Move - Cam1 - Pt0
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -4051,8 +4069,16 @@ void CManagerProcedure::Mk2PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0)) 	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -4079,8 +4105,16 @@ void CManagerProcedure::Mk2PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0)) 	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0)) 	// Move - Cam1 - Pt0
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -4090,8 +4124,16 @@ void CManagerProcedure::Mk2PtAlignPt0()
 				m_nMkStAuto = MK_ST + (Mk2PtIdx::Move0Cam0);
 			break;
 		case MK_ST + (Mk2PtIdx::Move0Cam0) :	// Move - Cam0 - Pt0
-			if (MoveAlign0(0))
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign1(0))
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(0))
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk2PtIdx::Move0Cam0) + 1:
 			if (IsRun())
@@ -4266,6 +4308,7 @@ void CManagerProcedure::Mk2PtAlignPt1()
 	if (!IsRun())
 		return;
 
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_bMkSt && IsBuffer())
@@ -4299,8 +4342,16 @@ void CManagerProcedure::Mk2PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -4327,8 +4378,16 @@ void CManagerProcedure::Mk2PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -4358,8 +4417,16 @@ void CManagerProcedure::Mk2PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -4386,8 +4453,16 @@ void CManagerProcedure::Mk2PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -4397,8 +4472,16 @@ void CManagerProcedure::Mk2PtAlignPt1()
 				m_nMkStAuto++;
 			break;
 		case MK_ST + (Mk2PtIdx::Move1Cam0) :
-			if (MoveAlign0(1))	// Move - Cam0 - Pt1
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign1(1))	// Move - Cam0 - Pt1
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(1))	// Move - Cam0 - Pt1
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk2PtIdx::Move1Cam0) + 1:
 			if (IsRun())
@@ -4451,7 +4534,7 @@ void CManagerProcedure::Mk2PtAlignPt1()
 			if (m_bFailAlign[0][1])
 			{
 				Buzzer(TRUE, 0);
-				TowerLamp(RGB_YELLOW, TRUE);
+				//TowerLamp(RGB_YELLOW, TRUE);
 
 				if (IDNO == MsgBox(_T("카메라(좌)의 검사판넬을 다시 정렬하시겠습니까?"), 0, MB_YESNO))
 				{
@@ -5557,6 +5640,7 @@ void CManagerProcedure::Mk4PtAlignPt0()
 	if (!IsRun())
 		return;
 
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_bMkSt && IsBuffer())
@@ -5580,8 +5664,16 @@ void CManagerProcedure::Mk4PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -5598,8 +5690,16 @@ void CManagerProcedure::Mk4PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -5619,8 +5719,16 @@ void CManagerProcedure::Mk4PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -5637,8 +5745,16 @@ void CManagerProcedure::Mk4PtAlignPt0()
 					}
 					else
 					{
-						if (MoveAlign1(0))
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(0))
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(0))
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -5648,8 +5764,16 @@ void CManagerProcedure::Mk4PtAlignPt0()
 				m_nMkStAuto++;
 			break;
 		case MK_ST + (Mk4PtIdx::Move0Cam0) :	// Move - Cam0 - Pt0
-			if (MoveAlign0(0))
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign1(0))
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(0))
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk4PtIdx::Move0Cam0) + 1:
 			if (IsRun())
@@ -5837,6 +5961,7 @@ void CManagerProcedure::Mk4PtAlignPt1()
 	if (!IsRun())
 		return;
 
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_bMkSt && IsBuffer())
@@ -5860,8 +5985,16 @@ void CManagerProcedure::Mk4PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -5878,8 +6011,16 @@ void CManagerProcedure::Mk4PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -5899,8 +6040,16 @@ void CManagerProcedure::Mk4PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -5917,8 +6066,16 @@ void CManagerProcedure::Mk4PtAlignPt1()
 					}
 					else
 					{
-						if (MoveAlign1(1))	// Move - Cam1 - Pt1
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(1))	// Move - Cam1 - Pt1
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -5928,8 +6085,16 @@ void CManagerProcedure::Mk4PtAlignPt1()
 				m_nMkStAuto++;
 			break;
 		case MK_ST + (Mk4PtIdx::Move1Cam0) :
-			if (MoveAlign0(1))	// Move - Cam0 - Pt1
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign0(1))	// Move - Cam0 - Pt1
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(1))	// Move - Cam0 - Pt1
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk4PtIdx::Move1Cam0) + 1:
 			if (IsRun())
@@ -6108,6 +6273,7 @@ void CManagerProcedure::Mk4PtAlignPt1()
 
 void CManagerProcedure::Mk4PtAlignPt2()
 {
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_bMkSt && IsBuffer())
@@ -6131,8 +6297,16 @@ void CManagerProcedure::Mk4PtAlignPt2()
 					}
 					else
 					{
-						if (MoveAlign1(2))	// Move - Cam1 - Pt2
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -6149,8 +6323,16 @@ void CManagerProcedure::Mk4PtAlignPt2()
 					}
 					else
 					{
-						if (MoveAlign1(2))	// Move - Cam1 - Pt2
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -6170,8 +6352,16 @@ void CManagerProcedure::Mk4PtAlignPt2()
 					}
 					else
 					{
-						if (MoveAlign1(2))	// Move - Cam1 - Pt2
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -6188,8 +6378,16 @@ void CManagerProcedure::Mk4PtAlignPt2()
 					}
 					else
 					{
-						if (MoveAlign1(2))	// Move - Cam1 - Pt2
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(2))	// Move - Cam1 - Pt2
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -6199,8 +6397,16 @@ void CManagerProcedure::Mk4PtAlignPt2()
 				m_nMkStAuto++;
 			break;
 		case MK_ST + (Mk4PtIdx::Move2Cam0) :
-			if (MoveAlign0(2))	// Move - Cam0 - Pt2
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign1(2))	// Move - Cam0 - Pt2
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(2))	// Move - Cam0 - Pt2
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk4PtIdx::Move2Cam0) + 1:
 			if (IsRun())
@@ -6389,6 +6595,7 @@ void CManagerProcedure::Mk4PtAlignPt2()
 
 void CManagerProcedure::Mk4PtAlignPt3()
 {
+	stMasterInfo& MasterInfo = pView->m_mgrReelmap->m_Master[1].MasterInfo;
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_bMkSt && IsBuffer())
@@ -6412,8 +6619,16 @@ void CManagerProcedure::Mk4PtAlignPt3()
 					}
 					else
 					{
-						if (MoveAlign1(3))	// Move - Cam1 - Pt3
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -6430,8 +6645,16 @@ void CManagerProcedure::Mk4PtAlignPt3()
 					}
 					else
 					{
-						if (MoveAlign1(3))	// Move - Cam1 - Pt3
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -6451,8 +6674,16 @@ void CManagerProcedure::Mk4PtAlignPt3()
 					}
 					else
 					{
-						if (MoveAlign1(3))	// Move - Cam1 - Pt3
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
 					}
 				}
 				else
@@ -6469,8 +6700,16 @@ void CManagerProcedure::Mk4PtAlignPt3()
 					}
 					else
 					{
-						if (MoveAlign1(3))	// Move - Cam1 - Pt3
-							m_nMkStAuto++;
+						if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+						{
+							if (MoveAlign0(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
+						else
+						{
+							if (MoveAlign1(3))	// Move - Cam1 - Pt3
+								m_nMkStAuto++;
+						}
 					}
 				}
 			}
@@ -6480,8 +6719,16 @@ void CManagerProcedure::Mk4PtAlignPt3()
 				m_nMkStAuto++;
 			break;
 		case MK_ST + (Mk4PtIdx::Move3Cam0) :
-			if (MoveAlign0(3))	// Move - Cam0 - Pt3
-				m_nMkStAuto++;
+			if (MasterInfo.nActionCode == 1 || MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+			{
+				if (MoveAlign1(3))	// Move - Cam0 - Pt3
+					m_nMkStAuto++;
+			}
+			else
+			{
+				if (MoveAlign0(3))	// Move - Cam0 - Pt3
+					m_nMkStAuto++;
+			}
 			break;
 		case MK_ST + (Mk4PtIdx::Move3Cam0) + 1:
 			if (IsRun())
@@ -7692,4 +7939,314 @@ BOOL CManagerProcedure::GetAoiInfoDn(int nSerial, int *pNewLot, BOOL bFromBuf) /
 	}
 
 	return FALSE;
+}
+
+int CManagerProcedure::GetBufUpSerial(int nCam)
+{
+	return m_nBufUpSerial[nCam];
+}
+
+int CManagerProcedure::GetBufDnSerial(int nCam)
+{
+	return m_nBufDnSerial[nCam];
+}
+
+void CManagerProcedure::DispDefImg()
+{
+	stGeneral& General = (pView->m_mgrStatus->General);
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	int nSerialL = m_nBufUpSerial[0]; // 좌측 Camera
+	int nSerialR = m_nBufUpSerial[1]; // 우측 Camera
+	//CString sNewLot = m_sNewLotUp;;
+	CString str;
+	BOOL bNewModel = FALSE;
+	int nNewLot = 0;
+	int nBreak = 0;
+	int nLastShot = 0;
+
+	switch (m_nStepTHREAD_DISP_DEF)
+	{
+		// CopyDefImg Start ============================================
+	case 0:
+		m_nStepTHREAD_DISP_DEF++;
+
+		if (nSerialL == General.nLotEndSerial)
+			nBreak = 1;
+
+		if (nSerialL > 0)
+		{
+			if (!CopyDefImg(nSerialL, sNewLot)) // 좌측 Camera
+			{
+				sNewLot.Empty();
+				m_bDispMsgDoAuto[7] = TRUE;
+				m_nStepDispMsg[7] = FROM_DISPDEFIMG + 7;
+				break;
+			}
+
+			if (pView->m_bSerialDecrese)
+			{
+				if (m_bLastProc && nSerialR < m_nLotEndSerial)
+				{
+					nLastShot = nSerialL;
+				}
+				else
+				{
+					if (nSerialR > 0)
+					{
+						if (!CopyDefImg(nSerialR, sNewLot)) // 우측 Camera
+						{
+							sNewLot.Empty();
+							m_bDispMsgDoAuto[6] = TRUE;
+							m_nStepDispMsg[6] = FROM_DISPDEFIMG + 6;
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (m_bLastProc && nSerialR > m_nLotEndSerial)
+				{
+					nLastShot = nSerialL;
+				}
+				else
+				{
+					if (nSerialR > 0)
+					{
+						if (!CopyDefImg(nSerialR, sNewLot)) // 우측 Camera
+						{
+							sNewLot.Empty();
+							m_bDispMsgDoAuto[6] = TRUE;
+							m_nStepDispMsg[6] = FROM_DISPDEFIMG + 6;
+							break;
+						}
+					}
+				}
+			}
+
+		}
+		else
+		{
+			if (!m_bLastProc)
+			{
+				m_bDispMsgDoAuto[5] = TRUE;
+				m_nStepDispMsg[5] = FROM_DISPDEFIMG + 5;
+			}
+		}
+		sNewLot.Empty();
+		break;
+	case 1:
+		//Sleep(300);
+		m_nStepTHREAD_DISP_DEF++;
+		if (pDoc->m_pReelMap)
+		{
+			str = pDoc->m_pReelMap->GetIpPath();
+			pDoc->SetMkMenu01(_T("DispDefImg"), _T("ReelmapPath"), str);
+		}
+		str.Format(_T("%d"), nSerialL);
+		pDoc->SetMkMenu01(_T("DispDefImg"), _T("SerialL"), str);
+		str.Format(_T("%d"), nSerialR);
+		pDoc->SetMkMenu01(_T("DispDefImg"), _T("SerialR"), str);
+		break;
+	case 2:
+		if (IsDoneDispMkInfo())	 // Check 불량이미지 Display End
+		{
+			if (pView->m_bSerialDecrese)
+			{
+				if (ChkLastProc() && (nSerialL < m_nLotEndSerial))
+				{
+					nLastShot = nSerialL;
+					SetSerialReelmap(nSerialL, TRUE);	// Reelmap(좌) Display Start
+					SetSerialMkInfo(nSerialL, TRUE);		// 불량이미지(좌) Display Start
+				}
+				else if (ChkLastProc() && nSerialL < 1)
+				{
+					SetSerialReelmap(m_nLotEndSerial + 1, TRUE);		// Reelmap(좌) Display Start
+					SetSerialMkInfo(m_nLotEndSerial + 1, TRUE);		// 불량이미지(좌) Display Start
+				}
+				else
+				{
+					SetFixPcs(nSerialL);
+					SetSerialReelmap(nSerialL);	// Reelmap(좌) Display Start
+					SetSerialMkInfo(nSerialL);	// 불량이미지(좌) Display Start
+				}
+			}
+			else
+			{
+				if (ChkLastProc() && (nSerialL > m_nLotEndSerial))
+				{
+					nLastShot = nSerialL;
+					SetSerialReelmap(nSerialL, TRUE);	// Reelmap(좌) Display Start
+					SetSerialMkInfo(nSerialL, TRUE);		// 불량이미지(좌) Display Start
+				}
+				else if (ChkLastProc() && nSerialL < 1)
+				{
+					SetSerialReelmap(m_nLotEndSerial + 1, TRUE);		// Reelmap(좌) Display Start
+					SetSerialMkInfo(m_nLotEndSerial + 1, TRUE);		// 불량이미지(좌) Display Start
+				}
+				else
+				{
+					SetFixPcs(nSerialL);
+					SetSerialReelmap(nSerialL);	// Reelmap(좌) Display Start
+					SetSerialMkInfo(nSerialL);	// 불량이미지(좌) Display Start
+				}
+			}
+
+
+			if (IsFixPcsUp(nSerialL))
+			{
+				m_bDispMsgDoAuto[2] = TRUE;
+				m_nStepDispMsg[2] = FROM_DISPDEFIMG + 2;
+			}
+			if (IsFixPcsDn(nSerialL))
+			{
+				m_bDispMsgDoAuto[3] = TRUE;
+				m_nStepDispMsg[3] = FROM_DISPDEFIMG + 3;
+			}
+
+			m_nStepTHREAD_DISP_DEF++;
+		}
+
+		break;
+
+	case 3:
+		if (IsDoneDispMkInfo())	 // Check 불량이미지(좌) Display End
+		{
+			if (nSerialR > 0) // 우측 Camera
+			{
+				if (pView->m_bSerialDecrese)
+				{
+					if (ChkLastProc() && (nSerialR < m_nLotEndSerial))
+						SetSerialMkInfo(nSerialR, TRUE);	// 불량이미지(우) Display Start
+					else
+						SetSerialMkInfo(nSerialR);		// 불량이미지(우) Display Start
+				}
+				else
+				{
+					if (ChkLastProc() && (nSerialR > m_nLotEndSerial))
+						SetSerialMkInfo(nSerialR, TRUE);	// 불량이미지(우) Display Start
+					else
+						SetSerialMkInfo(nSerialR);		// 불량이미지(우) Display Start
+				}
+			}
+			else
+			{
+				if (ChkLastProc())
+				{
+					if (pView->m_bSerialDecrese)
+						SetSerialMkInfo(m_nLotEndSerial - 1, TRUE);	// 불량이미지(우) Display Start
+					else
+						SetSerialMkInfo(m_nLotEndSerial + 1, TRUE);	// 불량이미지(우) Display Start
+				}
+			}
+			m_nStepTHREAD_DISP_DEF++;
+		}
+		break;
+	case 4:
+		if (nSerialR > 0) // 우측 Camera
+		{
+			m_nStepTHREAD_DISP_DEF++;
+
+			if (pView->m_bSerialDecrese)
+			{
+				if (ChkLastProc() && (nSerialR < m_nLotEndSerial))
+				{
+					SetSerialReelmap(nSerialR, TRUE);	// Reelmap(우) Display Start
+				}
+				else
+				{
+					SetFixPcs(nSerialR);
+					SetSerialReelmap(nSerialR);			// Reelmap(우) Display Start
+				}
+			}
+			else
+			{
+				if (ChkLastProc() && (nSerialR > m_nLotEndSerial))
+				{
+					SetSerialReelmap(nSerialR, TRUE);	// Reelmap(우) Display Start
+				}
+				else
+				{
+					SetFixPcs(nSerialR);
+					SetSerialReelmap(nSerialR);			// Reelmap(우) Display Start
+				}
+			}
+
+			if (bDualTest)
+			{
+				if (IsFixPcsUp(nSerialR))
+				{
+					m_bDispMsgDoAuto[2] = TRUE;
+					m_nStepDispMsg[2] = FROM_DISPDEFIMG + 2;
+				}
+				if (IsFixPcsDn(nSerialR))
+				{
+					m_bDispMsgDoAuto[3] = TRUE;
+					m_nStepDispMsg[3] = FROM_DISPDEFIMG + 3;
+				}
+			}
+			else
+			{
+				if (IsFixPcsUp(nSerialR))
+				{
+					m_bDispMsgDoAuto[2] = TRUE;
+					m_nStepDispMsg[2] = FROM_DISPDEFIMG + 2;
+				}
+			}
+		}
+		else
+		{
+			if (ChkLastProc())
+			{
+				m_nStepTHREAD_DISP_DEF++;
+				if (pView->m_bSerialDecrese)
+					SetSerialReelmap(m_nLotEndSerial - 1, TRUE);	// 불량이미지(우) Display Start
+				else
+					SetSerialReelmap(m_nLotEndSerial + 1, TRUE);	// 불량이미지(우) Display Start
+			}
+			else
+			{
+				if (m_bLastProc && nSerialL == m_nLotEndSerial)
+					m_nStepTHREAD_DISP_DEF++;
+				else
+				{
+					m_nStepTHREAD_DISP_DEF++;
+				}
+			}
+		}
+		break;
+	case 5:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 6:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 7:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 8:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 9:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 10:
+		m_nStepTHREAD_DISP_DEF++;
+		break;
+
+	case 11:
+		if (IsDoneDispMkInfo() && IsRun())	 // Check 불량이미지(우) Display End
+			m_nStepTHREAD_DISP_DEF++;
+		break;
+	case 12:
+		m_bTHREAD_DISP_DEF = FALSE;
+		pDoc->SetMkMenu01(_T("Signal"), _T("DispDefImg"), _T("0"));
+		if (m_pEngrave)
+			m_pEngrave->SwMenu01DispDefImg(TRUE);
+
+		break;
+		// CopyDefImg End ============================================
+	}
+
 }

@@ -12,7 +12,7 @@
 
 #include "../Device/MotionParam.h"
 
-#define TEST_MODE		1
+//#define TEST_MODE		1
 
 #ifndef MAX_STRIP
 	#ifdef TEST_MODE
@@ -678,6 +678,9 @@ struct stSystem
 	BOOL bStripPcsRgnBin;
 	BOOL bUseDTS, bUseITS;
 
+	// Sapp3 code
+	int m_nSapp3Code[10];
+
 	stSystem()
 	{
 		sMcName = _T("");
@@ -724,6 +727,9 @@ struct stSystem
 		bStripPcsRgnBin = FALSE;
 		bUseDTS = FALSE;
 		bUseITS = FALSE;
+
+		m_nSapp3Code[0] = 0; m_nSapp3Code[1] = 0; m_nSapp3Code[2] = 0; m_nSapp3Code[3] = 0; m_nSapp3Code[4] = 0;
+		m_nSapp3Code[5] = 0; m_nSapp3Code[6] = 0; m_nSapp3Code[7] = 0; m_nSapp3Code[8] = 0; m_nSapp3Code[9] = 0;
 	}
 };
 
@@ -772,7 +778,7 @@ struct stLastJob
 	BOOL bDispMkPcs, bStopFixDef, bMkSftySen, bAoiSftySen;
 	CString sJogSpd, sLotSerial; //sLightVal, 
 	BOOL bLightOn, bMkOnePnl, bAoiOnePnl, bEngraveOnePnl;
-	BOOL bVerify;// , bReview;
+	BOOL bVerify, bReview;
 	int nVerifyPeriod;
 	CString sVerifyLen;
 	//CString sDistAoiMk;

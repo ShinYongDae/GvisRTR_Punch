@@ -22,7 +22,7 @@ struct stGeneral
 
 	int nLotEndAuto, nMkStAuto, nPrevMkStAuto, nLastProcAuto, nTestMode, nLotEndSerial;
 	int nStepAuto, nPrevStepAuto, nSaveMk0Img, nSaveMk1Img;
-	int nTotMk[2], nPrevTotMk[2], nMkPcs[2], nPrevMkPcs[2];		// [0] : Up, [1] : Dn
+	int nTotMk[2], nPrevTotMk[2], nPrevMkPcs[2];		// [0] : Up, [1] : Dn
 	int nAoiCamInfoStrPcs[2];									// [0] : Up, [1] : Dn
 
 	int nStepMk[4], nMkPcs[4]; 	// [0] Auto-Left, [1] Auto-Right, [2] Manual-Left, [3] Manual-Right  ; m_nStepMk(原天Sequence), nMkOrderIdx(原天廃 count)

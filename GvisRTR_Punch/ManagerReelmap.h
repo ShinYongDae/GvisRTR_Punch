@@ -1,5 +1,7 @@
 #pragma once
+
 #include "afxwin.h"
+
 #include "Global/GlobalDefine.h"
 #include "Process/CamMaster.h"
 #include "Process/ReelMap.h"
@@ -70,14 +72,24 @@ public:
 	void SetRgbDef(int nDef, COLORREF rgbVal);
 	void ClrFixPcs();
 	void RestoreReelmap();
-	BOOL ReloadReelmap();
-	BOOL ReloadReelmap(int nSerial);
-	void InitReelmap();
-	void InitReelmapUp();
-	void InitReelmapDn();
+
+	int LoadPcrUp(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	int LoadPcrDn(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+
+	int GetVsBufLastSerial();
+	int GetVsUpBufLastSerial();
+	int GetVsDnBufLastSerial();
+
+	void MakeResultMDS();
+
+	BOOL InitReelmap();
+	BOOL InitReelmapUp();
+	BOOL InitReelmapDn();
 	BOOL InitReelmapInner();
 	BOOL InitReelmapInnerUp();
 	BOOL InitReelmapInnerDn();
+	void SetReelmapInner(int nDir = ROT_NONE);
+
 	BOOL OpenReelmapFromBuf(int nSerial);
 	void OpenReelmap();
 	void OpenReelmapUp();
@@ -85,23 +97,42 @@ public:
 	void OpenReelmapInner();
 	void OpenReelmapInnerUp();
 	void OpenReelmapInnerDn();
-	int LoadPcrUp(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
-	int LoadPcrDn(int nSerial);			// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
-	BOOL UpdateReelmap(int nSerial);	// 시리얼파일의 정보로 릴맵을 만듬 
-	BOOL MakeItsFile(int nSerial);
-	int GetVsBufLastSerial();
-	int GetVsUpBufLastSerial();
-	int GetVsDnBufLastSerial();
-	void MakeResultMDS();
+
+	BOOL ReloadReelmap();
+	BOOL ReloadReelmap(int nSerial);
+	BOOL IsDoneReloadReelmap(int& nProc);
+
+	BOOL ReloadReelmapInner();
+	BOOL ReloadReelmapInner(int nSerial);
+	BOOL IsDoneReloadReelmapInner(int& nProc);
+
 	void UpdateProcessNum(CString sProcessNum);
+
+	void UpdateYield(int nSerial);
+	void UpdateYieldUp(int nSerial);
+	void UpdateYieldDn(int nSerial);
+	void UpdateYieldAllUp(int nSerial);
+	void UpdateYieldAllDn(int nSerial);
+	void UpdateYieldInnerUp(int nSerial);
+	void UpdateYieldInnerDn(int nSerial);
+	void UpdateYieldInnerAllUp(int nSerial);
+	void UpdateYieldInnerAllDn(int nSerial);
+	void UpdateYieldIts(int nSerial);
+
+	BOOL UpdateReelmap(int nSerial);	// 시리얼파일의 정보로 릴맵을 만듬 
+	void UpdateRMapInnerUp();
+	void UpdateRMapInnerDn();
+	void UpdateRMapInnerAllUp();
+	void UpdateRMapInnerAllDn();
 
 	// ITS
 	CString GetPathReelmapIts();
 	BOOL MakeItsReelmapHeader();	// 내외층 머징된 릴맵 헤드
 	BOOL WriteIts(int nItsSerial);
-	BOOL MakeItsFile(int nSerial, int nLayer);		// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+	BOOL MakeItsFile(int nSerial, int nLayer);			// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
 	CString GetItsFileData(int nSerial, int nLayer);	// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
 	BOOL MakeDirIts();
+	BOOL MakeItsFile(int nSerial);
 
 	BOOL m_bThreadAliveFinalCopyItsFiles, m_bRtnThreadFinalCopyItsFiles;
 	CThreadTask m_ThreadTaskFinalCopyItsFiles; // CThreadTask class, handles the threading code

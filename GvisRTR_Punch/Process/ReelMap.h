@@ -82,7 +82,7 @@ class CReelMap : public CReelYield //public CWnd
 	int m_FixPcsPrevStSerial[FIX_PCS_COL_MAX][FIX_PCS_ROW_MAX]; // [Col][Row]
 	int m_FixPcsRpt[FIX_PCS_COL_MAX][FIX_PCS_ROW_MAX]; // [Col][Row]
 	int m_nPrevSerial[2]; // [0] : -- , [1] : ++
-	int m_nPnlBuf;															// 메모리에 할당된 총 Shot수
+	//int m_nPnlBuf;															// 메모리에 할당된 총 Shot수
 	int m_nTotPcs, m_nGoodPcs, m_nBadPcs, m_nDef[MAX_DEF];	// [DefCode] : Total Num.
 	int m_nDefStrip[MAX_STRIP], m_nDefPerStrip[MAX_STRIP][MAX_DEF];
 	int m_nStripOut[MAX_STRIP], m_nTotStOut;
@@ -93,9 +93,7 @@ class CReelMap : public CReelYield //public CWnd
 	BOOL m_bContFixDef;
 	//int m_nBeforeSerial;
 
-	CPcsRgn* m_pPcsRgn;
 	CDataMarking* m_pPcr[MAX_PCR_PNL];	//릴맵화면표시를 위한 데이터	// [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
-	stMasterInfo MasterInfo;
 	DWORD m_dwLotSt, m_dwLotEd;
 	//int m_nStartSerial;
 
@@ -224,7 +222,6 @@ public:
 	int m_nLastOnThread, m_nProgressReloadReelmap, m_nTotalProgressReloadReelmap;
 	CThreadTask m_ThreadTaskReloadReelmap; // CThreadTask class, handles the threading code
 	BOOL ReloadReelmap();
-	BOOL ReloadReelmap(int nTo);
 	BOOL IsDoneReloadReelmap();
 	int GetProgressReloadReelmap();
 	void StartThreadReloadReelmap();
@@ -259,7 +256,7 @@ public:
 // Implementation
 public:
 	virtual ~CReelMap();
-	short ***m_pPnlBuf;	// DefCode 3D Array : [nSerial-1][nRow][nCol] on File -> [nSerial-1][NodeX][NodeY] : Rotated Cw 90 
+	//short ***m_pPnlBuf;	// DefCode 3D Array : [nSerial-1][nRow][nCol] on File -> [nSerial-1][NodeX][NodeY] : Rotated Cw 90 
 
 	// Generated message map functions
 protected:

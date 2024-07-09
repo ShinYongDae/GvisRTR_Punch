@@ -111,6 +111,11 @@ class CManagerProcedure : public CWnd
 	BOOL m_bEng2dSt, m_bEng2dStSw;
 	int m_nEngStAuto, m_nEng2dStAuto;
 
+	int m_nBufUpSerial[2]; // [nCam]
+	int m_nBufDnSerial[2]; // [nCam]
+	int m_nBufUpCnt;
+	int m_nBufDnCnt;
+
 	BOOL Init();
 	BOOL Create();
 
@@ -263,11 +268,6 @@ public:
 	int m_nShareUpCnt;
 	int m_nShareDnCnt;
 
-	int m_nBufUpSerial[2]; // [nCam]
-	int m_nBufDnSerial[2]; // [nCam]
-	int m_nBufUpCnt;
-	int m_nBufDnCnt;
-
 
 	// 작업입니다.
 public:
@@ -279,6 +279,9 @@ public:
 	BOOL GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption = 0);		// 내층에서의 ITS 시리얼의 정보
 	BOOL GetAoiDnInfo(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
 	BOOL GetAoiUpInfo(int nSerial, int *pNewLot = NULL, BOOL bFromBuf = FALSE); // TRUE: CHANGED, FALSE: NO CHANGED
+	int GetBufUpSerial(int nCam);
+	int GetBufDnSerial(int nCam);
+	void DispDefImg();
 
 	// 생성된 메시지 맵 함수
 protected:

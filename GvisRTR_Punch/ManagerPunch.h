@@ -37,6 +37,8 @@ class CManagerPunch : public CWnd
 	CLight* m_pLight;
 
 	double m_dEnc[MAX_AXIS];
+	BOOL m_bDoneMk[2];			// [nCam] : TRUE(Punching 완료), FALSE(Punching 미완료)
+	BOOL m_bCollision[2], m_bPriority[4];
 
 	BOOL Init();
 	BOOL Create();
@@ -71,6 +73,29 @@ public:
 	void StopFeeding(BOOL bStop = TRUE);
 	void MoveInitPos0(BOOL bWait = TRUE);
 	void MoveInitPos1(BOOL bWait = TRUE);
+	void GetEnc();
+	BOOL IsRunAxisX();
+	void EStop();
+
+	BOOL ChkCollision();
+	BOOL GetCollision(int nCam);
+	void ResetPriority();
+	void SetPriority();
+
+	void DoMark0();
+	void DoMark1();
+	void DoMark0Its();
+	void DoMark1Its();
+	void DoMark0All();
+	void DoMark1All();
+	void DoReject0();
+	void DoReject1();
+
+	BOOL SaveMk0Img(int nMkPcsIdx);
+	BOOL SaveMk1Img(int nMkPcsIdx);
+
+	BOOL GetDoneMk(int nCam);
+	void SetDoneMk(int nCam);
 
 	// 보조작업입니다.
 public:

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ManagerReelmap.h"
 
+#include "Dialog/DlgProgress.h"
+
 #include "MainFrm.h"
 #include "GvisRTR_PunchDoc.h"
 #include "GvisRTR_PunchView.h"
@@ -13,6 +15,7 @@ extern CGvisRTR_PunchView* pView;
 CManagerReelmap::CManagerReelmap(CWnd* pParent)
 {
 	m_pParent = pParent;
+	m_bThreadAliveFinalCopyItsFiles = FALSE;
 
 	Reset();
 	Init();
@@ -26,6 +29,7 @@ CManagerReelmap::CManagerReelmap(CWnd* pParent)
 
 CManagerReelmap::~CManagerReelmap()
 {
+	m_bThreadAliveFinalCopyItsFiles = FALSE;
 }
 
 BEGIN_MESSAGE_MAP(CManagerReelmap, CWnd)
@@ -419,10 +423,57 @@ BOOL CManagerReelmap::ReloadReelmap()
 	return TRUE;
 }
 
-BOOL CManagerReelmap::ReloadReelmap(int nSerial)
+BOOL CManagerReelmap::IsDoneReloadReelmap(int& nProc)
 {
-	m_nReloadReelmapSerial = nSerial;
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
+	int nRatio[5] = { 0 };
+	BOOL bDone[5] = { 0 };
+
+	if (m_pReelMapUp)
+	{
+		nRatio[1] = m_pReelMapUp->GetProgressReloadReelmap();
+		bDone[1] = m_pReelMapUp->IsDoneReloadReelmap();
+	}
+	else
+		bDone[1] = TRUE;
+
+	if (bDualTest)
+	{
+		if (m_pReelMapDn)
+		{
+			nRatio[2] = m_pReelMapDn->GetProgressReloadReelmap();
+			bDone[2] = m_pReelMapDn->IsDoneReloadReelmap();
+		}
+		else
+			bDone[2] = TRUE;
+		if (m_pReelMapAllUp)
+		{
+			nRatio[3] = m_pReelMapAllUp->GetProgressReloadReelmap();
+			bDone[3] = m_pReelMapAllUp->IsDoneReloadReelmap();
+		}
+		else
+			bDone[3] = TRUE;
+
+		if (m_pReelMapAllDn)
+		{
+			nRatio[4] = m_pReelMapAllDn->GetProgressReloadReelmap();
+			bDone[4] = m_pReelMapAllDn->IsDoneReloadReelmap();
+		}
+		else
+			bDone[4] = TRUE;
+	}
+
+	nProc = nRatio[1] + nRatio[2] + nRatio[3] + nRatio[4];
+
+	if (bDone[1] && bDone[2] && bDone[3] && bDone[4])
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CManagerReelmap::ReloadReelmap()
+{
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	m_bTHREAD_RELOAD_RST_UP = TRUE;
@@ -450,21 +501,175 @@ BOOL CManagerReelmap::ReloadReelmap(int nSerial)
 	return TRUE;
 }
 
-void CManagerReelmap::InitReelmap()
+BOOL CManagerReelmap::ReloadReelmapInner()
+{
+	double dRatio = 0.0;
+	CString sVal = _T("");
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+
+	BOOL bRtn[7] = { 1 };
+	//if (m_pReelMapInner)
+	//	bRtn[0] = m_pReelMapInner->ReloadReelmap();
+
+	if (m_pReelMapInnerUp)
+		bRtn[1] = m_pReelMapInnerUp->ReloadReelmap();
+
+	if (m_pReelMapIts)
+		bRtn[2] = m_pReelMapIts->ReloadReelmap();
+
+	bRtn[3] = TRUE;
+
+	if (bDualTest)
+	{
+		if (m_pReelMapInnerDn)
+			bRtn[4] = m_pReelMapInnerDn->ReloadReelmap();
+		if (m_pReelMapInnerAllUp)
+			bRtn[5] = m_pReelMapInnerAllUp->ReloadReelmap();
+		if (m_pReelMapInnerAllDn)
+			bRtn[6] = m_pReelMapInnerAllDn->ReloadReelmap();
+	}
+
+	for (int i = 1; i < 7; i++)
+	{
+		if (!bRtn[i])
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+BOOL CManagerReelmap::ReloadReelmapInner(int nSerial)
+{
+	//GetCurrentInfoEng();
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+
+	BOOL bRtn[7] = { 0 };
+	if (m_pReelMapInner)
+		bRtn[0] = m_pReelMapInner->ReloadReelmap(nSerial);
+	if (m_pReelMapInnerUp)
+		bRtn[1] = m_pReelMapInnerUp->ReloadReelmap(nSerial);
+
+	//if (m_pReelMapInOuterUp)
+	//	bRtn[2] = m_pReelMapInOuterUp->ReloadReelmap(nSerial);
+
+	//if (m_pReelMapInOuterDn)
+	//	bRtn[3] = m_pReelMapInOuterDn->ReloadReelmap(nSerial);
+	bRtn[3] = TRUE;
+
+	if (m_pReelMapIts)
+		bRtn[2] = m_pReelMapIts->ReloadReelmap(nSerial);
+
+	if (bDualTest)
+	{
+		if (m_pReelMapInnerDn)
+			bRtn[4] = m_pReelMapInnerDn->ReloadReelmap(nSerial);
+		if (m_pReelMapInnerAllUp)
+			bRtn[5] = m_pReelMapInnerAllUp->ReloadReelmap(nSerial);
+		if (m_pReelMapInnerAllDn)
+			bRtn[6] = m_pReelMapInnerAllDn->ReloadReelmap(nSerial);
+
+		for (int i = 0; i < 7; i++)
+		{
+			if (!bRtn[i])
+				return FALSE;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (!bRtn[i])
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+BOOL CManagerReelmap::IsDoneReloadReelmapInner(int& nProc)
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+
+	int nRatio[7] = { 0 };
+	BOOL bDone[7] = { 0 };
+
+	bDone[0] = TRUE;
+
+	if (m_pReelMapInnerUp)
+	{
+		nRatio[1] = m_pReelMapInnerUp->GetProgressReloadReelmap();
+		bDone[1] = m_pReelMapInnerUp->IsDoneReloadReelmap();
+	}
+	else
+		bDone[1] = TRUE;
+
+	if (m_pReelMapIts)
+	{
+		nRatio[2] = m_pReelMapIts->GetProgressReloadReelmap();
+		bDone[2] = m_pReelMapIts->IsDoneReloadReelmap();
+	}
+	else
+		bDone[2] = TRUE;
+
+	bDone[3] = TRUE;
+
+	if (bDualTest)
+	{
+		if (m_pReelMapInnerDn)
+		{
+			nRatio[4] = m_pReelMapInnerDn->GetProgressReloadReelmap();
+			bDone[4] = m_pReelMapInnerDn->IsDoneReloadReelmap();
+		}
+		else
+			bDone[4] = TRUE;
+
+		if (m_pReelMapInnerAllUp)
+		{
+			nRatio[5] = m_pReelMapInnerAllUp->GetProgressReloadReelmap();
+			bDone[5] = m_pReelMapInnerAllUp->IsDoneReloadReelmap();
+		}
+		else
+			bDone[5] = TRUE;
+
+		if (m_pReelMapAllDn)
+		{
+			nRatio[6] = m_pReelMapInnerAllDn->GetProgressReloadReelmap();
+			bDone[6] = m_pReelMapInnerAllDn->IsDoneReloadReelmap();
+		}
+		else
+			bDone[6] = TRUE;
+	}
+	else
+	{
+		bDone[4] = TRUE;
+		bDone[5] = TRUE;
+		bDone[6] = TRUE;
+	}
+
+	nProc = nRatio[0] + nRatio[1] + nRatio[2] + nRatio[3] + nRatio[4] + nRatio[5] + nRatio[6];
+
+	if (bDone[0] && bDone[1] && bDone[2] && bDone[3] && bDone[4] && bDone[5] && bDone[6])
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CManagerReelmap::InitReelmap()
 {
 	pDoc->InitReelmap();
 	pDoc->SetReelmap(ROT_NONE);
 	pDoc->UpdateData();
 }
 
-void CManagerReelmap::InitReelmapUp()
+BOOL CManagerReelmap::InitReelmapUp()
 {
 	pDoc->InitReelmapUp();
 	pDoc->SetReelmap(ROT_NONE);
 	pDoc->UpdateData();
 }
 
-void CManagerReelmap::InitReelmapDn()
+BOOL CManagerReelmap::InitReelmapDn()
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
@@ -476,25 +681,244 @@ void CManagerReelmap::InitReelmapDn()
 	}
 }
 
-void CManagerReelmap::InitReelmapInner()
+BOOL CManagerReelmap::InitReelmapInner()
 {
-	pDoc->InitReelmapInner();
-	pDoc->SetReelmapInner(ROT_NONE);
-}
+	if (!m_MasterInner[0].m_pPcsRgn)
+	{
+		CString strMsg;
+		strMsg.Format(_T("피스 영역이 존재하지 않습니다."));
+		pView->ClrDispMsg();
+		AfxMessageBox(strMsg, MB_ICONSTOP);
+		return FALSE;
+	}
 
-void CManagerReelmap::InitReelmapInnerUp()
-{
-	pDoc->InitReelmapInnerUp();
-	pDoc->SetReelmapInner(ROT_NONE);
-}
-
-void CManagerReelmap::InitReelmapInnerDn()
-{
+	int nTotPcs = m_MasterInner[0].m_pPcsRgn->GetTotPcs();
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+
+	if (m_pReelMapInnerUp)
+	{
+		delete m_pReelMapInnerUp;
+		m_pReelMapInnerUp = NULL;
+	}
+	m_pReelMapInnerUp = new CReelMap(RMAP_INNER_UP, MAX_DISP_PNL, nTotPcs);
+
 	if (bDualTest)
 	{
-		pDoc->InitReelmapInnerDn();
-		pDoc->SetReelmapInner(ROT_NONE);
+		if (m_pReelMapInnerDn)
+		{
+			delete m_pReelMapInnerDn;
+			m_pReelMapInnerDn = NULL;
+		}
+		m_pReelMapInnerDn = new CReelMap(RMAP_INNER_DN, MAX_DISP_PNL, nTotPcs);
+
+		if (m_pReelMapInnerAllUp)
+		{
+			delete m_pReelMapInnerAllUp;
+			m_pReelMapInnerAllUp = NULL;
+		}
+		m_pReelMapInnerAllUp = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
+
+		if (m_pReelMapInnerAllDn)
+		{
+			delete m_pReelMapInnerAllDn;
+			m_pReelMapInnerAllDn = NULL;
+		}
+		m_pReelMapInnerAllDn = new CReelMap(RMAP_INNER_ALLDN, MAX_DISP_PNL, nTotPcs);
+		m_pReelMapInner = m_pReelMapInnerAllUp;
+	}
+	else
+	{
+		m_pReelMapInner = m_pReelMapInnerUp;
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		if (m_pReelMapIts)
+			m_pReelMap = m_pReelMapIts;
+	}
+
+	SetReelmapInner(ROT_NONE);
+	return TRUE;
+}
+
+BOOL CManagerReelmap::InitReelmapInnerUp()
+{
+	if (!m_MasterInner[0].m_pPcsRgn)
+	{
+		CString strMsg;
+		strMsg.Format(_T("피스 영역이 존재하지 않습니다."));
+		pView->MsgBox(strMsg);
+		return FALSE;
+	}
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+	int nTotPcs = m_MasterInner[0].m_pPcsRgn->GetTotPcs();
+
+	if (m_pReelMapInnerUp)
+	{
+		delete m_pReelMapInnerUp;
+		m_pReelMapInnerUp = NULL;
+	}
+	m_pReelMapInnerUp = new CReelMap(RMAP_INNER_UP, MAX_DISP_PNL, nTotPcs);
+
+	if (bDualTest)
+	{
+
+		if (m_pReelMapInnerAllUp)
+		{
+			delete m_pReelMapInnerAllUp;
+			m_pReelMapInnerAllUp = NULL;
+		}
+		m_pReelMapInnerAllUp = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
+		m_pReelMapInner = m_pReelMapInnerAllUp;
+	}
+	else
+	{
+		m_pReelMapInner = m_pReelMapInnerUp;
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		m_pReelMap = m_pReelMapIts;
+	}
+
+	SetReelmapInner(ROT_NONE);
+
+	return TRUE;
+}
+
+BOOL CManagerReelmap::InitReelmapInnerDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
+
+	if (!bDualTest)
+		return TRUE;
+
+	if (!m_MasterInner[0].m_pPcsRgn)
+	{
+		CString strMsg;
+		strMsg.Format(_T("피스 영역이 존재하지 않습니다."));
+		pView->MsgBox(strMsg);
+		return FALSE;
+	}
+
+	int nTotPcs = m_MasterInner[0].m_pPcsRgn->GetTotPcs();
+
+	if (m_pReelMapInnerDn)
+	{
+		delete m_pReelMapInnerDn;
+		m_pReelMapInnerDn = NULL;
+	}
+	m_pReelMapInnerDn = new CReelMap(RMAP_INNER_DN, MAX_DISP_PNL, nTotPcs);
+
+	if (m_pReelMapInnerAllDn)
+	{
+		delete m_pReelMapInnerAllDn;
+		m_pReelMapInnerAllDn = NULL;
+	}
+
+	m_pReelMapInnerAllDn = new CReelMap(RMAP_INNER_ALLDN, MAX_DISP_PNL, nTotPcs);
+	SetReelmapInner(ROT_NONE);
+
+	return TRUE;
+}
+
+void CManagerReelmap::SetReelmapInner(int nDir)
+{
+	if (!m_pReelMapInner || !m_MasterInner[0].m_pPcsRgn)
+		return;
+
+	if (!m_pReelMapInner->pFrmRgn || !m_pReelMapInner->pPcsRgn)
+		return;
+
+	int i, k;
+	double fData1, fData2, fData3, fData4, fDistX, fDistY;
+	double fWidth, fHeight, fRight, fBottom;
+
+	m_pReelMapInner->nDir = nDir;
+
+	int nTotPnl = m_pReelMapInner->nTotPnl;
+	int nTotPcs = m_pReelMapInner->nTotPcs;
+
+	// 	double dScale = (MasterInfo.dPixelSize/10.0);
+	double dScale = (m_MasterInner[0].MasterInfo.dPixelSize / 10.0);
+	m_pReelMapInner->SetAdjRatio(dScale);
+	dScale = m_pReelMapInner->GetAdjRatio();
+
+	for (k = 0; k < nTotPnl; k++)
+	{
+		switch (nDir)
+		{
+		case ROT_NONE:
+			fWidth = (m_MasterInner[0].m_pPcsRgn->pPcs[0].right - m_MasterInner[0].m_pPcsRgn->pPcs[0].left);
+			fHeight = (m_MasterInner[0].m_pPcsRgn->pPcs[0].bottom - m_MasterInner[0].m_pPcsRgn->pPcs[0].top);
+			fRight = m_MasterInner[0].m_pPcsRgn->rtFrm.right - fWidth * (1.0 - RMAP_PCS_SCALE);
+			fBottom = m_MasterInner[0].m_pPcsRgn->rtFrm.bottom - fHeight * (1.0 - RMAP_PCS_SCALE);;
+			m_pReelMapInner->pFrmRgn[k].left = (m_MasterInner[0].m_pPcsRgn->rtFrm.right + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + m_MasterInner[0].m_pPcsRgn->rtFrm.left;
+			m_pReelMapInner->pFrmRgn[k].top = m_MasterInner[0].m_pPcsRgn->rtFrm.top;
+			m_pReelMapInner->pFrmRgn[k].right = (m_MasterInner[0].m_pPcsRgn->rtFrm.right + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + fRight;
+			m_pReelMapInner->pFrmRgn[k].bottom = fBottom;
+			//m_pReelMap->pFrmRgn[k].left = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+m_pPcsRgn->rtFrm.left;
+			//m_pReelMap->pFrmRgn[k].top = m_pPcsRgn->rtFrm.top;
+			//m_pReelMap->pFrmRgn[k].right = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+m_pPcsRgn->rtFrm.right;
+			//m_pReelMap->pFrmRgn[k].bottom = m_pPcsRgn->rtFrm.bottom;
+
+			for (i = 0; i < nTotPcs; i++)
+			{
+				fWidth = (m_MasterInner[0].m_pPcsRgn->pPcs[i].right - m_MasterInner[0].m_pPcsRgn->pPcs[i].left);
+				fHeight = (m_MasterInner[0].m_pPcsRgn->pPcs[i].bottom - m_MasterInner[0].m_pPcsRgn->pPcs[i].top);
+				fData1 = m_MasterInner[0].m_pPcsRgn->pPcs[i].left;	// left
+				fData2 = m_MasterInner[0].m_pPcsRgn->pPcs[i].top;	// top
+				fData3 = fData1 + fWidth * RMAP_PCS_SCALE; // right
+				fData4 = fData2 + fHeight * RMAP_PCS_SCALE; // bottom
+
+				m_pReelMapInner->pPcsRgn[k][i].left = (m_MasterInner[0].m_pPcsRgn->rtFrm.right + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + fData1;
+				m_pReelMapInner->pPcsRgn[k][i].top = fData2;
+				m_pReelMapInner->pPcsRgn[k][i].right = (m_MasterInner[0].m_pPcsRgn->rtFrm.right + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + fData3;
+				m_pReelMapInner->pPcsRgn[k][i].bottom = fData4;
+			}
+			break;
+			//case ROT_NONE:
+			//	m_pReelMap->pFrmRgn[k].left = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+m_pPcsRgn->rtFrm.left;
+			//	m_pReelMap->pFrmRgn[k].top = m_pPcsRgn->rtFrm.top;
+			//	m_pReelMap->pFrmRgn[k].right = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+m_pPcsRgn->rtFrm.right;
+			//	m_pReelMap->pFrmRgn[k].bottom = m_pPcsRgn->rtFrm.bottom;
+
+			//	for(i=0; i<nTotPcs; i++)
+			//	{
+			//		fData1 = m_pPcsRgn->pPcs[i].left; // left
+			//		fData2 = m_pPcsRgn->pPcs[i].top; // top
+			//		fData3 = m_pPcsRgn->pPcs[i].right; // right
+			//		fData4 = m_pPcsRgn->pPcs[i].bottom; // bottom
+
+			//		m_pReelMap->pPcsRgn[k][i].left = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+fData1;
+			//		m_pReelMap->pPcsRgn[k][i].top = fData2;
+			//		m_pReelMap->pPcsRgn[k][i].right = (m_pPcsRgn->rtFrm.right+MYGL_GAP_PNL*dScale)*(nTotPnl-1-k)+fData3;
+			//		m_pReelMap->pPcsRgn[k][i].bottom = fData4;
+			//	}
+			//	break;
+		case ROT_CCW_90: // right->bottom, top->left, bottom->right, left->top ; Dir (x *= 1, y *= -1) 
+			fDistX = 0;
+			fDistY = m_MasterInner[0].m_pPcsRgn->rtFrm.left + m_MasterInner[0].m_pPcsRgn->rtFrm.right;
+			m_pReelMapInner->pFrmRgn[k].left = (m_MasterInner[0].m_pPcsRgn->rtFrm.bottom + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + m_MasterInner[0].m_pPcsRgn->rtFrm.top;
+			m_pReelMapInner->pFrmRgn[k].top = fDistY - m_Master[0].m_pPcsRgn->rtFrm.right;
+			m_pReelMapInner->pFrmRgn[k].right = (m_MasterInner[0].m_pPcsRgn->rtFrm.bottom + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + m_MasterInner[0].m_pPcsRgn->rtFrm.bottom;
+			m_pReelMapInner->pFrmRgn[k].bottom = fDistY - m_MasterInner[0].m_pPcsRgn->rtFrm.left;
+
+			for (i = 0; i < nTotPcs; i++)
+			{
+				fData1 = m_MasterInner[0].m_pPcsRgn->pPcs[i].top;	// left
+				fData2 = fDistY - m_MasterInner[0].m_pPcsRgn->pPcs[i].right;	// top
+				fData3 = m_MasterInner[0].m_pPcsRgn->pPcs[i].bottom;	// right
+				fData4 = fDistY - m_MasterInner[0].m_pPcsRgn->pPcs[i].left; // bottom
+
+				m_pReelMapInner->pPcsRgn[k][i].left = (m_MasterInner[0].m_pPcsRgn->rtFrm.bottom + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + fData1;
+				m_pReelMapInner->pPcsRgn[k][i].top = fData2;
+				m_pReelMapInner->pPcsRgn[k][i].right = (m_MasterInner[0].m_pPcsRgn->rtFrm.bottom + MYGL_GAP_PNL*dScale)*(nTotPnl - 1 - k) + fData3;
+				m_pReelMapInner->pPcsRgn[k][i].bottom = fData4;
+			}
+			break;
+		}
 	}
 }
 
@@ -1059,6 +1483,128 @@ BOOL CManagerReelmap::RemakeReelmapInner()
 		m_pReelMapIts->StartThreadRemakeReelmap();
 
 	return TRUE;
+}
+
+void CManagerReelmap::UpdateYield(int nSerial)
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	m_nSnTHREAD_UPDATAE_YIELD = nSerial;
+	m_bTHREAD_UPDATE_YIELD_UP = TRUE;
+	if (bDualTest)
+		m_bTHREAD_UPDATE_YIELD_DN = TRUE;
+}
+
+void CManagerReelmap::UpdateYieldUp(int nSerial)
+{
+	if (m_pReelMapUp)
+		m_pReelMapUp->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldDn(int nSerial)
+{
+	if (m_pReelMapDn)
+		m_pReelMapDn->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldAllUp(int nSerial)
+{
+	if (m_pReelMapAllUp)
+		m_pReelMapAllUp->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldAllDn(int nSerial)
+{
+	if (m_pReelMapAllDn)
+		m_pReelMapAllDn->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldInnerUp(int nSerial)
+{
+	if (m_pReelMapInnerUp)
+		m_pReelMapInnerUp->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldInnerDn(int nSerial)
+{
+	if (m_pReelMapInnerDn)
+		m_pReelMapInnerDn->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldInnerAllUp(int nSerial)
+{
+	if (m_pReelMapInnerAllUp)
+		m_pReelMapInnerAllUp->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldInnerAllDn(int nSerial)
+{
+	if (m_pReelMapInnerAllDn)
+		m_pReelMapInnerAllDn->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateYieldIts(int nSerial)
+{
+	if (m_pReelMapIts)
+		m_pReelMapIts->UpdateYield(nSerial);
+}
+
+void CManagerReelmap::UpdateRMapInnerUp()
+{
+	if (pDoc->GetTestMode() == MODE_INNER)
+	{
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		if (m_pReelMapInnerUp)
+			m_pReelMapInnerUp->Write(m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+	}
+}
+
+void CManagerReelmap::UpdateRMapInnerDn()
+{
+	if (pDoc->GetTestMode() == MODE_INNER)
+	{
+		//if (m_pReelMapInnerDn)
+		//	m_pReelMapInnerDn->MakeItsFile(m_nSerialRmapInnerUpdate, RMAP_INNER_DN);
+		//if (m_pReelMapDn)
+		//	m_pReelMapDn->MakeItsFile(m_nSerialRmapInnerUpdate, RMAP_INNER_DN);
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		//if (m_pReelMapDn)
+		//	m_pReelMapDn->MakeItsFile(m_nSerialRmapInnerUpdate, RMAP_DN);
+		if (m_pReelMapInnerDn)
+			m_pReelMapInnerDn->Write(m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+																	  //m_pReelMapInnerDn->Write(m_nSerialRmapInnerUpdate, 1, m_sPathRmapInnerUpdate[1]); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+
+																	  //if (m_pReelMapInnerDn)
+																	  //	m_pReelMapInnerDn->MakeItsFile(m_nSerialRmapInnerUpdate, RMAP_INNER_DN);
+																	  //if (m_pReelMapInnerDn)
+																	  //	m_pReelMapInnerDn->MakeItsFile(m_nSerialRmapInnerUpdate, RMAP_DN);
+	}
+}
+
+void CManagerReelmap::UpdateRMapInnerAllUp()
+{
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		if (m_pReelMapInnerAllUp)
+			m_pReelMapInnerAllUp->Write(m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+																		 //m_pReelMapInnerAllUp->Write(m_nSerialRmapInnerUpdate, 2, m_sPathRmapInnerUpdate[2]); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+	}
+}
+
+void CManagerReelmap::UpdateRMapInnerAllDn()
+{
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		if (m_pReelMapInnerAllDn)
+			m_pReelMapInnerAllDn->Write(m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+																		 //m_pReelMapInnerAllDn->Write(m_nSerialRmapInnerUpdate, 3, m_sPathRmapInnerUpdate[3]); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+	}
 }
 
 // for ITS
