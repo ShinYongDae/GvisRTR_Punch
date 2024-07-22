@@ -15,9 +15,14 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-//bool g_bThreadHomeMotionRun = false;
-//CNmcDevice* g_pNmcDevice = NULL;
-//void _thread_ListMotionRun(LPVOID pArg);
+#include "../MainFrm.h"
+#include "../GvisRTR_PunchDoc.h"
+#include "../GvisRTR_PunchView.h"
+
+extern CMainFrame* pFrm;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CNmcDevice

@@ -53,9 +53,9 @@ class CReelYield : public CWnd
 	int m_nBeforeSerial;
 
 	void Init();
-	BOOL DirectoryExists(LPCTSTR szPath);
 	char* StrToChar(CString str);
 	void StrToChar(CString str, char* pCh);
+	BOOL DirectoryExists(LPCTSTR szPath);
 
 public:
 	CReelYield(int nLayer, int nPnl = 0, int nPcs = 0, CWnd* pParent = NULL);
@@ -76,22 +76,22 @@ public:
 
 	// 작업입니다.
 public:
-	void Reset();
-	BOOL Update(int nSerial);
+	void ResetYield();
+	BOOL UpdateYield(int nSerial);
 	void UpdateTotalSpeed(CString sSpeed, int nLayer);
 
-	CString GetPath(int nRmap);
+	CString GetYieldPath(int nRmap);
 	int GetDefNum(int nDefCode);
 	int GetDefStrip(int nStrip);
 	int GetDefStrip(int nStrip, int nDefCode);
 	int GetStripOut(int nStrip);
 	void GetPcsNum(int &nGood, int &nBad);
 
-	BOOL MakeDir();
-	BOOL MakeDir(CString sPath);
+	BOOL MakeDirYield();
+	BOOL MakeDirYield(CString sPath);
 
-	BOOL Read(int nSerial, CString sPath);
-	BOOL Write(int nSerial, CString sPath);
+	BOOL ReadYield(int nSerial, CString sPath);
+	BOOL WriteYield(int nSerial, CString sPath);
 
 	BOOL GetResult(); // TRUE: Make Result, FALSE: Load Result or Failed.
 	CString GetResultTxt();

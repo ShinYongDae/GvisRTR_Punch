@@ -11,8 +11,6 @@
 #include "ManagerFeeding.h"
 #include "ManagerStatus.h"
 
-#include "GvisRTR_PunchDoc.h"
-
 #include "Dialog/DlgMyMsg.h"
 #include "Dialog/DlgMsgBox.h"
 
@@ -27,8 +25,12 @@
 #include "Dialog/DlgMenu07.h"
 #include "Dialog/DlgOption01.h"
 
+#include "GvisRTR_PunchDoc.h"
+
 #define TIM_INIT_VIEW			0
 #define TIM_DISP_STATUS			14
+#define TIM_CAMMASTER_UPDATE	22
+#define TIM_START_UPDATE		100
 
 typedef struct _DispMain
 {
@@ -67,6 +69,8 @@ class CGvisRTR_PunchView : public CFormView
 	__int64 m_nBufSerialSorting[2][100];	// [0]: AOI-Up , [1]: AOI-Dn
 
 	DWORD m_dwLotSt, m_dwLotEd;
+	BOOL m_bTIM_START_UPDATE, m_bTIM_CAMMASTER_UPDATE;
+	BOOL m_bLoadMstInfo, m_bLoadMstInfoF;
 
 	void InitMgr();
 	void CreateMgr();
@@ -122,6 +126,13 @@ class CGvisRTR_PunchView : public CFormView
 	void StringToChar(CString str, char* pCh); // char* returned must be deleted... 
 
 	void DispLotTime();
+	BOOL GetEngInfo();
+	void SetEngInfo(BOOL bOn);
+	BOOL GetEngOpInfo();
+	void SetEngOpInfo(BOOL bOn);
+	BOOL LoadMstInfo();
+	BOOL IsLastJob(int nAoi); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn - Check Empty
+	BOOL MakeDir(CString sModel, CString sLayer);
 
 protected: // serialization에서만 만들어집니다.
 	CGvisRTR_PunchView();
@@ -144,9 +155,12 @@ public:
 	CManagerStatus* m_mgrStatus;
 
 	CString m_sAlmMsg, m_sPrevAlmMsg, m_sIsAlmMsg;
+	CString m_sDispSts[2];
+	BOOL m_bDrawGL_Menu01, m_bDrawGL_Menu06;
 
 	// from Engrave
 	BOOL m_bRcvSig[_SigInx::_EndIdx];
+	BOOL m_bSetSig, m_bSetSigF, m_bSetData, m_bSetDataF;
 
 // 작업입니다.
 public:
@@ -166,6 +180,8 @@ public:
 	void SetAlarm(CString sMsg);
 	void ClrAlarm();
 	void SetListBuf();
+	void DoLoadMstInfo();
+	BOOL GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption = 0);
 
 	CDlgInfo *m_pDlgInfo;
 	CDlgFrameHigh *m_pDlgFrameHigh;
@@ -193,8 +209,12 @@ public:
 	void InitReelmapDisp();
 	void InitCamImgDisp();
 
+	BOOL ChkLotCutPos();
 	void DispInfo();
 	void ClrMkInfo();
+	void UpdateWorking();
+	double GetEnc(int nAxis);
+	void SetCompletedSerial(int nSerial);
 
 	void ResetMkInfo(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
 	void SetAlignPos();
@@ -260,6 +280,8 @@ public:
 	BOOL GetMkStSignal();
 	void ResetMkStSignal();
 	int GetLastShotMk();
+	int GetLastShotUp();
+	int GetLastShotDn();
 
 	BOOL IsEnableBtn(int nId);
 	void EnableBtn(int nId, BOOL bEnable);
@@ -275,12 +297,17 @@ public:
 	void DispLotStTime();
 	BOOL IsReady();
 	BOOL IsAoiLdRun();
+	BOOL IsShowLive();
+	void ShowLive(BOOL bShow = TRUE);
 
 	// ManagerProcedure
 	void Auto();
 
 	// ManagerPunch
 	void ResetMotion();
+
+	// ManagerFeeding
+	void SetMkFdLen();
 
 	// ManagerReelmap
 
@@ -292,6 +319,7 @@ public:
 // 재정의입니다.
 public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
 	virtual void OnInitialUpdate(); // 생성 후 처음 호출되었습니다.

@@ -926,4 +926,12 @@ void CDlgMenu03::SetLed(int nIdx, BOOL bOn)
 		myLabel[nIdx].SetImageBk(LBL_IMG_UP);
 }
 
+void CDlgMenu03::UpdateSignal()
+{
+	if (pView)
+		pView->GetPlcParam();
+
+	Disp();
+}
+
 

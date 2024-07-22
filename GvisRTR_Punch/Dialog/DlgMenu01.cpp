@@ -22,12 +22,30 @@ CDlgMenu01::CDlgMenu01(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DLG_MENU_01, pParent)
 {
 	m_pRect = NULL;
+	m_pReelMapDisp = NULL;
 	m_bLastProc = FALSE;
+	m_nSelRmap = RMAP_ALLUP;
+	m_nSelRmapPrev = RMAP_ALLUP;
+	m_bEnableMkStrip = FALSE;
+	m_bTIM_DISP_MK_CNT = FALSE;
+	m_bTIM_DISP_DEF_IMG = FALSE;
+
+	m_nIdxMkInfo[0] = 0;
+	m_nIdxMkInfo[1] = 0;
+	m_nDef[0] = 0;
+	m_nDef[1] = 0;
+	m_nSerialDispMkInfo = 0;
+	m_nSerial = 0;
+
 	Create();
+	Reset();
 }
 
 CDlgMenu01::~CDlgMenu01()
 {
+	m_bTIM_DISP_MK_CNT = FALSE;
+	m_bTIM_DISP_DEF_IMG = FALSE;
+
 	DelImg();
 
 	if (m_pRect)
@@ -46,6 +64,7 @@ void CDlgMenu01::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CDlgMenu01, CDialog)
 	ON_WM_SHOWWINDOW()
 	ON_BN_CLICKED(IDC_CHK_USER_INFO, &CDlgMenu01::OnBnClickedChkUserInfo)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -101,22 +120,57 @@ void CDlgMenu01::DelImg()
 
 void CDlgMenu01::Reset()
 {
-	m_bLastProc = FALSE;
-
-	if (MODE_INNER != pDoc->GetTestMode())
-		m_bLastProcFromUp = TRUE;
-	else
-		m_bLastProcFromEng = TRUE;
-
 	ResetSerial();
 	ResetLastProc();
+}
+
+void CDlgMenu01::ResetSerial()
+{
+	stGeneral& General = (pView->m_mgrStatus->General);
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	m_nSerial = 0;
+
+	if (myBtn[3].GetCheck())
+	{
+		myBtn[3].SetCheck(FALSE);
+		if (MODE_INNER != pDoc->GetTestMode())
+			General.bLastProcFromUp = TRUE;
+		else
+			General.bLastProcFromEng = TRUE;
+		m_bLastProc = FALSE;
+	}
+
+	if (myBtn[6].GetCheck())
+	{
+		myBtn[6].SetCheck(FALSE);
+		General.bLotEnd = FALSE;
+		pView->MpeWrite(_T("MB440180"), 0);			// 작업종료(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
+	}
+
+	if (myBtn[4].GetCheck())
+	{
+		myBtn[4].SetCheck(FALSE);
+		pView->MpeWrite(_T("MB440182"), 0);			// 재마킹(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
+	}
+}
+
+void CDlgMenu01::ResetLastProc()
+{
+	stGeneral& General = (pView->m_mgrStatus->General);
+	m_bLastProc = FALSE;
+	General.bLastProcFromUp = FALSE;
+	General.bLastProcFromEng = FALSE;
+
+	pView->MpeWrite(_T("MB44019D"), 0);			// 잔량처리 각인부 부터(PC가 On시키고, PLC가 확인하고 Off시킴)
+	pView->MpeWrite(_T("MB440185"), 0);			// 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+	pView->MpeWrite(_T("MB440186"), 0);			// 잔량처리 AOI(상) 부터(PC가 On시키고, PLC가 확인하고 Off시킴)-20141112
+	pView->MpeWrite(_T("MB440181"), 0);			// 잔량처리(PC가 On시키고, PLC가 확인하고 Off시킴)-20141031
 }
 
 void CDlgMenu01::InitGui()
 {
 	InitStatic();
 	InitBtn();
-
 	LoadImg();
 }
 
@@ -370,10 +424,13 @@ void CDlgMenu01::InitStcData()
 	myStcData[89].SubclassDlgItem(IDC_STC_TQ_DISP2_VAL_L, this);
 	myStcData[90].SubclassDlgItem(IDC_STC_TQ_DISP2_VAL_R, this);
 
+	myStcData[91].SubclassDlgItem(IDC_STC_ITS_CODE, this);
+	myStcData[92].SubclassDlgItem(IDC_STC_LOT_OFFSET, this);
+
 	for (int i = 0; i < MAX_MENU01_STC_DATA; i++)
 	{
 		myStcData[i].SetFontName(_T("Arial"));
-		if (i == 84)
+		if (i == 84 || i == 92)
 		{
 			myStcData[i].SetFontSize(20);
 			myStcData[i].SetFontBold(TRUE);
@@ -588,11 +645,20 @@ void CDlgMenu01::InitStcTitle()
 	myStcTitle[73].SubclassDlgItem(IDC_STC_TQ_DSIP1, this);
 	myStcTitle[74].SubclassDlgItem(IDC_STC_TQ_DSIP2, this);
 
+	myStcTitle[75].SubclassDlgItem(IDC_STC_VS, this);
+
+	myStcTitle[76].SubclassDlgItem(IDC_STC_ITS_, this);
+	myStcTitle[76].SetFontName(_T("Arial"));
+	myStcTitle[76].SetFontSize(14);
+	myStcTitle[76].SetFontBold(TRUE);
+	myStcTitle[76].SetTextColor(RGB_WHITE);
+	myStcTitle[76].SetBkColor(RGB_DARKBLUE);
+
 	for (i = 65; i < MAX_MENU01_STC_TITLE; i++)
 	{
 		myStcTitle[i].SetFontName(_T("Arial"));
 		myStcTitle[i].SetFontSize(12);
-		if (i == 69)
+		if (i == 69 || i == 75)
 		{
 			myStcTitle[i].SetFontBold(TRUE);
 			myStcTitle[i].SetTextColor(RGB_YELLOW);
@@ -625,6 +691,28 @@ BOOL CDlgMenu01::OnInitDialog()
 
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 	InitGui();
+	SetRgbStcDef();
+	SetTitleStcDef();
+	UpdateData();
+	pView->DispMain(_T("정 지"), RGB_RED);
+	EnableBtn(TRUE);
+
+	GetDlgItem(IDC_BTN_ST)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BTN_GD_RA_1)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BTN_GD_RA_2)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BTN_GD_RA_3)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BTN_GD_RA_4)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BTN_GD_RA_ALL)->ShowWindow(SW_HIDE);
+
+	GetCtrlPos();
+
+	m_bTIM_DISP_MK_CNT = TRUE;
+	SetTimer(TIM_DISP_MK_CNT, 300, NULL);
+
+	myStcData[87].SetText(pDoc->WorkingInfo.Marking[0].sMarkingDisp1Toq); // IDC_STC_TQ_DISP1_VAL_L
+	myStcData[88].SetText(pDoc->WorkingInfo.Marking[1].sMarkingDisp1Toq); // IDC_STC_TQ_DISP1_VAL_R
+	myStcData[89].SetText(pDoc->WorkingInfo.Marking[0].sMarkingDisp2Toq); // IDC_STC_TQ_DISP2_VAL_L
+	myStcData[90].SetText(pDoc->WorkingInfo.Marking[1].sMarkingDisp2Toq); // IDC_STC_TQ_DISP2_VAL_R
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -649,7 +737,6 @@ void CDlgMenu01::OnShowWindow(BOOL bShow, UINT nStatus)
 
 	if (bShow)
 	{
-		//this->MoveWindow(m_pRect, TRUE);
 		AtDlgShow();
 	}
 	else
@@ -660,147 +747,143 @@ void CDlgMenu01::OnShowWindow(BOOL bShow, UINT nStatus)
 
 void CDlgMenu01::AtDlgShow()
 {
-	//UpdateData();
+	UpdateData();
 
-	//if (pDoc->WorkingInfo.LastJob.nMergingLayer == 0) 	// [0]:AOI-Up , [1]:AOI-Dn
-	//{
-	//	myStcTitle[61].SetTextColor(RGB_WHITE);		// IDC_STC_UP
-	//	myStcTitle[61].SetBkColor(RGB_RED);			// IDC_STC_UP
-	//	myStcTitle[62].SetTextColor(RGB_WHITE);		// IDC_STC_DN
-	//	myStcTitle[62].SetBkColor(RGB_DARKBLUE);	// IDC_STC_DN
-	//}
-	//else if (pDoc->WorkingInfo.LastJob.nMergingLayer == 1) 	// [0]:AOI-Up , [1]:AOI-Dn
-	//{
-	//	myStcTitle[61].SetTextColor(RGB_WHITE);		// IDC_STC_UP
-	//	myStcTitle[61].SetBkColor(RGB_DARKBLUE);	// IDC_STC_UP
-	//	myStcTitle[62].SetTextColor(RGB_WHITE);		// IDC_STC_DN
-	//	myStcTitle[62].SetBkColor(RGB_RED);			// IDC_STC_DN
-	//}
+	if (pDoc->WorkingInfo.LastJob.nMergingLayer == 0) 	// [0]:AOI-Up , [1]:AOI-Dn
+	{
+		myStcTitle[61].SetTextColor(RGB_WHITE);		// IDC_STC_UP
+		myStcTitle[61].SetBkColor(RGB_RED);			// IDC_STC_UP
+		myStcTitle[62].SetTextColor(RGB_WHITE);		// IDC_STC_DN
+		myStcTitle[62].SetBkColor(RGB_DARKBLUE);	// IDC_STC_DN
+	}
+	else if (pDoc->WorkingInfo.LastJob.nMergingLayer == 1) 	// [0]:AOI-Up , [1]:AOI-Dn
+	{
+		myStcTitle[61].SetTextColor(RGB_WHITE);		// IDC_STC_UP
+		myStcTitle[61].SetBkColor(RGB_DARKBLUE);	// IDC_STC_UP
+		myStcTitle[62].SetTextColor(RGB_WHITE);		// IDC_STC_DN
+		myStcTitle[62].SetBkColor(RGB_RED);			// IDC_STC_DN
+	}
 
-	//myBtn[21].SetCheck(pDoc->WorkingInfo.Probing[0].bUse);
-	//myBtn[22].SetCheck(pDoc->WorkingInfo.Probing[0].bStopOnOpen);
-
+	myBtn[21].SetCheck(pDoc->WorkingInfo.Probing[0].bUse);
+	myBtn[22].SetCheck(pDoc->WorkingInfo.Probing[0].bStopOnOpen);
 }
 
 void CDlgMenu01::AtDlgHide()
 {
 }
 
-//void CDlgMenu01::SetRgbStcDef()
-//{
-//	if (!pDoc->m_pReelMap)
-//		return;
-//
-//	COLORREF rgbDef;
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_OPEN];
-//	myStcTitle[23].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_SHORT];
-//	myStcTitle[24].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_USHORT];
-//	myStcTitle[25].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_SPACE];
-//	myStcTitle[26].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_EXTRA];
-//	myStcTitle[27].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_PROTRUSION];
-//	myStcTitle[28].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_PINHOLE];
-//	myStcTitle[29].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_PAD];
-//	myStcTitle[30].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_HOLE_OPEN];
-//	myStcTitle[31].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_HOLE_MISS];
-//	myStcTitle[32].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_HOLE_POSITION];
-//	myStcTitle[33].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_HOLE_DEFECT];
-//	myStcTitle[34].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_NICK];
-//	myStcTitle[35].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_POI];
-//	myStcTitle[36].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_VH_OPEN];
-//	myStcTitle[37].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_VH_MISS];
-//	myStcTitle[38].SetBkColor(RGB_YELLOW);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_VH_POSITION];
-//	myStcTitle[39].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_VH_DEF];
-//	myStcTitle[40].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_LIGHT];
-//	myStcTitle[41].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_EDGE_NICK];
-//	myStcTitle[42].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_EDGE_PROT];
-//	myStcTitle[43].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_EDGE_SPACE];
-//	myStcTitle[44].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_USER_DEFINE_1];
-//	myStcTitle[45].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_NARROW];
-//	myStcTitle[46].SetBkColor(rgbDef);
-//
-//	rgbDef = pDoc->m_pReelMap->m_rgbDef[DEF_WIDE];
-//	myStcTitle[47].SetBkColor(rgbDef);
-//}
-//
-//void CDlgMenu01::SetTitleStcDef()
-//{
-//	if (!pDoc->m_pReelMap)
-//		return;
-//
-//	myStcTitle[23].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_OPEN]);
-//	myStcTitle[24].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_SHORT]);
-//	myStcTitle[25].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_USHORT]);
-//	myStcTitle[26].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_SPACE]);
-//	myStcTitle[27].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_EXTRA]);
-//	myStcTitle[28].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_PROTRUSION]);
-//	myStcTitle[29].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_PINHOLE]);
-//	myStcTitle[30].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_PAD]);
-//	myStcTitle[31].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_HOLE_OPEN]);
-//	myStcTitle[32].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_HOLE_MISS]);
-//	myStcTitle[33].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_HOLE_POSITION]);
-//	myStcTitle[34].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_HOLE_DEFECT]);
-//	myStcTitle[35].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_NICK]);
-//	myStcTitle[36].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_POI]);
-//	myStcTitle[37].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_VH_OPEN]);
-//	myStcTitle[38].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_VH_MISS]);
-//	myStcTitle[39].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_VH_POSITION]);
-//	myStcTitle[40].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_VH_DEF]);
-//	myStcTitle[41].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_LIGHT]);
-//
-//	myStcTitle[42].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_EDGE_NICK]);
-//	myStcTitle[43].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_EDGE_PROT]);
-//	myStcTitle[44].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_EDGE_SPACE]);
-//	myStcTitle[45].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_USER_DEFINE_1]);
-//	myStcTitle[46].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_NARROW]);
-//	myStcTitle[47].SetText(pDoc->m_pReelMap->m_sKorDef[DEF_WIDE]);
-//}
+void CDlgMenu01::SetRgbStcDef()
+{
+	if (!pView->m_mgrReelmap) return;
+
+	COLORREF rgbDef;
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_OPEN);
+	myStcTitle[23].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_SHORT);
+	myStcTitle[24].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_USHORT);
+	myStcTitle[25].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_SPACE);
+	myStcTitle[26].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_EXTRA);
+	myStcTitle[27].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_PROTRUSION);
+	myStcTitle[28].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_PINHOLE);
+	myStcTitle[29].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_PAD);
+	myStcTitle[30].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_HOLE_OPEN);
+	myStcTitle[31].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_HOLE_MISS);
+	myStcTitle[32].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_HOLE_POSITION);
+	myStcTitle[33].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_HOLE_DEFECT);
+	myStcTitle[34].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_NICK);
+	myStcTitle[35].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_POI);
+	myStcTitle[36].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_VH_OPEN);
+	myStcTitle[37].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_VH_MISS);
+	myStcTitle[38].SetBkColor(RGB_YELLOW);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_VH_POSITION);
+	myStcTitle[39].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_VH_DEF);
+	myStcTitle[40].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_LIGHT);
+	myStcTitle[41].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_EDGE_NICK);
+	myStcTitle[42].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_EDGE_PROT);
+	myStcTitle[43].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_EDGE_SPACE);
+	myStcTitle[44].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_USER_DEFINE_1);
+	myStcTitle[45].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_NARROW);
+	myStcTitle[46].SetBkColor(rgbDef);
+
+	rgbDef = pView->m_mgrReelmap->GetRgbStcDef(DEF_WIDE);
+	myStcTitle[47].SetBkColor(rgbDef);
+}
+
+void CDlgMenu01::SetTitleStcDef()
+{
+	if (!pView->m_mgrReelmap) return;
+
+	myStcTitle[23].SetText(pView->m_mgrReelmap->GetKorDef(DEF_OPEN));
+	myStcTitle[24].SetText(pView->m_mgrReelmap->GetKorDef(DEF_SHORT));
+	myStcTitle[25].SetText(pView->m_mgrReelmap->GetKorDef(DEF_USHORT));
+	myStcTitle[26].SetText(pView->m_mgrReelmap->GetKorDef(DEF_SPACE));
+	myStcTitle[27].SetText(pView->m_mgrReelmap->GetKorDef(DEF_EXTRA));
+	myStcTitle[28].SetText(pView->m_mgrReelmap->GetKorDef(DEF_PROTRUSION));
+	myStcTitle[29].SetText(pView->m_mgrReelmap->GetKorDef(DEF_PINHOLE));
+	myStcTitle[30].SetText(pView->m_mgrReelmap->GetKorDef(DEF_PAD));
+	myStcTitle[31].SetText(pView->m_mgrReelmap->GetKorDef(DEF_HOLE_OPEN));
+	myStcTitle[32].SetText(pView->m_mgrReelmap->GetKorDef(DEF_HOLE_MISS));
+	myStcTitle[33].SetText(pView->m_mgrReelmap->GetKorDef(DEF_HOLE_POSITION));
+	myStcTitle[34].SetText(pView->m_mgrReelmap->GetKorDef(DEF_HOLE_DEFECT));
+	myStcTitle[35].SetText(pView->m_mgrReelmap->GetKorDef(DEF_NICK));
+	myStcTitle[36].SetText(pView->m_mgrReelmap->GetKorDef(DEF_POI));
+	myStcTitle[37].SetText(pView->m_mgrReelmap->GetKorDef(DEF_VH_OPEN));
+	myStcTitle[38].SetText(pView->m_mgrReelmap->GetKorDef(DEF_VH_MISS));
+	myStcTitle[39].SetText(pView->m_mgrReelmap->GetKorDef(DEF_VH_POSITION));
+	myStcTitle[40].SetText(pView->m_mgrReelmap->GetKorDef(DEF_VH_DEF));
+	myStcTitle[41].SetText(pView->m_mgrReelmap->GetKorDef(DEF_LIGHT));
+	myStcTitle[42].SetText(pView->m_mgrReelmap->GetKorDef(DEF_EDGE_NICK));
+	myStcTitle[43].SetText(pView->m_mgrReelmap->GetKorDef(DEF_EDGE_PROT));
+	myStcTitle[44].SetText(pView->m_mgrReelmap->GetKorDef(DEF_EDGE_SPACE));
+	myStcTitle[45].SetText(pView->m_mgrReelmap->GetKorDef(DEF_USER_DEFINE_1));
+	myStcTitle[46].SetText(pView->m_mgrReelmap->GetKorDef(DEF_NARROW));
+	myStcTitle[47].SetText(pView->m_mgrReelmap->GetKorDef(DEF_WIDE));
+}
 
 void CDlgMenu01::DispMain(CString sMsg, COLORREF rgb)
 {
@@ -835,7 +918,6 @@ void CDlgMenu01::DispStTime()
 	else
 		str.Format(_T("%04d-%02d-%02d, %02d:%02d:%02d"), nYear, nMonth, nDay, nHour, nMin, nSec);
 
-	// 	sPrev = myStcData[21].GetText();
 	GetDlgItem(IDC_STC_LOT_START)->GetWindowText(sPrev);
 	if (sPrev != str)
 	{
@@ -1051,17 +1133,17 @@ void CDlgMenu01::UpdateData()
 	CString sVal;
 
 	myStcData[0].SetText(pDoc->WorkingInfo.LastJob.sSelUserName);	// 운용자
-	pDoc->SetMkMenu01(_T("Info"), _T("Operator"), pDoc->WorkingInfo.LastJob.sSelUserName);
+	pView->SetMkMenu01(_T("Info"), _T("Operator"), pDoc->WorkingInfo.LastJob.sSelUserName);
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	if (bDualTest)
 	{
 		myStcData[75].SetText(pDoc->WorkingInfo.LastJob.sLayerDn);		// 하면레이어
-		pDoc->SetMkMenu01(_T("Info"), _T("LayerDn"), pDoc->WorkingInfo.LastJob.sLayerDn);
+		pView->SetMkMenu01(_T("Info"), _T("LayerDn"), pDoc->WorkingInfo.LastJob.sLayerDn);
 	}
 
 	myStcData[1].SetText(pDoc->WorkingInfo.LastJob.sModelUp);		// 모델
-	pDoc->SetMkMenu01(_T("Info"), _T("Model"), pDoc->WorkingInfo.LastJob.sModelUp);
+	pView->SetMkMenu01(_T("Info"), _T("Model"), pDoc->WorkingInfo.LastJob.sModelUp);
 
 	if (pDoc->GetTestMode() == MODE_INNER || pDoc->GetTestMode() == MODE_OUTER)
 		myStcData[91].SetText(pDoc->m_sItsCode);					// ITS CODE
@@ -1069,9 +1151,9 @@ void CDlgMenu01::UpdateData()
 		myStcData[91].SetText(_T(""));
 
 	myStcData[3].SetText(pDoc->WorkingInfo.LastJob.sLotUp);			// 로트
-	pDoc->SetMkMenu01(_T("Info"), _T("Lot"), pDoc->WorkingInfo.LastJob.sLotUp);
+	pView->SetMkMenu01(_T("Info"), _T("Lot"), pDoc->WorkingInfo.LastJob.sLotUp);
 	myStcData[2].SetText(pDoc->WorkingInfo.LastJob.sLayerUp);		// 상면레이어
-	pDoc->SetMkMenu01(_T("Info"), _T("LayerUp"), pDoc->WorkingInfo.LastJob.sLayerUp);
+	pView->SetMkMenu01(_T("Info"), _T("LayerUp"), pDoc->WorkingInfo.LastJob.sLayerUp);
 
 	double dTotLen = _tstof(pDoc->WorkingInfo.LastJob.sReelTotLen) * 1000.0;
 	double dLotLen = _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen) * 1000.0;
@@ -1079,7 +1161,9 @@ void CDlgMenu01::UpdateData()
 	sVal.Format(_T("%.1f"), dTotLen / 1000.0);
 	myStcData[4].SetText(sVal);			// 전체릴길이
 
-	double dFdTotLen = pView->GetMkFdLen();
+	double dFdTotLen = 0.0;
+	if(pView->m_mgrFeeding)
+		dFdTotLen = pView->m_mgrFeeding->GetMkFdLen();
 
 	sVal.Format(_T("%d"), (int)(dFdTotLen / dTotLen * 100.0));
 	myStcData[5].SetText(sVal);			// 전체진행율
@@ -1110,12 +1194,1590 @@ void CDlgMenu01::UpdateData()
 
 	myBtn[2].SetCheck(pDoc->WorkingInfo.LastJob.bVerify);
 	GetDlgItem(IDC_STC_REVIEW_LEN)->SetWindowText(pDoc->WorkingInfo.LastJob.sVerifyLen);
-	pDoc->SetMkMenu01(_T("Data"), _T("VerifyLen"), pDoc->WorkingInfo.LastJob.sVerifyLen);
+	pView->SetMkMenu01(_T("Data"), _T("VerifyLen"), pDoc->WorkingInfo.LastJob.sVerifyLen);
 
-	((CButton*)GetDlgItem(IDC_CHK_2LAYER))->SetCheck(pDoc->WorkingInfo.LastJob.bUse2Layer);
+	//((CButton*)GetDlgItem(IDC_CHK_2LAYER))->SetCheck(pDoc->WorkingInfo.LastJob.bUse2Layer);
 
 	if (pDoc->WorkingInfo.LastJob.bUse380mm)
 		GetDlgItem(IDC_STC_380mm)->ShowWindow(SW_SHOW);
 	else
 		GetDlgItem(IDC_STC_380mm)->ShowWindow(SW_HIDE);
+}
+
+void CDlgMenu01::SelMap(int nSel)
+{
+#ifdef TEST_MODE
+	switch (nSel)
+	{
+	case UP:
+		myBtn[12].SetCheck(TRUE);
+		myBtn[13].SetCheck(FALSE);
+		myBtn[14].SetCheck(FALSE);
+		m_nSelRmap = RMAP_UP;
+		break;
+	case DN:
+		myBtn[12].SetCheck(FALSE);
+		myBtn[13].SetCheck(TRUE);
+		myBtn[14].SetCheck(FALSE);
+		m_nSelRmap = RMAP_DN;
+		break;
+	case ALL:
+		myBtn[12].SetCheck(FALSE);
+		myBtn[13].SetCheck(FALSE);
+		myBtn[14].SetCheck(TRUE);
+		if (pDoc->WorkingInfo.LastJob.nMergingLayer == 0)
+			m_nSelRmap = RMAP_ALLUP;
+		else if (pDoc->WorkingInfo.LastJob.nMergingLayer == 1)
+			m_nSelRmap = RMAP_ALLDN;
+		else
+			m_nSelRmap = RMAP_ALLUP;
+		break;
+	}
+	//OpenReelmap(m_nSelRmap);
+	//DispReelmap(TEST_SHOT);	
+#else
+	CString str;// , sPath;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (bDualTest)
+	{
+		switch (nSel)
+		{
+		case UP:
+			myBtn[12].SetCheck(TRUE);
+			myBtn[13].SetCheck(FALSE);
+			myBtn[14].SetCheck(FALSE);
+			m_nSelRmap = RMAP_UP;
+			break;
+		case DN:
+			myBtn[12].SetCheck(FALSE);
+			myBtn[13].SetCheck(TRUE);
+			myBtn[14].SetCheck(FALSE);
+			m_nSelRmap = RMAP_DN;
+			break;
+		case ALL:
+			myBtn[12].SetCheck(FALSE);
+			myBtn[13].SetCheck(FALSE);
+			myBtn[14].SetCheck(TRUE);
+			if (pDoc->WorkingInfo.LastJob.nMergingLayer == 0)
+				m_nSelRmap = RMAP_ALLUP;
+			else if (pDoc->WorkingInfo.LastJob.nMergingLayer == 1)
+				m_nSelRmap = RMAP_ALLDN;
+			else
+				m_nSelRmap = RMAP_ALLUP;
+			break;
+		}
+	}
+	else
+	{
+		myBtn[12].SetCheck(TRUE);
+		myBtn[13].SetCheck(FALSE);
+		myBtn[14].SetCheck(FALSE);
+		m_nSelRmap = RMAP_UP;
+	}
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		if (m_nSelRmap != RMAP_ITS)
+			m_nSelRmapPrev = m_nSelRmap;
+
+		m_nSelRmap = RMAP_ITS;
+	}
+
+	SwitchReelmapDisp(m_nSelRmap);
+#endif
+}
+
+void CDlgMenu01::SwitchReelmapDisp(int nSelRmap)
+{
+	if (!pView->m_mgrReelmap) return;
+	pView->m_mgrReelmap->SwitchReelmapDisp(nSelRmap);
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (bDualTest)
+	{
+		switch (nSelRmap) // m_nSelRmap
+		{
+		case RMAP_UP:
+			myBtn[12].SetCheck(TRUE);
+			myBtn[13].SetCheck(FALSE);
+			myBtn[14].SetCheck(FALSE);
+			break;
+		case RMAP_DN:
+			myBtn[12].SetCheck(FALSE);
+			myBtn[13].SetCheck(TRUE);
+			myBtn[14].SetCheck(FALSE);
+			break;
+		case RMAP_ALLUP:
+		case RMAP_ALLDN:
+			myBtn[12].SetCheck(FALSE);
+			myBtn[13].SetCheck(FALSE);
+			myBtn[14].SetCheck(TRUE);
+			break;
+		case RMAP_ITS:
+			myBtn[12].SetCheck(FALSE);
+			myBtn[13].SetCheck(FALSE);
+			myBtn[14].SetCheck(TRUE);
+			break;
+		}
+	}
+	else
+	{
+		m_pReelMapDisp = pView->m_mgrReelmap->m_pReelMapDisp;
+	}
+}
+
+void CDlgMenu01::InitGL()
+{
+	if (m_pMyGL)
+	{
+		delete m_pMyGL;
+		m_pMyGL = NULL;
+	}
+
+	if (!m_pMyGL)
+	{
+		m_pMyGL = new CMyGL(this);
+		m_pMyGL->Init(IDC_STC_REELMAP_IMG, m_pReelMapDisp);
+	}
+	m_pMyGL->SetRgn();
+	m_pMyGL->SetPcsDef();
+}
+
+void CDlgMenu01::ResetGL()
+{
+	if (m_pMyGL)
+		m_pMyGL->ResetRgn();
+}
+
+void CDlgMenu01::ResetMkInfo()
+{
+	m_nIdxMkInfo[0] = 0;
+	m_nIdxMkInfo[1] = 0;
+	ClrCadImg();
+	ClrDefImg();
+	InitDefInfo();
+	ClrInfo();
+
+
+	int nCtrlIdCad, nCtrlIdDef;
+	for (int nIdxMkInfo = 0; nIdxMkInfo < DEF_VIEW_IMG_NUMBER; nIdxMkInfo++)
+	{
+		switch (nIdxMkInfo)
+		{
+		case 0:
+			nCtrlIdCad = IDC_PIC_CAD_001;
+			nCtrlIdDef = IDC_PIC_DEF_001;
+			break;
+		case 1:
+			nCtrlIdCad = IDC_PIC_CAD_002;
+			nCtrlIdDef = IDC_PIC_DEF_002;
+			break;
+		case 2:
+			nCtrlIdCad = IDC_PIC_CAD_003;
+			nCtrlIdDef = IDC_PIC_DEF_003;
+			break;
+		case 3:
+			nCtrlIdCad = IDC_PIC_CAD_004;
+			nCtrlIdDef = IDC_PIC_DEF_004;
+			break;
+		case 4:
+			nCtrlIdCad = IDC_PIC_CAD_005;
+			nCtrlIdDef = IDC_PIC_DEF_005;
+			break;
+		case 5:
+			nCtrlIdCad = IDC_PIC_CAD_006;
+			nCtrlIdDef = IDC_PIC_DEF_006;
+			break;
+		case 6:
+			nCtrlIdCad = IDC_PIC_CAD_007;
+			nCtrlIdDef = IDC_PIC_DEF_007;
+			break;
+		case 7:
+			nCtrlIdCad = IDC_PIC_CAD_008;
+			nCtrlIdDef = IDC_PIC_DEF_008;
+			break;
+		case 8:
+			nCtrlIdCad = IDC_PIC_CAD_009;
+			nCtrlIdDef = IDC_PIC_DEF_009;
+			break;
+		case 9:
+			nCtrlIdCad = IDC_PIC_CAD_010;
+			nCtrlIdDef = IDC_PIC_DEF_010;
+			break;
+		case 10:
+			nCtrlIdCad = IDC_PIC_CAD_011;
+			nCtrlIdDef = IDC_PIC_DEF_011;
+			break;
+		case 11:
+			nCtrlIdCad = IDC_PIC_CAD_012;
+			nCtrlIdDef = IDC_PIC_DEF_012;
+			break;
+		}
+
+		GetDlgItem(nCtrlIdCad)->RedrawWindow();
+		GetDlgItem(nCtrlIdDef)->RedrawWindow();
+	}
+
+}
+
+void CDlgMenu01::ResetMkInfoUp()
+{
+	m_nIdxMkInfo[0] = 0;
+	ClrCadImgUp();
+	ClrDefImgUp();
+	InitDefInfo();
+	ClrInfo();
+}
+
+void CDlgMenu01::ResetMkInfoDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+	m_nIdxMkInfo[1] = 0;
+	ClrCadImgDn();
+	ClrDefImgDn();
+	InitDefInfo();
+	ClrInfo();
+}
+
+void CDlgMenu01::EnableBtn(BOOL bEnable)
+{
+	m_bEnableMkStrip = bEnable;
+	myBtn[7].EnableWindow(bEnable); // IDC_CHK_MK_1
+	myBtn[8].EnableWindow(bEnable); // IDC_CHK_MK_2
+	myBtn[9].EnableWindow(bEnable); // IDC_CHK_MK_3
+	myBtn[10].EnableWindow(bEnable); // IDC_CHK_MK_4
+}
+
+void CDlgMenu01::GetCtrlPos()
+{
+	GetDlgItem(IDC_STC_UP)->GetWindowRect(&m_RectTitle[0]);
+	GetDlgItem(IDC_STC_DN)->GetWindowRect(&m_RectTitle[1]);
+	GetDlgItem(IDC_PIC_CAD_001)->GetWindowRect(&m_RectCAD[0]);
+	GetDlgItem(IDC_PIC_CAD_002)->GetWindowRect(&m_RectCAD[1]);
+	GetDlgItem(IDC_PIC_CAD_003)->GetWindowRect(&m_RectCAD[2]);
+	GetDlgItem(IDC_PIC_CAD_004)->GetWindowRect(&m_RectCAD[3]);
+	GetDlgItem(IDC_PIC_CAD_005)->GetWindowRect(&m_RectCAD[4]);
+	GetDlgItem(IDC_PIC_CAD_006)->GetWindowRect(&m_RectCAD[5]);
+	GetDlgItem(IDC_PIC_CAD_007)->GetWindowRect(&m_RectCAD[6]);
+	GetDlgItem(IDC_PIC_CAD_008)->GetWindowRect(&m_RectCAD[7]);
+	GetDlgItem(IDC_PIC_CAD_009)->GetWindowRect(&m_RectCAD[8]);
+	GetDlgItem(IDC_PIC_CAD_010)->GetWindowRect(&m_RectCAD[9]);
+	GetDlgItem(IDC_PIC_CAD_011)->GetWindowRect(&m_RectCAD[10]);
+	GetDlgItem(IDC_PIC_CAD_012)->GetWindowRect(&m_RectCAD[11]);
+	GetDlgItem(IDC_PIC_DEF_001)->GetWindowRect(&m_RectDef[0]);
+	GetDlgItem(IDC_PIC_DEF_002)->GetWindowRect(&m_RectDef[1]);
+	GetDlgItem(IDC_PIC_DEF_003)->GetWindowRect(&m_RectDef[2]);
+	GetDlgItem(IDC_PIC_DEF_004)->GetWindowRect(&m_RectDef[3]);
+	GetDlgItem(IDC_PIC_DEF_005)->GetWindowRect(&m_RectDef[4]);
+	GetDlgItem(IDC_PIC_DEF_006)->GetWindowRect(&m_RectDef[5]);
+	GetDlgItem(IDC_PIC_DEF_007)->GetWindowRect(&m_RectDef[6]);
+	GetDlgItem(IDC_PIC_DEF_008)->GetWindowRect(&m_RectDef[7]);
+	GetDlgItem(IDC_PIC_DEF_009)->GetWindowRect(&m_RectDef[8]);
+	GetDlgItem(IDC_PIC_DEF_010)->GetWindowRect(&m_RectDef[9]);
+	GetDlgItem(IDC_PIC_DEF_011)->GetWindowRect(&m_RectDef[10]);
+	GetDlgItem(IDC_PIC_DEF_012)->GetWindowRect(&m_RectDef[11]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_001)->GetWindowRect(&m_RectInfo[0]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_002)->GetWindowRect(&m_RectInfo[1]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_003)->GetWindowRect(&m_RectInfo[2]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_004)->GetWindowRect(&m_RectInfo[3]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_005)->GetWindowRect(&m_RectInfo[4]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_006)->GetWindowRect(&m_RectInfo[5]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_007)->GetWindowRect(&m_RectInfo[6]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_008)->GetWindowRect(&m_RectInfo[7]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_009)->GetWindowRect(&m_RectInfo[8]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_010)->GetWindowRect(&m_RectInfo[9]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_011)->GetWindowRect(&m_RectInfo[10]);
+	GetDlgItem(IDC_EDIT_DEF_INFO_012)->GetWindowRect(&m_RectInfo[11]);
+}
+
+void CDlgMenu01::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (nIDEvent == TIM_DISP_DEF_IMG) // SetSerial() ---> DispMkInfo() ---> DispMkInfo(m_nSerial);
+	{
+		KillTimer(TIM_DISP_DEF_IMG);
+		if (m_nSerialDispMkInfo > 0) // if (m_nSerial > 0)
+		{
+			DispMkInfo(m_nSerialDispMkInfo);	// DispMkInfo(m_nSerial);
+
+			if (m_nIdxDef[0] < m_nDef[0] || m_nIdxDef[1] < m_nDef[1]) // m_nIdxDef(불량이미지 인덱스) , m_nDef[0] = pPcr->m_nTotDef; // m_nDef[up] : 릴맵 화면 표시 인덱스의 Display Def Num.
+			{
+				if (m_bTIM_DISP_DEF_IMG)
+					SetTimer(TIM_DISP_DEF_IMG, 100, NULL);
+			}
+			else
+				m_bTIM_DISP_DEF_IMG = FALSE;
+		}
+		else
+			m_bTIM_DISP_DEF_IMG = FALSE;
+	}
+	if (nIDEvent == TIM_DISP_MK_INFO) // SetSerial() ---> if m_bTIM_DISP_DEF_IMG == FALSE then Wait to call SetTimer(TIM_DISP_MK_INFO)
+	{
+		KillTimer(TIM_DISP_MK_INFO);
+		if (m_bTIM_DISP_DEF_IMG)
+			SetTimer(TIM_DISP_MK_INFO, 100, NULL);
+		else
+			DispMkInfo();
+	}
+	if (nIDEvent == TIM_DISP_MK_CNT)
+	{
+		KillTimer(TIM_DISP_MK_CNT);
+		DispMkCnt();
+		DispTqVal();
+		ChkMkLimit();
+		ChkPartialSpd();
+
+		if (pView->GetAoiUpVsStatus() && !GetDlgItem(IDC_STC_VS)->IsWindowVisible())
+			GetDlgItem(IDC_STC_VS)->ShowWindow(SW_SHOW);
+		else if (!pView->GetAoiUpVsStatus() && GetDlgItem(IDC_STC_VS)->IsWindowVisible())
+			GetDlgItem(IDC_STC_VS)->ShowWindow(SW_HIDE);
+
+		if (m_bTIM_DISP_MK_CNT)
+			SetTimer(TIM_DISP_MK_CNT, 300, NULL);
+	}
+
+	CDialog::OnTimer(nIDEvent);
+}
+
+void CDlgMenu01::DispMkInfo()	// m_bTIM_DISP_DEF_IMG == FALSE 일때까지 계속 호출함.
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (bDualTest)
+	{
+		DispMkInfoUp();
+		DispMkInfoDn();
+
+		if (m_nDef[0] > 0 || m_nDef[1] > 0)
+		{
+			if (!m_bTIM_DISP_DEF_IMG)
+			{
+				m_nSerialDispMkInfo = m_nSerial;
+				m_bTIM_DISP_DEF_IMG = TRUE;
+				SetTimer(TIM_DISP_DEF_IMG, 10, NULL);
+			}
+			else
+				SetTimer(TIM_DISP_MK_INFO, 10, NULL);
+		}
+	}
+	else
+	{
+		DispMkInfoUp();
+
+		if (m_nDef[0] > 0)
+		{
+			if (!m_bTIM_DISP_DEF_IMG)
+			{
+				m_nSerialDispMkInfo = m_nSerial;
+				m_bTIM_DISP_DEF_IMG = TRUE;
+				SetTimer(TIM_DISP_DEF_IMG, 10, NULL);
+			}
+			else
+				SetTimer(TIM_DISP_MK_INFO, 10, NULL);
+		}
+	}
+}
+
+void CDlgMenu01::DispMkInfoUp()
+{
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapUp) return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	int nIdx = GetPcrIdx0(m_nSerial);
+	m_nDef[0] = 0;
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapUp->GetPcr(nIdx);
+	if (!pPcr) return;
+
+	int nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+	if (pDoc->WorkingInfo.System.sMaxDispDefImg.IsEmpty())
+		nMaxMaxDispDefImg = 0;
+	else
+		nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+
+	if (nMaxMaxDispDefImg > 0 && pPcr->m_nTotDef - nMaxMaxDispDefImg > 0)
+		m_nIdxDef[0] = pPcr->m_nTotDef - nMaxMaxDispDefImg; // 불량이미지 인덱스.
+	else
+		m_nIdxDef[0] = 0; // 불량이미지 인덱스.
+
+	if (bDualTest)
+	{
+		if (m_nIdxMkInfo[0] > MENU01_STC_DEFINFO_HARF)
+			m_nIdxMkInfo[0] = MENU01_STC_DEFINFO_HARF;
+	}
+	else
+	{
+		if (m_nIdxMkInfo[0] > MENU01_STC_DEFINFO_HARF * 2)
+			m_nIdxMkInfo[0] = MENU01_STC_DEFINFO_HARF * 2;
+	}
+
+#ifdef TEST_MODE
+	m_nDef[0] = m_nIdxMkInfo[0] + 15; // DefNum : 15
+#else
+	if (pPcr)
+	{
+		m_nDef[0] = pPcr->m_nTotDef; // m_nDef : m_nIdxMkInfo + Display Def Num.
+		pPcr->m_nTotRealDef = 0;
+	}
+#endif
+}
+
+void CDlgMenu01::DispMkInfoDn()
+{
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapUp) return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest) return;
+
+	int nIdx = GetPcrIdx1(m_nSerial);
+	m_nDef[1] = 0;
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapDn->GetPcr(nIdx);
+	if (!pPcr) return;
+
+	int nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+	if (pDoc->WorkingInfo.System.sMaxDispDefImg.IsEmpty())
+		nMaxMaxDispDefImg = 0;
+	else
+		nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+
+	if (nMaxMaxDispDefImg > 0 && pPcr->m_nTotDef - nMaxMaxDispDefImg > 0)
+		m_nIdxDef[1] = pPcr->m_nTotDef - nMaxMaxDispDefImg; // 불량이미지 인덱스.
+	else
+		m_nIdxDef[1] = 0; // 불량이미지 인덱스.
+
+	if (m_nIdxMkInfo[1] > MENU01_STC_DEFINFO_HARF)
+		m_nIdxMkInfo[1] = MENU01_STC_DEFINFO_HARF;
+#ifdef TEST_MODE
+	m_nDef[1] = m_nIdxMkInfo[1] + 15; // DefNum : 15
+#else
+	if (pPcr)
+	{
+		m_nDef[1] = pPcr->m_nTotDef; // m_nDef : m_nIdxMkInfo + Display Def Num.
+		pPcr->m_nTotRealDef = 0;
+	}
+#endif
+}
+
+void CDlgMenu01::DispMkInfo(int nSerial)
+{
+	if (nSerial <= 0)
+	{
+		pView->MsgBox(_T("Serial Error.2"));
+		return;
+	}
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	DispMkInfoUp(nSerial);
+	if (bDualTest)
+		DispMkInfoDn(nSerial);
+}
+
+void CDlgMenu01::DispMkInfoUp(int nSerial)
+{
+	if (nSerial <= 0)
+	{
+		pView->MsgBox(_T("Serial Error.3"));
+		return;
+	}
+
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapUp) return;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	int nIdx = GetPcrIdx0(nSerial);
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapUp->GetPcr(nIdx);
+	if (!pPcr) return;
+
+#ifdef USE_VISION
+	if (bDualTest)
+	{
+		int nIdxMkInfo = (m_nIdxMkInfo[0] < MENU01_STC_DEFINFO_HARF) ? m_nIdxMkInfo[0] : (MENU01_STC_DEFINFO_HARF - 1);
+
+		int nDefImg;
+		if (pPcr->m_pImg)
+		{
+			if (pPcr->m_pMk[m_nIdxDef[0]] != -2) // -2 (NoMarking)
+			{
+				if (m_nIdxDef[0] < pPcr->m_nTotDef)
+				{
+					if (m_nIdxMkInfo[0] >= MENU01_STC_DEFINFO_HARF)
+						ShiftDefInfoUp();								
+					ShowDispCadUp(nIdxMkInfo, nSerial, m_nIdxDef[0]);//pView->m_pVision[0]->ShowDispCad(nIdxMkInfo, nSerial, 0, m_nIdxDef[0]);
+					ShowOvrCadUp(nIdxMkInfo, nSerial);//pView->m_pVision[0]->ShowOvrCad(nIdxMkInfo, nSerial);
+					nDefImg = pPcr->m_pImg[m_nIdxDef[0]]; // 화면에 표시할 불량이미지 인덱스
+					ShowDispDefUp(nIdxMkInfo, nSerial, nDefImg);//pView->m_pVision[0]->ShowDispDef(nIdxMkInfo, nSerial, 0, nDefImg);
+					ShowDefInfoUp(nIdxMkInfo); // 화면의 IDC 인덱스
+					WriteDefInfoUp(nSerial, nIdxMkInfo, m_nIdxDef[0], nDefImg); // (nSerial, 화면의 IDC 인덱스, 불량피스 인덱스, 불량이미지 인덱스)
+					SaveCadImgUp(nSerial, nIdxMkInfo, nDefImg);
+					m_nIdxMkInfo[0]++; // 화면의 IDC 인덱스
+					m_nIdxDef[0]++; // 화면에 표시할 불량피스 인덱스 ( 0 ~ TotalDef )
+					(pPcr->m_nTotRealDef)++;
+				}
+				else
+					m_nIdxMkInfo[0]++;
+			}
+			else
+				m_nIdxDef[0]++;
+		}
+	}
+	else
+	{
+		int nIdxMkInfo = (m_nIdxMkInfo[0] < MENU01_STC_DEFINFO_HARF * 2) ? m_nIdxMkInfo[0] : (MENU01_STC_DEFINFO_HARF * 2 - 1);
+
+		int nDefImg;
+		if (pPcr->m_pImg)
+		{
+			if (pPcr->m_pMk[m_nIdxDef[0]] != -2) // -2 (NoMarking)
+			{
+				if (m_nIdxDef[0] < pPcr->m_nTotDef)
+				{
+					if (m_nIdxMkInfo[0] >= MENU01_STC_DEFINFO_HARF * 2)
+						ShiftDefInfoUp();
+					ShowDispCadUp(nIdxMkInfo, nSerial, m_nIdxDef[0]);//pView->m_pVision[0]->ShowDispCad(nIdxMkInfo, nSerial, 0, m_nIdxDef[0]);
+					ShowOvrCadUp(nIdxMkInfo, nSerial);//pView->m_pVision[0]->ShowOvrCad(nIdxMkInfo, nSerial);
+					nDefImg = pPcr->m_pImg[m_nIdxDef[0]];
+					ShowDispDefUp(nIdxMkInfo, nSerial, nDefImg);//pView->m_pVision[0]->ShowDispDef(nIdxMkInfo, nSerial, 0, nDefImg);
+					ShowDefInfoUp(nIdxMkInfo);
+					WriteDefInfoUp(nSerial, nIdxMkInfo, m_nIdxDef[0], nDefImg);
+					SaveCadImgUp(nSerial, nIdxMkInfo, nDefImg);
+					m_nIdxMkInfo[0]++;
+					m_nIdxDef[0]++;
+					(pPcr->m_nTotRealDef)++;
+				}
+				else
+					m_nIdxMkInfo[0]++;
+			}
+			else
+				m_nIdxDef[0]++;
+		}
+	}
+#endif
+}
+
+void CDlgMenu01::DispMkInfoDn(int nSerial)
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+	if (nSerial <= 0)
+	{
+		pView->MsgBox(_T("Serial Error.4"));
+		return;
+	}
+
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapDn) return;
+	int nIdx = GetPcrIdx1(nSerial);
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapDn->GetPcr(nIdx);
+	if (!pPcr) return;
+
+#ifdef USE_VISION
+	int nIdxMkInfo = (m_nIdxMkInfo[1] < MENU01_STC_DEFINFO_HARF) ? m_nIdxMkInfo[1] : (MENU01_STC_DEFINFO_HARF - 1);
+
+	int nDefImg;
+	if (pPcr->m_pImg)
+	{
+		if (pPcr->m_pMk[m_nIdxDef[1]] != -2) // -2 (NoMarking)
+		{
+			if (m_nIdxDef[1] < pPcr->m_nTotDef)
+			{
+				if (m_nIdxMkInfo[1] >= MENU01_STC_DEFINFO_HARF)
+					ShiftDefInfoDn();
+				ShowDispCadDn(nIdxMkInfo, nSerial,m_nIdxDef[1]); //pView->m_pVision[1]->ShowDispCad(nIdxMkInfo, nSerial, 1, m_nIdxDef[1]);
+				ShowOvrCadDn(nIdxMkInfo, nSerial);//pView->m_pVision[1]->ShowOvrCad(nIdxMkInfo, nSerial);
+				nDefImg = pPcr->m_pImg[m_nIdxDef[1]];
+				ShowDispDefDn(nIdxMkInfo, nSerial, nDefImg);//pView->m_pVision[1]->ShowDispDef(nIdxMkInfo, nSerial, 1, nDefImg);
+				ShowDefInfoDn(nIdxMkInfo);
+				WriteDefInfoDn(nSerial, nIdxMkInfo, m_nIdxDef[1], nDefImg);
+				SaveCadImgDn(nSerial, nIdxMkInfo, nDefImg);
+				m_nIdxMkInfo[1]++;
+				m_nIdxDef[1]++;
+				(pPcr->m_nTotRealDef)++;
+			}
+			else
+				m_nIdxMkInfo[1]++;
+		}
+		else
+			m_nIdxDef[1]++;
+	}
+#endif
+}
+
+void CDlgMenu01::InitMkInfo()
+{
+	InitMkInfoUp();
+
+	if (pDoc->WorkingInfo.LastJob.bDualTest) // 20220519
+		InitMkInfoDn();
+}
+
+void CDlgMenu01::InitMkInfoUp()
+{
+#ifdef USE_VISION
+	if (!pView->m_pVision[0])
+		return;
+#else
+	return;
+#endif
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	HWND hW;
+	CRect rt;
+	int nCtrlIdCad, nCtrlIdDef;
+
+	if (bDualTest)
+	{
+		for (int nIdxMkInfo = 0; nIdxMkInfo < DEF_VIEW_IMG_NUMBER / 2; nIdxMkInfo++)
+		{
+			switch (nIdxMkInfo)
+			{
+			case 0:
+				nCtrlIdCad = IDC_PIC_CAD_001;
+				nCtrlIdDef = IDC_PIC_DEF_001;
+				break;
+			case 1:
+				nCtrlIdCad = IDC_PIC_CAD_002;
+				nCtrlIdDef = IDC_PIC_DEF_002;
+				break;
+			case 2:
+				nCtrlIdCad = IDC_PIC_CAD_003;
+				nCtrlIdDef = IDC_PIC_DEF_003;
+				break;
+			case 3:
+				nCtrlIdCad = IDC_PIC_CAD_004;
+				nCtrlIdDef = IDC_PIC_DEF_004;
+				break;
+			case 4:
+				nCtrlIdCad = IDC_PIC_CAD_005;
+				nCtrlIdDef = IDC_PIC_DEF_005;
+				break;
+			case 5:
+				nCtrlIdCad = IDC_PIC_CAD_006;
+				nCtrlIdDef = IDC_PIC_DEF_006;
+				break;
+			}
+
+			hW = GetDlgItem(nCtrlIdCad)->GetSafeHwnd();
+			GetDlgItem(nCtrlIdCad)->GetWindowRect(&rt);
+#ifdef USE_VISION
+			pView->m_pVision[0]->SelDispCad(hW, rt, nIdxMkInfo);
+			pView->m_pVision[0]->SetOvrCadFontSz(nIdxMkInfo);
+
+			hW = GetDlgItem(nCtrlIdDef)->GetSafeHwnd();
+			GetDlgItem(nCtrlIdDef)->GetWindowRect(&rt);
+			pView->m_pVision[0]->SelDispDef(hW, rt, nIdxMkInfo);
+#endif
+		}
+	}
+	else
+	{
+		FreeMkInfoDn();
+		for (int nIdxMkInfo = 0; nIdxMkInfo < DEF_VIEW_IMG_NUMBER; nIdxMkInfo++)
+		{
+			switch (nIdxMkInfo)
+			{
+			case 0:
+				nCtrlIdCad = IDC_PIC_CAD_001;
+				nCtrlIdDef = IDC_PIC_DEF_001;
+				break;
+			case 1:
+				nCtrlIdCad = IDC_PIC_CAD_002;
+				nCtrlIdDef = IDC_PIC_DEF_002;
+				break;
+			case 2:
+				nCtrlIdCad = IDC_PIC_CAD_003;
+				nCtrlIdDef = IDC_PIC_DEF_003;
+				break;
+			case 3:
+				nCtrlIdCad = IDC_PIC_CAD_004;
+				nCtrlIdDef = IDC_PIC_DEF_004;
+				break;
+			case 4:
+				nCtrlIdCad = IDC_PIC_CAD_005;
+				nCtrlIdDef = IDC_PIC_DEF_005;
+				break;
+			case 5:
+				nCtrlIdCad = IDC_PIC_CAD_006;
+				nCtrlIdDef = IDC_PIC_DEF_006;
+				break;
+			case 6:
+				nCtrlIdCad = IDC_PIC_CAD_007;
+				nCtrlIdDef = IDC_PIC_DEF_007;
+				break;
+			case 7:
+				nCtrlIdCad = IDC_PIC_CAD_008;
+				nCtrlIdDef = IDC_PIC_DEF_008;
+				break;
+			case 8:
+				nCtrlIdCad = IDC_PIC_CAD_009;
+				nCtrlIdDef = IDC_PIC_DEF_009;
+				break;
+			case 9:
+				nCtrlIdCad = IDC_PIC_CAD_010;
+				nCtrlIdDef = IDC_PIC_DEF_010;
+				break;
+			case 10:
+				nCtrlIdCad = IDC_PIC_CAD_011;
+				nCtrlIdDef = IDC_PIC_DEF_011;
+				break;
+			case 11:
+				nCtrlIdCad = IDC_PIC_CAD_012;
+				nCtrlIdDef = IDC_PIC_DEF_012;
+				break;
+			}
+
+#ifdef USE_VISION
+			hW = GetDlgItem(nCtrlIdCad)->GetSafeHwnd();
+			GetDlgItem(nCtrlIdCad)->GetWindowRect(&rt);
+			pView->m_pVision[0]->SelDispCad(hW, rt, nIdxMkInfo);
+			pView->m_pVision[0]->SetOvrCadFontSz(nIdxMkInfo);
+
+			hW = GetDlgItem(nCtrlIdDef)->GetSafeHwnd();
+			GetDlgItem(nCtrlIdDef)->GetWindowRect(&rt);
+			pView->m_pVision[0]->SelDispDef(hW, rt, nIdxMkInfo);
+#endif
+		}
+	}
+
+}
+
+void CDlgMenu01::InitMkInfoDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (!pView->m_pVision[1])
+		return;
+#else
+	return;
+#endif
+
+	HWND hW;
+	CRect rt;
+	int nCtrlIdCad, nCtrlIdDef;
+
+	FreeMkInfoUp();
+	for (int nIdxMkInfo = 0; nIdxMkInfo < DEF_VIEW_IMG_NUMBER / 2; nIdxMkInfo++)
+	{
+		switch (nIdxMkInfo)
+		{
+		case 0:
+			nCtrlIdCad = IDC_PIC_CAD_007;
+			nCtrlIdDef = IDC_PIC_DEF_007;
+			break;
+		case 1:
+			nCtrlIdCad = IDC_PIC_CAD_008;
+			nCtrlIdDef = IDC_PIC_DEF_008;
+			break;
+		case 2:
+			nCtrlIdCad = IDC_PIC_CAD_009;
+			nCtrlIdDef = IDC_PIC_DEF_009;
+			break;
+		case 3:
+			nCtrlIdCad = IDC_PIC_CAD_010;
+			nCtrlIdDef = IDC_PIC_DEF_010;
+			break;
+		case 4:
+			nCtrlIdCad = IDC_PIC_CAD_011;
+			nCtrlIdDef = IDC_PIC_DEF_011;
+			break;
+		case 5:
+			nCtrlIdCad = IDC_PIC_CAD_012;
+			nCtrlIdDef = IDC_PIC_DEF_012;
+			break;
+		}
+
+		hW = GetDlgItem(nCtrlIdCad)->GetSafeHwnd();
+		GetDlgItem(nCtrlIdCad)->GetWindowRect(&rt);
+#ifdef USE_VISION
+		pView->m_pVision[1]->SelDispCad(hW, rt, nIdxMkInfo);
+		pView->m_pVision[1]->SetOvrCadFontSz(nIdxMkInfo);
+
+		hW = GetDlgItem(nCtrlIdDef)->GetSafeHwnd();
+		GetDlgItem(nCtrlIdDef)->GetWindowRect(&rt);
+		pView->m_pVision[1]->SelDispDef(hW, rt, nIdxMkInfo);
+#endif
+	}
+
+}
+
+void CDlgMenu01::SaveCadImgUp(int nSerial, int nIdxMkInfo, int nIdxImg) // (nSerial, 화면의 IDC 인덱스, 불량이미지 인덱스)
+{
+	pDoc->MakeImageDirUp(nSerial);
+
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\CadImage\\%d\\%05d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerUp,
+		nSerial,
+		nIdxImg);
+
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->SaveCadImg(nIdxMkInfo, sPath);
+}
+
+void CDlgMenu01::SaveCadImgDn(int nSerial, int nIdxMkInfo, int nIdxImg) // (nSerial, 화면의 IDC 인덱스, 불량이미지 인덱스)
+{
+	pDoc->MakeImageDirDn(nSerial);
+
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\CadImage\\%d\\%05d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerDn,
+		nSerial,
+		nIdxImg);
+
+	if (pView->m_pVision[1])
+		pView->m_pVision[1]->SaveCadImg(nIdxMkInfo, sPath);
+}
+
+BOOL CDlgMenu01::SaveDefImgPosUp(int nSerial, int nIdxMkInfo, int nIdxImg) // (nSerial, 화면의 IDC 인덱스, 불량이미지 인덱스)
+{
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapUp) return 0;
+	CPcsRgn* pPcsRgn = pView->m_mgrReelmap->m_Master[0].m_pPcsRgn;
+
+	int nStrip = -1, nCol = -1, nRow = -1;
+	int nPcrIdx = GetPcrIdx0(nSerial);
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapUp->GetPcr(nPcrIdx);
+
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[0]];
+	int nDefCode = pPcr->m_pDefType[m_nIdxDef[0]];
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+
+	CString strDefImgPathS, strDefImgPathD, strTemp;
+
+	strDefImgPathS.Format(_T("%s%s\\%s\\%s\\DefImage\\%d\\%05d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerUp,
+		nSerial,
+		nIdxImg);
+
+	strDefImgPathD.Format(_T("%s%s\\%s\\%s\\DefImagePos\\%d\\%05d_%s_%c_%d_%d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerUp,
+		nSerial,
+		nIdxImg, pView->m_mgrReelmap->GetKorDef(nDefCode), nStrip + 'A', nCol + 1, nRow + 1);
+
+	CFileFind finder;
+	if (finder.FindFile(strDefImgPathS))
+	{
+		if (!CopyFile((LPCTSTR)strDefImgPathS, (LPCTSTR)strDefImgPathD, FALSE))
+		{
+			if (!CopyFile((LPCTSTR)strDefImgPathS, (LPCTSTR)strDefImgPathD, FALSE))
+			{
+				strTemp.Format(_T("%s \r\n: Defect Image Up Position File Copy Fail"), strDefImgPathS);
+				pView->MsgBox(strTemp);
+				return FALSE;
+			}
+		}
+	}
+	else
+		return FALSE;
+
+	return TRUE;
+}
+
+BOOL CDlgMenu01::SaveDefImgPosDn(int nSerial, int nIdxMkInfo, int nIdxImg) // (nSerial, 화면의 IDC 인덱스, 불량이미지 인덱스)
+{
+	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pReelMapUp) return 0;
+	CPcsRgn* pPcsRgn = pView->m_mgrReelmap->m_Master[0].m_pPcsRgn;
+
+	int nStrip = -1, nCol = -1, nRow = -1;
+	int nPcrIdx = GetPcrIdx1(nSerial);
+	CDataMarking* pPcr = pView->m_mgrReelmap->m_pReelMapDn->GetPcr(nPcrIdx);
+
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[1]];
+	int nDefCode = pPcr->m_pDefType[m_nIdxDef[1]];
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+
+	CString strDefImgPathS, strDefImgPathD, strTemp;
+
+	strDefImgPathS.Format(_T("%s%s\\%s\\%s\\DefImage\\%d\\%05d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerDn,
+		nSerial,
+		nIdxImg);
+
+	strDefImgPathD.Format(_T("%s%s\\%s\\%s\\DefImagePos\\%d\\%05d_%s_%c_%d_%d.tif"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerDn,
+		nSerial,
+		nIdxImg, pView->m_mgrReelmap->GetKorDef(nDefCode), nStrip + 'A', nCol + 1, nRow + 1);
+
+	CFileFind finder;
+	if (finder.FindFile(strDefImgPathS))
+	{
+		if (!CopyFile((LPCTSTR)strDefImgPathS, (LPCTSTR)strDefImgPathD, FALSE))
+		{
+			if (!CopyFile((LPCTSTR)strDefImgPathS, (LPCTSTR)strDefImgPathD, FALSE))
+			{
+				strTemp.Format(_T("%s \r\n: Defect Image Dn Position File Copy Fail"), strDefImgPathS);
+				pView->MsgBox(strTemp);
+				return FALSE;
+			}
+		}
+	}
+	else
+		return FALSE;
+
+	return TRUE;
+}
+
+void CDlgMenu01::WriteDefInfoUp(int nSerial, int nIdxText, int nIdxDef, int nIdxImg)
+{
+	CString sText = myStcDefInfo[nIdxText].GetText();
+	COLORREF rgbDef = myStcDefInfo[nIdxText].GetBkColor();
+
+	CString sPos = _T(""), sDef = _T("");
+	int nPos = -1;
+
+	nPos = sText.Find(_T('\r'));
+	sDef = sText.Left(nPos);
+	sDef.Trim();
+	sPos = sText.Right(sText.GetLength() - nPos - 2);
+	sPos.Trim();
+
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\DefImage\\%d\\Disp.txt"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerUp,
+		nSerial);
+
+	CString sItem, sData;
+	sData.Format(_T("%d"), m_nDef[0]);
+	::WritePrivateProfileString(_T("Info"), _T("TotalDef"), sData, sPath);
+
+	int nMaxMaxDispDefImg = 0;
+	if (!pDoc->WorkingInfo.System.sMaxDispDefImg.IsEmpty())
+		nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+
+	sData.Format(_T("%d"), nMaxMaxDispDefImg);
+	::WritePrivateProfileString(_T("Info"), _T("MaxDisp"), sData, sPath);
+
+	sItem.Format(_T("%d"), nIdxDef);
+	sData.Format(_T("%d"), nIdxImg);
+	::WritePrivateProfileString(sItem, _T("nImg"), sData, sPath);
+	::WritePrivateProfileString(sItem, _T("TextDef"), sDef, sPath);
+	::WritePrivateProfileString(sItem, _T("TextPos"), sPos, sPath);
+	sData.Format(_T("%d"), rgbDef);
+	::WritePrivateProfileString(sItem, _T("TextRGB"), sData, sPath);
+}
+
+void CDlgMenu01::WriteDefInfoDn(int nSerial, int nIdxText, int nIdxDef, int nIdxImg)
+{
+	CString sText = myStcDefInfo[MENU01_STC_DEFINFO_HARF + nIdxText].GetText();
+	COLORREF rgbDef = myStcDefInfo[MENU01_STC_DEFINFO_HARF + nIdxText].GetBkColor();
+
+	CString sPos = _T(""), sDef = _T("");
+	int nPos = -1;
+
+	nPos = sText.Find(_T('\r'));
+	sDef = sText.Left(nPos);
+	sDef.Trim();
+	sPos = sText.Right(sText.GetLength() - nPos - 2);
+	sPos.Trim();
+
+
+	CString sPath;
+	sPath.Format(_T("%s%s\\%s\\%s\\DefImage\\%d\\Disp.txt"), pDoc->WorkingInfo.System.sPathOldFile,
+		pDoc->WorkingInfo.LastJob.sModelUp,
+		pDoc->WorkingInfo.LastJob.sLotUp,
+		pDoc->WorkingInfo.LastJob.sLayerDn,
+		nSerial);
+
+	int nIdx = GetPcrIdx0(m_nSerial);
+	CString sItem, sData;
+
+	sData.Format(_T("%d"), pDoc->m_pPcr[2][nIdx]->m_nTotDef);
+	::WritePrivateProfileString(_T("Info"), _T("MergedTotalDef"), sData, sPath);
+
+	sData.Format(_T("%d"), m_nDef[1]);
+	::WritePrivateProfileString(_T("Info"), _T("TotalDef"), sData, sPath);
+
+	int nMaxMaxDispDefImg = 0;
+	if (!pDoc->WorkingInfo.System.sMaxDispDefImg.IsEmpty())
+		nMaxMaxDispDefImg = _tstoi(pDoc->WorkingInfo.System.sMaxDispDefImg);
+
+	sData.Format(_T("%d"), nMaxMaxDispDefImg);
+	::WritePrivateProfileString(_T("Info"), _T("MaxDisp"), sData, sPath);
+
+	sItem.Format(_T("%d"), nIdxDef);
+	sData.Format(_T("%d"), nIdxImg);
+	::WritePrivateProfileString(sItem, _T("nImg"), sData, sPath);
+	::WritePrivateProfileString(sItem, _T("TextDef"), sDef, sPath);
+	::WritePrivateProfileString(sItem, _T("TextPos"), sPos, sPath);
+	sData.Format(_T("%d"), rgbDef);
+	::WritePrivateProfileString(sItem, _T("TextRGB"), sData, sPath);
+}
+
+void CDlgMenu01::ShowDefInfoUp(int nIdx) // nIdx : 0 ~ 11 (12ea)
+{
+	if (!pView->m_bDrawGL_Menu01)
+		return;
+	if (!pDoc->m_pReelMap)
+	{
+		pView->MsgBox(_T("Not created Reelmap."));
+		//AfxMessageBox(_T("Not created Reelmap."));
+		return;
+	}
+
+	CString str;
+	int nDefCode, nStrip, nCol, nRow;
+	COLORREF rgbDef;
+
+#ifdef TEST_MODE 
+	// 	nDefCode = pDoc->m_pReelMap->pPcsDef[2][28];
+	int nPcrIdx = GetPcrIdx0(m_nSerial);
+	if (pPcr->m_pMk[m_nIdxDef[0]] == -2) // -2 (NoMarking)
+		return;
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[0]]; //m_pImg[m_nIdxDef];
+	nDefCode = pPcr->m_pDefType[m_nIdxDef[0]];
+	rgbDef = pDoc->m_pReelMap->m_rgbDef[nDefCode];
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip + 'A', nCol + 1, nRow + 1);
+	// 	str.Format(_T("%s\r\n%d열 %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip+1, nCol+1, nRow+1);
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[nPcsIdx]);
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[28]);
+
+#else
+	int nPcrIdx = GetPcrIdx0(m_nSerial);
+	// 	int nSelMkPnl = pDoc->m_pReelMap->m_nSelMarkingPnl;
+	if (MODE_OUTER != pDoc->GetTestMode())
+	{
+		if (pPcr->m_pMk[m_nIdxDef[0]] == -2) // -2 (NoMarking)
+			return;
+	}
+	else
+	{
+		if (pPcr->m_pMk[m_nIdxDef[0]] == -2) // -2 (NoMarking)
+			return;
+	}
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[0]]; //m_pImg[m_nIdxDef];
+	nDefCode = pPcr->m_pDefType[m_nIdxDef[0]];
+	// 	nDefCode = pDoc->m_pReelMap->pPcsDef[nSelMkPnl][nPcsIdx];
+	rgbDef = pDoc->m_pReelMap->m_rgbDef[nDefCode];
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[nPcsIdx]);
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip + 'A', nCol + 1, nRow + 1);
+	// 	str.Format(_T("%s\r\n%d열 %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip+1, nCol+1, nRow+1);
+#endif
+	myStcDefInfo[nIdx].SetText(str);
+	myStcDefInfo[nIdx].SetBkColor(rgbDef);
+}
+
+void CDlgMenu01::ShowDefInfoDn(int nIdx) // nIdx : 0 ~ 11 (12ea)
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+	if (!pView->m_bDrawGL_Menu01)
+		return;
+	if (!pDoc->m_pReelMap)
+	{
+		pView->MsgBox(_T("Not created Reelmap."));
+		//AfxMessageBox(_T("Not created Reelmap."));
+		return;
+	}
+
+	CString str;
+	int nDefCode, nStrip, nCol, nRow;
+	COLORREF rgbDef;
+
+#ifdef TEST_MODE 
+	int nPcrIdx = GetPcrIdx1(m_nSerial);
+	if (pPcr->m_pMk[m_nIdxDef[1]] == -2) // -2 (NoMarking)
+		return;
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[1]]; //m_pImg[m_nIdxDef];
+	nDefCode = pPcr->m_pDefType[m_nIdxDef[1]];
+	// 	nDefCode = pDoc->m_pReelMap->pPcsDef[2][28];
+	rgbDef = pDoc->m_pReelMap->m_rgbDef[nDefCode];
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip + 'A', nCol + 1, nRow + 1);
+	// 	str.Format(_T("%s\r\n%d열 %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip+1, nCol+1, nRow+1);
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[nPcsIdx]);
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[28]);
+#else
+	int nPcrIdx = GetPcrIdx1(m_nSerial);
+	// 	int nSelMkPnl = pDoc->m_pReelMap->m_nSelMarkingPnl;
+	if (MODE_OUTER != pDoc->GetTestMode())
+	{
+		if (pPcr->m_pMk[m_nIdxDef[1]] == -2) // -2 (NoMarking)
+			return;
+	}
+	else
+	{
+		if (pPcr->m_pMk[m_nIdxDef[1]] == -2) // -2 (NoMarking)
+			return;
+	}
+	int nPcsIdx = pPcr->m_pDefPcs[m_nIdxDef[1]]; //m_pImg[m_nIdxDef];
+	nDefCode = pPcr->m_pDefType[m_nIdxDef[1]];
+	// 	nDefCode = pDoc->m_pReelMap->pPcsDef[nSelMkPnl][nPcsIdx];
+	rgbDef = pDoc->m_pReelMap->m_rgbDef[nDefCode];
+	if (pPcsRgn)
+		pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip + 'A', nCol + 1, nRow + 1);
+	// 	str.Format(_T("%s\r\n%d열 %d, %d"), pDoc->m_pReelMap->m_sKorDef[nDefCode], nStrip+1, nCol+1, nRow+1);
+	// 	str.Format(_T("%s"), pDoc->m_pReelMap->pMkInfo[nPcsIdx]);
+#endif
+	myStcDefInfo[MENU01_STC_DEFINFO_HARF + nIdx].SetText(str);
+	myStcDefInfo[MENU01_STC_DEFINFO_HARF + nIdx].SetBkColor(rgbDef);
+}
+
+void CDlgMenu01::ShiftDefInfoUp()
+{
+#ifdef USE_VISION
+	if (!pView->m_pVision[0])
+		return;
+
+	pView->m_pVision[0]->ShiftDisp();
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	CString str;
+	COLORREF rgbDef;
+
+	if (bDualTest)
+	{
+		for (int i = 0; i < MENU01_STC_DEFINFO_HARF - 1; i++)
+		{
+			str = myStcDefInfo[i + 1].GetText();
+			rgbDef = myStcDefInfo[i + 1].GetBkColor();
+			myStcDefInfo[i].SetText(str);
+			myStcDefInfo[i].SetBkColor(rgbDef);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < MENU01_STC_DEFINFO_HARF * 2 - 1; i++)
+		{
+			str = myStcDefInfo[i + 1].GetText();
+			rgbDef = myStcDefInfo[i + 1].GetBkColor();
+			myStcDefInfo[i].SetText(str);
+			myStcDefInfo[i].SetBkColor(rgbDef);
+		}
+	}
+#endif
+}
+
+void CDlgMenu01::ShiftDefInfoDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (!pView->m_pVision[1])
+		return;
+
+	pView->m_pVision[1]->ShiftDisp();
+
+	CString str;
+	COLORREF rgbDef;
+	for (int i = 0; i < MENU01_STC_DEFINFO_HARF - 1; i++)
+	{
+		str = myStcDefInfo[i + 1 + MENU01_STC_DEFINFO_HARF].GetText();
+		rgbDef = myStcDefInfo[i + 1 + MENU01_STC_DEFINFO_HARF].GetBkColor();
+		myStcDefInfo[i + MENU01_STC_DEFINFO_HARF].SetText(str);
+		myStcDefInfo[i + MENU01_STC_DEFINFO_HARF].SetBkColor(rgbDef);
+	}
+#endif
+}
+
+void CDlgMenu01::InitCadImg()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+	{
+		//pView->m_pVision[0]->InitDispCad();
+		pView->m_pVision[0]->InitCADBuf(0); // Top Side
+	}
+
+	if (bDualTest)
+	{
+		if (pView->m_pVision[1])
+		{
+			//pView->m_pVision[1]->InitDispCad();
+			pView->m_pVision[1]->InitCADBuf(1); // Bottom Side
+		}
+	}
+#endif
+}
+
+void CDlgMenu01::InitCadImgUp()
+{
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+	{
+		//pView->m_pVision[0]->InitDispCad();
+		pView->m_pVision[0]->InitCADBuf(0);
+	}
+#endif
+}
+
+void CDlgMenu01::InitCadImgDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[1])
+	{
+		//pView->m_pVision[1]->InitDispCad();
+		pView->m_pVision[1]->InitCADBuf(1);
+	}
+#endif
+}
+
+void CDlgMenu01::InitDefImg()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->InitDispDef();
+
+	if (bDualTest)
+	{
+		if (pView->m_pVision[1])
+			pView->m_pVision[1]->InitDispDef();
+	}
+#endif
+}
+
+void CDlgMenu01::InitDefImgUp()
+{
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->InitDispDef();
+#endif
+}
+
+void CDlgMenu01::InitDefImgDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[1])
+		pView->m_pVision[1]->InitDispDef();
+#endif
+}
+
+void CDlgMenu01::InitDefInfo()
+{
+	for (int nIdx = 0; nIdx < DEF_VIEW_IMG_NUMBER; nIdx++)
+	{
+		myStcDefInfo[nIdx].SetText(_T(""));
+		myStcDefInfo[nIdx].SetBkColor(RGB_LTDKORANGE);
+	}
+}
+
+void CDlgMenu01::InitDefInfoUp()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (bDualTest)
+	{
+		for (int nIdx = 0; nIdx < DEF_VIEW_IMG_NUMBER / 2; nIdx++)
+		{
+			myStcDefInfo[nIdx].SetText(_T(""));
+			myStcDefInfo[nIdx].SetBkColor(RGB_LTDKORANGE);
+		}
+	}
+	else
+	{
+		for (int nIdx = 0; nIdx < DEF_VIEW_IMG_NUMBER; nIdx++)
+		{
+			myStcDefInfo[nIdx].SetText(_T(""));
+			myStcDefInfo[nIdx].SetBkColor(RGB_LTDKORANGE);
+		}
+	}
+}
+
+void CDlgMenu01::InitDefInfoDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+	for (int nIdx = DEF_VIEW_IMG_NUMBER / 2; nIdx < DEF_VIEW_IMG_NUMBER; nIdx++)
+	{
+		myStcDefInfo[nIdx].SetText(_T(""));
+		myStcDefInfo[nIdx].SetBkColor(RGB_LTDKORANGE);
+	}
+}
+
+void CDlgMenu01::ClrInfo()
+{
+	myStcData[5].SetText(_T(""));			// 전체진행율
+	pView->SetMkMenu01(_T("Info"), _T("Total Work Ratio"), _T(""));
+	myStcData[6].SetText(_T(""));			// 로트진행율
+	pView->SetMkMenu01(_T("Info"), _T("Lot Work Ratio"), _T(""));
+	myStcData[14].SetText(_T(""));			// 진행Lot시리얼
+	pView->SetMkMenu01(_T("Info"), _T("VerifyImageNum"), _T(""));
+	myStcData[7].SetText(_T(""));			// 전체속도
+	pView->SetMkMenu01(_T("Info"), _T("Total Speed"), _T(""));
+	myStcData[8].SetText(_T(""));			// 구간속도
+	pView->SetMkMenu01(_T("Info"), _T("Patial Speed"), _T(""));
+	myStcData[12].SetText(_T(""));			// 마킹부 : Distance (FdDone)
+	pView->SetMkMenu01(_T("Info"), _T("DoneLengthMk"), _T(""));
+	myStcData[13].SetText(_T(""));			// 검사부 Dn: Distance (FdDone)
+	pView->SetMkMenu01(_T("Info"), _T("DoneLengthAoiDn"), _T(""));
+	myStcData[74].SetText(_T(""));			// 검사부 Up: Distance (FdDone)
+	pView->SetMkMenu01(_T("Info"), _T("DoneLengthAoiUp"), _T(""));
+	myStcData[83].SetText(_T(""));			// 각인부: Distance (FdDone)
+	pView->SetMkMenu01(_T("Info"), _T("DoneLengthEngrave"), _T(""));
+
+	// < 전체 수율 >
+	// 상면
+	myStcData[15].SetText(_T("")); // IDC_STC_DEFECT_NUM_UP
+	pView->SetMkMenu01(_T("Bed"), _T("Up"), _T(""));
+	myStcData[16].SetText(_T("")); // IDC_STC_DEFECT_RATIO_UP
+	pView->SetMkMenu01(_T("Bed Ratio"), _T("Up"), _T(""));
+	myStcData[17].SetText(_T("")); // IDC_STC_GOOD_NUM_UP
+	pView->SetMkMenu01(_T("Good"), _T("Up"), _T(""));
+	myStcData[18].SetText(_T("")); // IDC_STC_GOOD_RATIO_UP
+	pView->SetMkMenu01(_T("Good Ratio"), _T("Up"), _T(""));
+	myStcData[19].SetText(_T("")); // IDC_STC_TOTAL_NUM_UP
+	pView->SetMkMenu01(_T("Total Test"), _T("Up"), _T(""));
+
+	// 하면
+	myStcData[49].SetText(_T("")); // IDC_STC_DEFECT_NUM_DN
+	pView->SetMkMenu01(_T("Bed"), _T("Dn"), _T(""));
+	myStcData[50].SetText(_T("")); // IDC_STC_DEFECT_RATIO_DN
+	pView->SetMkMenu01(_T("Bed Ratio"), _T("Dn"), _T(""));
+	myStcData[51].SetText(_T("")); // IDC_STC_GOOD_NUM_DN
+	pView->SetMkMenu01(_T("Good"), _T("Dn"), _T(""));
+	myStcData[52].SetText(_T("")); // IDC_STC_GOOD_RATIO_DN
+	pView->SetMkMenu01(_T("Good Ratio"), _T("Dn"), _T(""));
+	myStcData[53].SetText(_T("")); // IDC_STC_TOTAL_NUM_DN
+	pView->SetMkMenu01(_T("Total Test"), _T("Dn"), _T(""));
+
+	// 전체
+	myStcData[54].SetText(_T("")); // IDC_STC_DEFECT_NUM_ALL
+	pView->SetMkMenu01(_T("Bed"), _T("Total"), _T(""));
+	myStcData[55].SetText(_T("")); // IDC_STC_DEFECT_RATIO_ALL
+	pView->SetMkMenu01(_T("Bed Ratio"), _T("Total"), _T(""));
+	myStcData[56].SetText(_T("")); // IDC_STC_GOOD_NUM_ALL
+	pView->SetMkMenu01(_T("Good"), _T("Total"), _T(""));
+	myStcData[57].SetText(_T("")); // IDC_STC_GOOD_RATIO_ALL
+	pView->SetMkMenu01(_T("Good Ratio"), _T("Total"), _T(""));
+	myStcData[58].SetText(_T("")); // IDC_STC_TOTAL_NUM_ALL
+	pView->SetMkMenu01(_T("Total Test"), _T("Total"), _T(""));
+
+	// < 스트립 별 수율 >
+	// 상면
+	myStcData[59].SetText(_T("")); // DC_STC_GD_RA_1_UP
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Up"), _T(""));
+	myStcData[60].SetText(_T("")); // DC_STC_GD_RA_2_UP
+	pView->SetMkMenu01(_T("Yield Strip1"), _T("Up"), _T(""));
+	myStcData[61].SetText(_T("")); // DC_STC_GD_RA_3_UP
+	pView->SetMkMenu01(_T("Yield Strip2"), _T("Up"), _T(""));
+	myStcData[62].SetText(_T("")); // DC_STC_GD_RA_4_UP
+	pView->SetMkMenu01(_T("Yield Strip3"), _T("Up"), _T(""));
+	myStcData[63].SetText(_T("")); // IDC_STC_GD_RA_ALL_UP
+	pView->SetMkMenu01(_T("Yield Total"), _T("Up"), _T(""));
+
+	// 하면
+	myStcData[64].SetText(_T("")); // IDC_STC_GD_RA_1_DN
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Dn"), _T(""));
+	myStcData[65].SetText(_T("")); // IDC_STC_GD_RA_1_DN
+	pView->SetMkMenu01(_T("Yield Strip1"), _T("Dn"), _T(""));
+	myStcData[66].SetText(_T("")); // IDC_STC_GD_RA_1_DN
+	pView->SetMkMenu01(_T("Yield Strip2"), _T("Dn"), _T(""));
+	myStcData[67].SetText(_T("")); // IDC_STC_GD_RA_1_DN
+	pView->SetMkMenu01(_T("Yield Strip3"), _T("Dn"), _T(""));
+	myStcData[68].SetText(_T("")); // IDC_STC_GD_RA_ALL_DN
+	pView->SetMkMenu01(_T("Yield Total"), _T("Dn"), _T(""));
+
+	// 상면 + 하면
+	myStcData[69].SetText(_T("")); // IDC_STC_GD_RA_1_ALL
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Total"), _T(""));
+	myStcData[70].SetText(_T("")); // IDC_STC_GD_RA_2_ALL
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Total"), _T(""));
+	myStcData[71].SetText(_T("")); // IDC_STC_GD_RA_3_ALL
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Total"), _T(""));
+	myStcData[72].SetText(_T("")); // IDC_STC_GD_RA_4_ALL
+	pView->SetMkMenu01(_T("Yield Strip0"), _T("Total"), _T(""));
+	myStcData[73].SetText(_T("")); // IDC_STC_GD_RA_ALL_ALL
+	pView->SetMkMenu01(_T("Yield Total"), _T("Total"), _T(""));
+
+	// 불량 내역
+	myStcData[24].SetText(_T("")); // IDC_STC_DEF_OPEN
+	myStcData[25].SetText(_T("")); // IDC_STC_DEF_SHORT
+	myStcData[26].SetText(_T("")); // IDC_STC_DEF_U_SHORT
+	myStcData[27].SetText(_T("")); // IDC_STC_DEF_SPACE
+	myStcData[28].SetText(_T("")); // IDC_STC_DEF_EXTRA
+	myStcData[29].SetText(_T("")); // IDC_STC_DEF_PROT
+	myStcData[30].SetText(_T("")); // IDC_STC_DEF_P_HOLE
+	myStcData[31].SetText(_T("")); // IDC_STC_DEF_PAD
+	myStcData[32].SetText(_T("")); // IDC_STC_DEF_H_OPEN
+	myStcData[33].SetText(_T("")); // IDC_STC_DEF_H_MISS
+	myStcData[34].SetText(_T("")); // IDC_STC_DEF_H_POS
+	myStcData[35].SetText(_T("")); // IDC_STC_DEF_H_DEF
+	myStcData[36].SetText(_T("")); // IDC_STC_DEF_NICK
+	myStcData[37].SetText(_T("")); // IDC_STC_DEF_POI
+	myStcData[38].SetText(_T("")); // IDC_STC_DEF_VH_OPEN
+	myStcData[39].SetText(_T("")); // IDC_STC_DEF_VH_MISS
+	myStcData[40].SetText(_T("")); // IDC_STC_DEF_VH_POS
+	myStcData[41].SetText(_T("")); // IDC_STC_DEF_VH_DEF
+	myStcData[42].SetText(_T("")); // IDC_STC_DEF_LIGHT
+	myStcData[43].SetText(_T("")); // DEF_EDGE_NICK
+	myStcData[44].SetText(_T("")); // DEF_EDGE_PROT
+	myStcData[45].SetText(_T("")); // DEF_EDGE_SPACE
+	myStcData[46].SetText(_T("")); // DEF_USER_DEFINE_1
+	myStcData[47].SetText(_T("")); // DEF_NARROW
+	myStcData[48].SetText(_T("")); // DEF_WIDE
+
+	int i;
+	CString sItem;
+	for (int i = 1; i < MAX_DEF; i++)
+	{
+		sItem.Format(_T("%d"), i);
+		pView->SetMkMenu01(_T("Defect"), sItem, _T(""));
+	}
+
+}
+
+void CDlgMenu01::ClrCadImg()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->ClrDispCad();
+
+	if (bDualTest)
+	{
+		if (pView->m_pVision[1])
+			pView->m_pVision[1]->ClrDispCad();
+	}
+#endif
+}
+
+void CDlgMenu01::ClrCadImgUp()
+{
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->ClrDispCad();
+#endif
+}
+
+void CDlgMenu01::ClrCadImgDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[1])
+		pView->m_pVision[1]->ClrDispCad();
+#endif
+}
+
+void CDlgMenu01::ClrDefImg()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->ClrDispDef();
+
+	if (bDualTest)
+	{
+		if (pView->m_pVision[1])
+			pView->m_pVision[1]->ClrDispDef();
+	}
+#endif
+}
+
+void CDlgMenu01::ClrDefImgUp()
+{
+#ifdef USE_VISION
+	if (pView->m_pVision[0])
+		pView->m_pVision[0]->ClrDispDef();
+#endif
+}
+
+void CDlgMenu01::ClrDefImgDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return;
+
+#ifdef USE_VISION
+	if (pView->m_pVision[1])
+		pView->m_pVision[1]->ClrDispDef();
+#endif
+}
+
+void CDlgMenu01::ShowDispCadUp(int nIdxMkInfo, int nSerial, int nIdxDef) // From 0 To 12...for Screen display.
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispCadUp(nIdxMkInfo, nSerial, nIdxDef);
+}
+
+void CDlgMenu01::ShowDispCadDn(int nIdxMkInfo, int nSerial, int nIdxDef) // From 0 To 12...for Screen display.
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispCadDn(nIdxMkInfo, nSerial, nIdxDef);
+}
+
+void CDlgMenu01::ShowOvrCadUp(int nIdxMkInfo, int nSerial) // From 0 To 12...for Screen display.
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispCadUp(nIdxMkInfo, nSerial);
+}
+
+void CDlgMenu01::ShowOvrCadDn(int nIdxMkInfo, int nSerial) // From 0 To 12...for Screen display.
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispCadDn(nIdxMkInfo, nSerial);
+}
+
+void CDlgMenu01::ShowDispDefUp(int nIdxMkInfo, int nSerial, int nDefPcs)
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispDefUp(nIdxMkInfo, nSerial, 0, nDefPcs);
+}
+
+void CDlgMenu01::ShowDispDefDn(int nIdxMkInfo, int nSerial, int nDefPcs)
+{
+	if (!pView->m_mgrPunch) return;
+	pView->m_mgrPunch->ShowDispDefDn(nIdxMkInfo, nSerial, 1, nDefPcs);
+}
+
+int CDlgMenu01::GetPcrIdx0(int nSerial, BOOL bNewLot)	// Punch-#0 : 릴맵화면 표시를 위한 Display buffer의 Shot 인덱스
+{
+	if (!pView->m_mgrReelmap) return 0;
+	return pView->m_mgrReelmap->GetPcrIdx0(nSerial, bNewLot);
+}
+
+int CDlgMenu01::GetPcrIdx1(int nSerial, BOOL bNewLot)	// Punch-#1 :릴맵화면 표시를 위한 Display buffer의 Shot 인덱스
+{
+	if (!pView->m_mgrReelmap) return 0;
+	return pView->m_mgrReelmap->GetPcrIdx1(nSerial, bNewLot);
 }

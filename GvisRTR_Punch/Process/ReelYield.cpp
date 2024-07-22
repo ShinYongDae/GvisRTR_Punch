@@ -44,7 +44,7 @@ BOOL CReelYield::DirectoryExists(LPCTSTR szPath)
 		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-CString CReelYield::GetPath(int nRmap)
+CString CReelYield::GetYieldPath(int nRmap)
 {
 	CString sPath;
 	CString str;
@@ -126,7 +126,7 @@ CString CReelYield::GetPath(int nRmap)
 	return sPath;
 }
 
-void CReelYield::Reset()
+void CReelYield::ResetYield()
 {
 	m_nBeforeSerial = 0;
 
@@ -146,7 +146,7 @@ void CReelYield::Reset()
 	}
 }
 
-BOOL CReelYield::Update(int nSerial)
+BOOL CReelYield::UpdateYield(int nSerial)
 {
 	if (nSerial <= 0)
 	{
@@ -155,7 +155,8 @@ BOOL CReelYield::Update(int nSerial)
 		return 0;
 	}
 
-	m_sPathYield = GetPath(m_nLayer);
+	stGeneral& General = (pView->m_mgrStatus->General);
+	m_sPathYield = GetYieldPath(m_nLayer);
 	CString sPath = m_sPathYield;
 
 	BOOL bExist = FALSE;
@@ -166,16 +167,31 @@ BOOL CReelYield::Update(int nSerial)
 	if (bExist)
 	{
 		TCHAR szData[MAX_PATH];
-		if (0 < ::GetPrivateProfileString(_T("Info"), _T("Start Shot"), NULL, szData, sizeof(szData), sPath))
+		if (0 < ::GetPrivateProfileString(_T("Info"), _T("End Shot"), NULL, szData, sizeof(szData), sPath))
 			m_nBeforeSerial = _tstoi(szData);
 	}
 
 	int nPnl = m_nBeforeSerial;//nSerial - 1;
 
-	if (bExist && nPnl > 0)
-		Read(nPnl, sPath);
+	if (General.bSerialDecrese)
+	{
+		if (nSerial >= m_nBeforeSerial)
+		{
+			m_nBeforeSerial = nSerial + 1;
+		}
+	}
+	else
+	{
+		if (m_nBeforeSerial >= nSerial)
+		{
+			m_nBeforeSerial = nSerial - 1;
+		}
+	}
 
-	Write(nSerial, sPath);
+	if (bExist && nPnl > 0)
+		ReadYield(nPnl, sPath);
+
+	WriteYield(nSerial, sPath);
 
 	Sleep(10);
 
@@ -184,7 +200,7 @@ BOOL CReelYield::Update(int nSerial)
 
 void CReelYield::UpdateTotalSpeed(CString sSpeed, int nLayer)
 {
-	::WritePrivateProfileString(_T("Info"), _T("Entire Speed"), sSpeed, GetPath(nLayer));
+	::WritePrivateProfileString(_T("Info"), _T("Entire Speed"), sSpeed, GetYieldPath(nLayer));
 }
 
 int CReelYield::GetDefNum(int nDefCode)
@@ -213,7 +229,7 @@ void CReelYield::GetPcsNum(int &nGood, int &nBad)
 	nBad = m_stYield.nDef;
 }
 
-BOOL CReelYield::MakeDir()
+BOOL CReelYield::MakeDirYield()
 {
 	CString str, sPath, Path[5];
 
@@ -285,7 +301,7 @@ BOOL CReelYield::MakeDir()
 
 }
 
-BOOL CReelYield::MakeDir(CString sPath)
+BOOL CReelYield::MakeDirYield(CString sPath)
 {
 	CString str, Path[5];
 
@@ -400,7 +416,7 @@ BOOL CReelYield::MakeDir(CString sPath)
 	return TRUE;
 }
 
-BOOL CReelYield::Read(int nSerial, CString sPath)
+BOOL CReelYield::ReadYield(int nSerial, CString sPath)
 {
 	int dwStart = GetTickCount();
 
@@ -580,7 +596,7 @@ BOOL CReelYield::Read(int nSerial, CString sPath)
 	return TRUE;
 }
 
-BOOL CReelYield::Write(int nSerial, CString sPath)
+BOOL CReelYield::WriteYield(int nSerial, CString sPath)
 {
 	CManagerReelmap* mgrReelmap = (CManagerReelmap*)m_pParent;
 	CPcsRgn* pPcsRgn = mgrReelmap->m_Master[0].m_pPcsRgn;
@@ -681,7 +697,7 @@ BOOL CReelYield::Write(int nSerial, CString sPath)
 	if (findfile.FindFile(sPath))
 		bExist = TRUE;
 	else
-		MakeDir(sPath);
+		MakeDirYield(sPath);
 
 	StrToChar(sPath, FileName);
 
@@ -845,7 +861,7 @@ BOOL CReelYield::GetResult() // TRUE: Make Result, FALSE: Load Result or Failed.
 	m_stResult.nEntireStripNum = 0;
 
 	//sPathRmap = GetRmapPath(m_nLayer);
-	sPath = GetPath(m_nLayer);
+	sPath = GetYieldPath(m_nLayer);
 
 	if (!findfile.FindFile(sPath)) // Can not find file.
 	{

@@ -97,32 +97,6 @@ void CCamMaster::Init(CString sPathSpec, CString sModel, CString sLayer, CString
 	m_sLayerUp = sLayerUp; // 하면 CamMaster정보에는 상면의 Align 이미지를 담아야 함.
 }
 
-//BOOL CCamMaster::LoadMstInfo()
-//{
-//	CString sPath;
-//
-//	GetCamPxlRes();
-//	LoadMasterSpec();
-//	LoadPinImg();
-//	LoadAlignImg();
-//	if(LoadStripRgnFromCam())
-//	{
-//		if(pDoc->WorkingInfo.System.bStripPcsRgnBin)
-//			LoadStripPieceRegion_Binary();
-//		else
-//			LoadPcsRgnFromCam();
-//
-//		LoadPcsImg();
-//		LoadCadImg();
-//
-//		LoadCadMk(); //.pch
-//	}
-//	else
-//		return FALSE;
-//
-//	return TRUE;
-//}
-
 BOOL CCamMaster::LoadMstInfo()
 {
 	CString sPath;
@@ -142,14 +116,10 @@ BOOL CCamMaster::LoadMstInfo()
 		LoadPcsImg();
 		LoadCadImg();
 		LoadCadAlignMkPos(); //.pch
-
-		//InitOrderingMk();
-
 #ifdef TEST_MODE
 		//WriteOrderingMk();
 		//WriteOrderingMkMirror();
 #endif
-
 	}
 	else
 		return FALSE;

@@ -65,10 +65,6 @@ class CLibMil : public CWnd
 			MilImageCam,				/* Image buffer identifier.      */
 			MilImageCamRotate,			/* Image buffer identifier.      */
 			MilImageCamFlip;			/* Image buffer identifier.      */
-// 			MilDisplay[4],				/* Display identifier.      */
-// 			MilDisplayOverlay[4],
-// 			MilGraphicContextID[4],
-// 			MilImage[4];				/* Image buffer identifier. */
 	CLibMilDisp*	MilDisplay[4];
 	CLibMilBuf*	MilImage[4];
 	CLibMilDraw* MilDraw[4];
@@ -99,13 +95,7 @@ class CLibMil : public CWnd
 	void DisplaySelect(MIL_ID DisplayId, MIL_ID ImageId, HWND ClientWindowHandle, int nDisplaySizeX, int nDisplaySizeY, int nDisplayFitMode=DISPLAY_FIT_MODE_CENTERVIEW);
 	void CreateOverlay();
 
-
 	// Morphology ========================================================================================================
-	//void Erode(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_INT NbIteration, MIL_INT64 ProcMode);
-	//void Dilate(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_INT NbIteration, MIL_INT64 ProcMode);
-	//void Open(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_INT NbIteration, MIL_INT64 ProcMode);
-	//void Close(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_INT NbIteration, MIL_INT64 ProcMode);
-
 	void Filter(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_ID KernelId, MIL_INT Rank, MIL_INT64 Mode);	// rank filter on the pixels in an image
 	void Convolution(MIL_ID SrcImageId, MIL_ID DestImageId, MIL_ID KernelId);							// general convolution operation
 	long Binarize(MIL_ID SrcImageId);	// Binarize
@@ -118,6 +108,7 @@ class CLibMil : public CWnd
 
 // Construction
 public:
+	CLibMil(CWnd* pParent = NULL);
 	CLibMil(int nIdx, MIL_ID &MilSysId, HWND *hCtrl, int nCamWidth, int nCamHeight, CWnd* pParent=NULL);
 	CLibMil(int nIdx, int *nPixelMode, HWND *hCtrl, CWnd* pParent=NULL);
 

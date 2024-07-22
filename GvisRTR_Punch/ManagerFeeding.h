@@ -90,7 +90,7 @@ class CManagerFeeding : public CWnd
 	CString m_sAoiUpAlarmReStartMsg, m_sAoiDnAlarmReStartMsg;
 	CString m_sAoiUpAlarmReTestMsg, m_sAoiDnAlarmReTestMsg;
 	int m_nMonAlmF, m_nClrAlmF;
-	BOOL m_bEngStSw, m_bEng2dStSw;
+	//BOOL m_bEngStSw, m_bEng2dStSw;
 
 	BOOL Init();
 	BOOL Create();
@@ -134,6 +134,7 @@ public:
 public:
 	stBtnPush Btn;
 	stStatusFeeding Status;
+	stBtnStatus BtnStatus;
 
 
 	// 작업입니다.
@@ -149,6 +150,10 @@ public:
 
 	void SetBufInitPos(double dPos);
 	void SetBufHomeParam(double dVel, double dAcc);
+	double GetAoiUpFdLen();
+	double GetAoiDnFdLen();
+	void SetAoiFdPitch(double dPitch);
+	void SetMkFdPitch(double dPitch);
 
 	BOOL IsRun();
 	BOOL IsStop();
@@ -180,6 +185,12 @@ public:
 	CString ReadAoiUpAlarmReTestMsg();									// m_sAoiUpAlarmReTestMsg
 	CString ReadAoiDnAlarmReTestMsg();									// m_sAoiDnAlarmReTestMsg
 	void DispMain(CString sMsg, COLORREF rgb = RGB(0, 255, 0));
+	double GetMkFdLen();
+	void SetMkFdLen();
+
+	// 보조작업입니다.
+public:
+	void GetPlcParam();
 
 	// 생성된 메시지 맵 함수
 protected:

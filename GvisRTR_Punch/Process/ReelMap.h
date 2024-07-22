@@ -152,6 +152,9 @@ public:
 	int m_nLastShot, m_nCompletedShot;
 	double m_dProgressRatio;
 
+	int m_nBkColor[3]; //RGB
+	COLORREF m_rgbDef[MAX_DEF];
+
 
 // Operations
 public:
@@ -168,6 +171,7 @@ public:
 
 	CString GetLotSt();
 	CString GetLotEd();
+	CfPoint GetMkPnt(int nSerial, int nMkPcs);
 
 	BOOL Open();
 	BOOL Open(CString sPath);
@@ -188,6 +192,8 @@ public:
 	int GetLastSerial();
 	void InitPcs();
 	void ClrPcs();
+	void InitPcr();
+	void ClrPcr();
 
 	void ClrFixPcs();
 	void ClrFixPcs(int nCol, int nRow);
@@ -222,6 +228,7 @@ public:
 	int m_nLastOnThread, m_nProgressReloadReelmap, m_nTotalProgressReloadReelmap;
 	CThreadTask m_ThreadTaskReloadReelmap; // CThreadTask class, handles the threading code
 	BOOL ReloadReelmap();
+	BOOL ReloadReelmap(int nTo);
 	BOOL IsDoneReloadReelmap();
 	int GetProgressReloadReelmap();
 	void StartThreadReloadReelmap();
@@ -240,13 +247,28 @@ public:
 	CString GetPath();
 	CString GetIpPath();
 
-
 	void SetLastSerialOnOffline(int nSerial);
 	CString GetRmapPathOnOffline(int nRmap);
 	BOOL WriteOnOffline(int nSerial);
 	BOOL WriteLastRmapInfoOnOffline();
 	int GetFirstShotFromPcr();
 	int GetLastShotFromPcr();
+
+	CString GetItsFileData(int nSerial); // RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
+	CString GetItsPath(int nSerial);
+	CString GetTimeIts();
+	CString GetItsFolderPath();
+
+	void CropCadImg(int nIdxMkInfo, int nSerial, int nIdxDef);
+	void CropCadImg(short cell, short cx, short cy, int BufID);
+	BOOL SetCADCoord(int CellNum, int StX, int StY, int Coord);
+	void LoadCADBuf(int CurrCell, long OrgStX, long OrgStY, long DesStX, long DesStY, long SizeX, long SizeY);
+	//BOOL VicFileLoadFromMem(MIL_ID MilImage, UCHAR *pCADImg, TiffData &tdat);
+	//BOOL VicGetImgInfo(UCHAR *pCADImg, TiffData &tdat);
+	//void ClrOvrCad(int nIdx);
+
+	CDataMarking* GetPcr(int nIdx);
+	void SetCompletedSerial(int nSerial);
 
 // Overrides
 	// ClassWizard generated virtual function overrides

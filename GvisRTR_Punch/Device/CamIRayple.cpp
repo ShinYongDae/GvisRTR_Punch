@@ -1,14 +1,14 @@
-#include "stdafx.h"
+#include "../stdafx.h"
 
 #include "CamIRayple.h"
 #include "RGBConvert.h"
 
 
-#include "../GvisR2R_PunchDoc.h"
-#include "../GvisR2R_PunchView.h"
+#include "../GvisRTR_PunchDoc.h"
+#include "../GvisRTR_PunchView.h"
 
-extern CGvisR2R_PunchDoc* pDoc;
-extern CGvisR2R_PunchView* pView;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
 
 #define DEFAULT_SHOW_RATE (30)
 

@@ -312,6 +312,9 @@
     <ClInclude Include="Dialog\DlgProgress.h">
       <Filter>Dialog</Filter>
     </ClInclude>
+    <ClInclude Include="safelockdoc.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GvisRTR_Punch.cpp">

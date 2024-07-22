@@ -199,6 +199,7 @@
 #define IDC_STC_TOT_NUM                 1076
 #define IDC_STC_TOTAL_NUM_UP            1077
 #define IDC_CHK_USER_INFO               1078
+#define IDC_STC_ITS_                    1079
 #define IDC_CHK_EJECT_BUFFER            1080
 #define IDC_CHK_REVIEW_MOVE             1081
 #define IDC_STC_REVIEW_LEN              1082
@@ -584,10 +585,13 @@
 #define IDC_CHK_41                      1199
 #define IDC_STC_25                      1199
 #define IDC_CHK_ELEC                    1199
+#define IDC_STC_ITS_CODE                1199
 #define IDC_STC_175                     1200
 #define IDC_STC_ALN_SCR4                1200
 #define IDC_CHK_7                       1200
 #define IDC_CHK_ELEC_STOP               1200
+#define IDC_STC_REVIEW_LEN2             1200
+#define IDC_STC_VS                      1200
 #define IDC_CHK_000                     1201
 #define IDC_STC_ENG                     1201
 #define IDC_STC_ALIGN_STD_SCR2          1201
@@ -672,6 +676,7 @@
 #define IDC_CHK_MK_POS2_3               1217
 #define IDC_STC_20_                     1217
 #define IDC_STC_48                      1217
+#define IDC_STC_LOT_OFFSET              1217
 #define IDC_STC_0040                    1218
 #define IDC_STC_30_                     1218
 #define IDC_STC_49                      1218

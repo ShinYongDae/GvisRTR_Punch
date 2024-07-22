@@ -129,6 +129,9 @@ class CVision : public CWnd
 	BOOL GrabCrevis(int nPos, BOOL bDraw = TRUE);
 	BOOL GrabIds(int nPos, BOOL bDraw = TRUE);
 
+	long GetMpeData(int nSection, int nName);
+	int GetPcrIdx0(int nSerial, BOOL bNewLot = FALSE);	// Dn - 릴맵화면 표시를 위한 Display buffer의 Shot 인덱스
+	int GetPcrIdx1(int nSerial, BOOL bNewLot = FALSE);	// Dn - 릴맵화면 표시를 위한 Display buffer의 Shot 인덱스
 
 // Construction
 public:
@@ -173,16 +176,15 @@ public:
 	void ClrDispDef();
 
 	void ShiftDisp();
-	void ShowDispCad(int nIdxMkInfo, int nSerial, int nLayer, int nIdxDef);
-	void ShowDispDef(int nIdxMkInfo, int nSerial, int nLayer, int nDefPcs);
+	void ShowDispCad(int nIdxMkInfo, int nSerial, int nIdxDef);
+	//void ShowDispDef(int nIdxMkInfo, int nSerial, int nLayer, int nDefPcs);
+	void ShowDispDef(int nIdxMkInfo, CString sPath);
 	void ShowOvrCad(int nIdxMkInfo, int nSerial);
 	void ShowDispPin(int nLayer);
 	void ShowDispAlign();
 
-	void CropCadImg(int nIdxMkInfo, int nSerial, int nLayer, int nIdxDef);
-	void CropCadImg(short cell, short cx, short cy, int BufID, int nLayer);
-	BOOL SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer);
-	void LoadCADBuf(int CurrCell, long OrgStX, long OrgStY, long DesStX, long DesStY, long SizeX, long SizeY, int nLayer);
+	//BOOL SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer);
+	void LoadCADBuf(UCHAR *pCADCellImg, long OrgStX, long OrgStY, long DesStX, long DesStY, long SizeX, long SizeY);
 	BOOL VicFileLoadFromMem(MIL_ID MilImage, UCHAR *pCADImg, TiffData &tdat);
 	BOOL VicGetImgInfo(UCHAR *pCADImg, TiffData &tdat);
 	void ClrOvrCad(int nIdx);
@@ -203,7 +205,6 @@ public:
 	void SetDispAxisPos();
 	void DispAxisPos(BOOL bForceWrite=FALSE);
 
-	double CalcCameraPixelSize();
 	BOOL Grab(int nPos, BOOL bDraw=TRUE);
 	void GetCameraSize(int &nX, int &nY);
 	void GetIdsSize(int &nX, int &nY);

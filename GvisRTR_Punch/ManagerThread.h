@@ -12,6 +12,7 @@ class CManagerThread : public CWnd
 
 	BOOL m_bTIM_INIT_THREAD;
 	int m_nStepInitThread;
+	int m_nSerialRmapUpdate;
 
 	void Init();
 	BOOL Create();
@@ -26,7 +27,7 @@ public:
 	BOOL m_bThread[MAX_THREAD];
 	CThreadTask m_Thread[MAX_THREAD];
 
-	BOOL m_bTHREAD_MK[4];	// [0] Auto-Left, [1] Auto-Right, [2] Manual-Left, [3] Manual-Right
+	//BOOL m_bTHREAD_MK[4];	// [0] Auto-Left, [1] Auto-Right, [2] Manual-Left, [3] Manual-Right
 
 	int	m_nStepTHREAD_DISP_DEF;
 	BOOL m_bTHREAD_DISP_DEF;
@@ -36,7 +37,7 @@ public:
 	int	m_nSerialTHREAD_UPDATAE_YIELD[2];	// [0] : Cam0, [1] : Cam1
 	BOOL m_bTHREAD_UPDATAE_YIELD[2];		// [0] : Cam0, [1] : Cam1
 
-	BOOL m_bTHREAD_SHIFT2MK;// [2];		// [0] : Cam0, [1] : Cam1
+	//BOOL m_bTHREAD_SHIFT2MK;
 	BOOL m_bTHREAD_UPDATE_REELMAP_UP, m_bTHREAD_UPDATE_REELMAP_ALLUP;
 	BOOL m_bTHREAD_UPDATE_REELMAP_DN, m_bTHREAD_UPDATE_REELMAP_ALLDN;
 	BOOL m_bTHREAD_REELMAP_YIELD_UP, m_bTHREAD_REELMAP_YIELD_ALLUP;
@@ -58,6 +59,7 @@ public:
 	BOOL m_bTHREAD_UPDATE_REELMAP_INNER_UP, m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP;
 	BOOL m_bTHREAD_UPDATE_REELMAP_INNER_DN, m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN;
 	BOOL m_bTHREAD_UPDATE_REELMAP_ITS;
+	int m_nSerialMakeItsFile;
 
 
 	// 작업입니다.
@@ -134,20 +136,50 @@ public:
 	void DoReject0();
 	void DoReject1();
 
+	void UpdateYield();
 	void UpdateYield(int nSerial);
 	void UpdateYieldUp(int nSerial);
 	void UpdateYieldDn(int nSerial);
 	void UpdateYieldAllUp(int nSerial);
 	void UpdateYieldAllDn(int nSerial);
 
+	void UpdateRMapUp();
+	void UpdateRMapDn();
+	void UpdateRMapAllUp();
+	void UpdateRMapAllDn();
+
 	void UpdateRMapInnerUp();
 	void UpdateRMapInnerDn();
 	void UpdateRMapInnerAllUp();
 	void UpdateRMapInnerAllDn();
 
+	BOOL UpdateReelmap(int nSerial);
+	BOOL MakeItsFile(int nSerial);
+	BOOL MakeItsFileUp(int nSerial);
+	BOOL MakeItsFileDn(int nSerial);
+	BOOL WriteReelmapIts();
+
+	BOOL ReloadReelmap();
+	void ReloadReelmapUp();
+	void ReloadReelmapAllUp();
+	void ReloadReelmapDn();
+	void ReloadReelmapAllDn();
+
+	void ReloadReelmapUpInner();
+	void ReloadReelmapAllUpInner();
+	void ReloadReelmapDnInner();
+	void ReloadReelmapAllDnInner();
+	BOOL ReloadReelmapIts();
+
 	BOOL GetCurrentInfoSignal();
 	void DispDefImg();
+	void DispDefImgInner();
+	void Shift2MkFromThread();
+	void Shift2Mk();
+	void Stop();
 
+	// 보조작업입니다.
+public:
 
 	// 생성된 메시지 맵 함수
 protected:

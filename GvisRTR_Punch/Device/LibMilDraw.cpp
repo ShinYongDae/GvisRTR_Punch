@@ -1,8 +1,7 @@
 // LibMilDraw.cpp : implementation file
 //
 
-#include "stdafx.h"
-//#include "gvisr2r.h"
+#include "../stdafx.h"
 #include "LibMilDraw.h"
 
 #ifdef _DEBUG

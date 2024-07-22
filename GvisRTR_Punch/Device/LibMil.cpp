@@ -1,7 +1,7 @@
 // LibMil.cpp : implementation file
 //
 
-#include "stdafx.h"
+#include "../stdafx.h"
 #include "LibMil.h"
 #include "../Global/GlobalDefine.h"
 
@@ -11,14 +11,18 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-#include "../GvisR2R_PunchDoc.h"
-#include "../GvisR2R_PunchView.h"
+#include "../GvisRTR_PunchDoc.h"
+#include "../GvisRTR_PunchView.h"
 
-extern CGvisR2R_PunchDoc* pDoc;
-extern CGvisR2R_PunchView* pView;
+extern CGvisRTR_PunchDoc* pDoc;
+extern CGvisRTR_PunchView* pView;
 
 /////////////////////////////////////////////////////////////////////////////
 // CLibMil
+CLibMil::CLibMil(CWnd* pParent /*=NULL*/)
+{
+
+}
 
 CLibMil::CLibMil(int nIdx, MIL_ID &MilSysId, HWND *hCtrl, int nCamWidth, int nCamHeight, CWnd* pParent /*=NULL*/)
 {
@@ -141,39 +145,20 @@ CLibMil::CLibMil(int nIdx, int *nPixelMode, HWND *hCtrl, CWnd* pParent /*=NULL*/
 
 CLibMil::~CLibMil()
 {
-// 	/* Remove the MIL buffer from the display. */
-// 	MdispSelect(MilDisplay[0], M_NULL);
-// 	MdispSelect(MilDisplay[1], M_NULL);
-// 	MdispSelect(MilDisplay[2], M_NULL);
-// 	MdispSelect(MilDisplay[3], M_NULL);
-// 	
-// 	/* Free allocated objects. */
-// 	MbufFree(MilImage[0]);
-// 	MbufFree(MilImage[1]);
-// 	MbufFree(MilImage[2]);
-// 	MbufFree(MilImage[3]);
-// 	MdispFree(MilDisplay[0]);
-// 	MdispFree(MilDisplay[1]);
-// 	MdispFree(MilDisplay[2]);
-// 	MdispFree(MilDisplay[3]);
-
 	if(MilImageCamFlip)
 	{
-		pView->m_nDebugStep = 100; pView->DispThreadTick();
 		MbufFree(MilImageCamFlip);
 		MilImageCamFlip = M_NULL;
 	}
 
 	if(MilImageCamRotate)
 	{
-		pView->m_nDebugStep = 101; pView->DispThreadTick();
 		MbufFree(MilImageCamRotate);
 		MilImageCamRotate = M_NULL;
 	}
 
 	if(MilImageCam)
 	{
-		pView->m_nDebugStep = 102; pView->DispThreadTick();
 		MbufFree(MilImageCam);
 		MilImageCam = M_NULL;
 	}
@@ -200,13 +185,9 @@ CLibMil::~CLibMil()
 
 	if(!m_nIdx)
 	{
-		pView->m_nDebugStep = 300; pView->DispThreadTick();
 		MsysFree(MilSystem);
 		MappFree(MilApplication);
 	}
-
-// 	/* Free defaults. */
-// 	MappFreeDefault(MilApplication, MilSystem, MilDisplay, M_NULL, MilImage);
 }
 
 

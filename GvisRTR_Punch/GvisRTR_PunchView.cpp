@@ -26,6 +26,8 @@ extern CMainFrame* pFrm;
 extern CGvisRTR_PunchDoc* pDoc;
 CGvisRTR_PunchView* pView;
 
+#define TIM_SHOW_MENU01			18
+#define TIM_SHOW_MENU02			19
 
 // CGvisRTR_PunchView
 
@@ -57,8 +59,20 @@ CGvisRTR_PunchView::CGvisRTR_PunchView()
 	m_sShare[1] = _T("");
 	m_sBuf[1] = _T("");
 
-	ClrAlarm();
+	m_bTIM_START_UPDATE = FALSE; 
+	m_bTIM_CAMMASTER_UPDATE = FALSE;
+	m_bLoadMstInfo = FALSE;  
+	m_bLoadMstInfoF = FALSE;
 
+	m_bSetSig = FALSE;
+	m_bSetSigF = FALSE;
+	m_bSetData = FALSE;
+	m_bSetDataF = FALSE;
+
+	m_bDrawGL_Menu01 = TRUE;
+	m_bDrawGL_Menu06 = TRUE;
+
+	ClrAlarm();
 	InitMgr();	
 	InitDispMsg();
 	InitDlg();
@@ -81,19 +95,6 @@ void CGvisRTR_PunchView::DoDataExchange(CDataExchange* pDX)
 void CGvisRTR_PunchView::DestroyView()
 {
 	DelAllDlg();
-
-	//CString sData;
-
-	//if (!m_bDestroyedView)
-	//{
-	//	m_bDestroyedView = TRUE;
-
-	//	sData.Format(_T("%d"), m_mgrProcedure->m_nMkStAuto);
-	//	::WritePrivateProfileString(_T("Last Job"), _T("MkStAuto"), sData, PATH_WORKING_INFO);
-
-	//	DelAllDlg();
-	//	Sleep(100);
-	//}
 }
 
 BOOL CGvisRTR_PunchView::PreCreateWindow(CREATESTRUCT& cs)
@@ -300,6 +301,111 @@ void CGvisRTR_PunchView::OnTimer(UINT_PTR nIDEvent)
 			SetTimer(TIM_DISP_STATUS, 100, NULL);
 	}
 
+	if (nIDEvent == TIM_SHOW_MENU01)
+	{
+		KillTimer(TIM_SHOW_MENU01);
+		if (m_pDlgFrameHigh)
+			m_pDlgFrameHigh->ChkMenu01();
+	}
+
+	if (nIDEvent == TIM_SHOW_MENU02)
+	{
+		KillTimer(TIM_SHOW_MENU02);
+		if (m_pDlgFrameHigh)
+			m_pDlgFrameHigh->ChkMenu02();
+	}
+
+	if (nIDEvent == TIM_START_UPDATE)
+	{
+		KillTimer(TIM_START_UPDATE);
+
+		if (m_bLoadMstInfo && !m_bLoadMstInfoF)
+		{
+			if (!pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() && !pDoc->WorkingInfo.LastJob.sLayerUp.IsEmpty())
+			{
+				m_bLoadMstInfoF = TRUE;
+				SetTimer(TIM_CAMMASTER_UPDATE, 500, NULL);
+			}
+			else
+				m_bLoadMstInfo = FALSE;
+		}
+
+		if (m_bSetSig && !m_bSetSigF)
+		{
+			m_bSetSigF = TRUE;
+
+			if (GetEngOpInfo() || GetEngInfo())
+			{
+				if (m_pDlgInfo)
+					m_pDlgInfo->UpdateData();
+
+				if (m_pDlgMenu01)
+					m_pDlgMenu01->UpdateData();
+
+				SetEngOpInfo(FALSE);
+				SetEngInfo(FALSE);
+			}
+			else
+			{
+				if (m_pDlgMenu03)
+					m_pDlgMenu03->UpdateSignal();
+			}
+
+			m_bSetSig = FALSE;
+		}
+		else if (!m_bSetSig && m_bSetSigF)
+		{
+			m_bSetSigF = FALSE;
+		}
+
+		if (m_bSetData && !m_bSetDataF)
+		{
+			m_bSetDataF = TRUE;
+
+			if (GetEngOpInfo() || GetEngInfo())
+			{
+				if (m_pDlgInfo)
+					m_pDlgInfo->UpdateData();
+
+				if (m_pDlgMenu01)
+					m_pDlgMenu01->UpdateData();
+
+				SetEngOpInfo(FALSE);
+				SetEngInfo(FALSE);
+			}
+
+			if (m_pDlgMenu02)
+				m_pDlgMenu02->UpdateData();
+
+			if (m_pDlgMenu03)
+				m_pDlgMenu03->UpdateData();
+
+			if (m_pDlgMenu04)
+				m_pDlgMenu04->UpdateData();
+
+			m_bSetData = FALSE;
+		}
+		else if (!m_bSetData && m_bSetDataF)
+		{
+			m_bSetDataF = FALSE;
+		}
+
+		if (m_bTIM_START_UPDATE)
+			SetTimer(TIM_START_UPDATE, 100, NULL);
+	}
+
+	if (nIDEvent == TIM_CAMMASTER_UPDATE)
+	{
+		KillTimer(TIM_CAMMASTER_UPDATE);
+		if (LoadMstInfo())
+		{
+			if (m_pDlgMenu01)
+				m_pDlgMenu01->UpdateData();
+		}
+		m_bLoadMstInfoF = FALSE;
+		m_bLoadMstInfo = FALSE;
+	}
+
 	CFormView::OnTimer(nIDEvent);
 }
 
@@ -375,14 +481,17 @@ void CGvisRTR_PunchView::ChkShare()
 
 void CGvisRTR_PunchView::ChkShareUp()
 {
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+
 	CString str, str2;
 	int nSerial, nAoiUpAutoSerial;
 
 	if (ChkShareUp(nSerial))
 	{
 		str.Format(_T("US: %d"), nSerial);
-		m_mgrProcedure->PcrShare[0].bExist = TRUE;
-		m_mgrProcedure->PcrShare[0].nSerial = nSerial;
+		PcrShare[0].bExist = TRUE;
+		PcrShare[0].nSerial = nSerial;
 		str2.Format(_T("PCR파일 Received - US: %d"), nSerial);
 		pDoc->LogAuto(str2);
 		MpeWrite(_T("ML45112"), (long)nSerial);		// 검사한 Panel의 AOI 상 Serial
@@ -390,8 +499,8 @@ void CGvisRTR_PunchView::ChkShareUp()
 	}
 	else
 	{
-		m_mgrProcedure->PcrShare[0].bExist = FALSE;
-		m_mgrProcedure->PcrShare[0].nSerial = -1;
+		PcrShare[0].bExist = FALSE;
+		PcrShare[0].nSerial = -1;
 		str.Format(_T("US: "));
 	}
 	if (pFrm)
@@ -406,14 +515,17 @@ void CGvisRTR_PunchView::ChkShareUp()
 
 void CGvisRTR_PunchView::ChkShareDn()
 {
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+
 	CString str, str2;
 	int nSerial, nAoiDnAutoSerial;
 
 	if (ChkShareDn(nSerial))
 	{
 		str.Format(_T("DS: %d"), nSerial);
-		m_mgrProcedure->PcrShare[1].bExist = TRUE;
-		m_mgrProcedure->PcrShare[1].nSerial = nSerial;
+		PcrShare[1].bExist = TRUE;
+		PcrShare[1].nSerial = nSerial;
 
 		str2.Format(_T("PCR파일 Received - DS: %d"), nSerial);
 		pDoc->LogAuto(str2);
@@ -423,8 +535,8 @@ void CGvisRTR_PunchView::ChkShareDn()
 	}
 	else
 	{
-		m_mgrProcedure->PcrShare[1].bExist = FALSE;
-		m_mgrProcedure->PcrShare[1].nSerial = -1;
+		PcrShare[1].bExist = FALSE;
+		PcrShare[1].nSerial = -1;
 		str.Format(_T("DS: "));
 	}
 	if (pFrm)
@@ -1148,28 +1260,30 @@ BOOL CGvisRTR_PunchView::IsShare()
 
 BOOL CGvisRTR_PunchView::IsShareUp()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShare[0].bExist;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return FALSE;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+	return PcrShare[0].bExist;
 }
 
 BOOL CGvisRTR_PunchView::IsShareDn()
 {
-	return m_mgrProcedure->PcrShare[1].bExist;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return FALSE;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+	return PcrShare[1].bExist;
 }
 
 int CGvisRTR_PunchView::GetShareUp()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShare[0].nSerial;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return 0;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+	return PcrShare[0].nSerial;
 }
 
 int CGvisRTR_PunchView::GetShareDn()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShare[1].nSerial;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return 0;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+	return PcrShare[1].nSerial;
 }
 
 BOOL CGvisRTR_PunchView::IsShareVs()
@@ -1191,30 +1305,30 @@ BOOL CGvisRTR_PunchView::IsShareVs()
 
 BOOL CGvisRTR_PunchView::IsShareVsUp()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShareVs[0].bExist;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShareVs) return FALSE;
+	stPcrShare* PcrShareVs = (m_mgrStatus->PcrShareVs);
+	return PcrShareVs[0].bExist;
 }
 
 BOOL CGvisRTR_PunchView::IsShareVsDn()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShareVs[1].bExist;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShareVs) return FALSE;
+	stPcrShare* PcrShareVs = (m_mgrStatus->PcrShareVs);
+	return PcrShareVs[1].bExist;
 }
 
 int CGvisRTR_PunchView::GetShareVsUp()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShareVs[0].nSerial;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShareVs) return 0;
+	stPcrShare* PcrShareVs = (m_mgrStatus->PcrShareVs);
+	return PcrShareVs[0].nSerial;
 }
 
 int CGvisRTR_PunchView::GetShareVsDn()
 {
-	if (!m_mgrReelmap)
-		return FALSE;
-	return m_mgrProcedure->PcrShareVs[1].nSerial;
+	if (!m_mgrStatus || !m_mgrStatus->PcrShareVs) return 0;
+	stPcrShare* PcrShareVs = (m_mgrStatus->PcrShareVs);
+	return PcrShareVs[1].nSerial;
 }
 
 void CGvisRTR_PunchView::DelOverLotEndSerialUp(int nSerial)
@@ -1280,16 +1394,15 @@ void CGvisRTR_PunchView::ChkReTestAlarmOnAoiUp()
 	DispStsBar(sMsg, 0);
 
 	int nSerial = m_pBufSerial[0][m_nBufTot[0] - 1];
-	stGeneral& General = (pView->m_mgrStatus->General);
+	stGeneral& General = (m_mgrStatus->General);
 
-	if (m_bSerialDecrese)
+	if (General.bSerialDecrese)
 	{
 		if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
 		{
 			pDoc->SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
 			Sleep(300);
 			MpeWrite(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
 		}
 		else if (General.nLotEndSerial > 0 && nSerial <= General.nLotEndSerial)
 		{
@@ -1303,12 +1416,10 @@ void CGvisRTR_PunchView::ChkReTestAlarmOnAoiUp()
 			pDoc->SetAoiUpAutoStep(2); // Wait for AOI 검사시작 신호.
 			Sleep(300);
 			MpeWrite(_T("MB44013B"), 1); // 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
 		}
 		else if (General.nLotEndSerial > 0 && nSerial >= General.nLotEndSerial)
 		{
 			MpeWrite(_T("MB44012B"), 1); // AOI 상 : PCR파일 Received
-			//pDoc->LogAuto(_T("PC: 검사부 상부 재작업 (시작신호) PCR파일 Received : PC가 On시키고 PLC가 Off"));
 		}
 	}
 
@@ -1320,21 +1431,20 @@ void CGvisRTR_PunchView::ChkReTestAlarmOnAoiDn()
 	sMsg.Format(_T("D%03d"), pDoc->GetAoiDnAutoSerial());
 	pView->DispStsBar(sMsg, 0);
 
+	stGeneral& General = (m_mgrStatus->General);
 	int nSerial = m_pBufSerial[1][m_nBufTot[1] - 1];
 
-	if (m_bSerialDecrese)
+	if (General.bSerialDecrese)
 	{
 		if (General.nLotEndSerial > 0 && nSerial > General.nLotEndSerial)
 		{
 			pDoc->SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
 			Sleep(300);
 			MpeWrite(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-			//pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
 		}
 		else if (General.nLotEndSerial > 0 && nSerial <= General.nLotEndSerial)
 		{
-			//if (m_pMpe)
-			//	MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+			;
 		}
 	}
 	else
@@ -1344,12 +1454,10 @@ void CGvisRTR_PunchView::ChkReTestAlarmOnAoiDn()
 			pDoc->SetAoiDnAutoStep(2); // Wait for AOI 검사시작 신호.
 			Sleep(300);
 			MpeWrite(_T("MB44013C"), 1); // 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off : PLC가 처음부터 다시 시작
-			//pDoc->LogAuto(_T("PC: 검사부 하부 재작업 (시작신호) : PC가 On시키고 PLC가 Off"));
 		}
 		else if (General.nLotEndSerial > 0 && nSerial >= General.nLotEndSerial)
 		{
-			//if (m_pMpe)
-			//	MpeWrite(_T("MB44012C"), 1); // AOI 하 : PCR파일 Received
+			;
 		}
 	}
 
@@ -1834,17 +1942,17 @@ void CGvisRTR_PunchView::DispMain(CString sMsg, COLORREF rgb)
 
 	if (sMsg == _T("정 지"))
 	{
-		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Stop"), TRUE);
-		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Run"), FALSE);
+		pView->SetMkMenu03(_T("Main"), _T("Stop"), TRUE);
+		pView->SetMkMenu03(_T("Main"), _T("Run"), FALSE);
 	}
 	else if (sMsg == _T("운전준비"))
 	{
-		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Ready"), TRUE);
+		pView->SetMkMenu03(_T("Main"), _T("Ready"), TRUE);
 	}
 	else
 	{
-		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Run"), TRUE);
-		m_mgrProcedure->SetMkMenu03(_T("Main"), _T("Stop"), FALSE);
+		pView->SetMkMenu03(_T("Main"), _T("Run"), TRUE);
+		pView->SetMkMenu03(_T("Main"), _T("Stop"), FALSE);
 	}
 
 	sMsg.Empty();
@@ -1967,6 +2075,28 @@ int CGvisRTR_PunchView::GetLastShotMk()
 	if (m_pDlgFrameHigh)
 		nLastShot = m_pDlgFrameHigh->GetLastShotMk();
 	return nLastShot;
+}
+
+int CGvisRTR_PunchView::GetLastShotUp()
+{
+	int nLastShot = 0;
+	if (pView->m_pDlgFrameHigh)
+		nLastShot = pView->m_pDlgFrameHigh->m_nAoiLastShot[0];
+
+	return (nLastShot);
+}
+
+int CGvisRTR_PunchView::GetLastShotDn()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return 0;
+
+	int nLastShot = 0;
+	if (pView->m_pDlgFrameHigh)
+		nLastShot = pView->m_pDlgFrameHigh->m_nAoiLastShot[1];
+
+	return (nLastShot);
 }
 
 BOOL CGvisRTR_PunchView::GetMkStSignal()
@@ -2143,14 +2273,24 @@ void CGvisRTR_PunchView::DispLotTime()
 
 void CGvisRTR_PunchView::SetMkMenu01(CString sMenu, CString sItem, CString sData)
 {
-	if(m_mgrProcedure)
-		m_mgrProcedure->SetMkMenu01(sMenu, sItem, sData);
+	CString sPath = pDoc->WorkingInfo.System.sPathMkMenu01;
+
+	if (sPath.IsEmpty())
+		return;
+
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
 }
 
 void CGvisRTR_PunchView::SetMkMenu03(CString sMenu, CString sItem, BOOL bOn)
 {
-	if (m_mgrProcedure)
-		m_mgrProcedure->SetMkMenu03(sMenu, sItem, bOn);
+	CString sPath = pDoc->WorkingInfo.System.sPathMkMenu03;
+	CString sData = _T("");
+
+	if (sPath.IsEmpty())
+		return;
+
+	sData.Format(_T("%d"), bOn > 0 ? 1 : 0);
+	::WritePrivateProfileString(sMenu, sItem, sData, sPath);
 }
 
 BOOL CGvisRTR_PunchView::IsEnableBtn(int nId)
@@ -2267,7 +2407,7 @@ void CGvisRTR_PunchView::UpdateRst()
 		m_pDlgMenu01->UpdateRst();
 }
 
-void CGvisRTR_PunchView::Buzzer(BOOL bOn, int nCh = 0)
+void CGvisRTR_PunchView::Buzzer(BOOL bOn, int nCh)
 {
 	if (m_mgrFeeding)
 		m_mgrFeeding->Buzzer(bOn, nCh);
@@ -2399,12 +2539,12 @@ void CGvisRTR_PunchView::DispInfo()
 	if (m_pDlgMenu01)
 		m_pDlgMenu01->UpdateData();
 
-	if (m_pDlgMenu05)
-	{
-		m_pDlgMenu05->InitModel();
-		if (m_pDlgMenu05->IsWindowVisible())
-			m_pDlgMenu05->AtDlgShow();
-	}
+	//if (m_pDlgMenu05)
+	//{
+	//	m_pDlgMenu05->InitModel();
+	//	if (m_pDlgMenu05->IsWindowVisible())
+	//		m_pDlgMenu05->AtDlgShow();
+	//}
 }
 
 void CGvisRTR_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
@@ -2434,7 +2574,7 @@ void CGvisRTR_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 		{
 			if (pDoc->GetTestMode() == MODE_OUTER)
 			{
-				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+				if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
 				{
 					if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
 					{
@@ -2463,7 +2603,7 @@ void CGvisRTR_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			{
 				if (pDoc->GetTestMode() == MODE_OUTER)
 				{
-					if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+					if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 					{
 						if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
 						{
@@ -2494,75 +2634,29 @@ void CGvisRTR_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			AfxMessageBox(_T("Error - IsLastJob(0)..."));
 		}
 
-		InitReelmapUp();
+		m_mgrReelmap->InitReelmapUp();
 
 		if (bGetCurrentInfoEng)
 		{
 			if (pDoc->GetTestMode() == MODE_OUTER)
 			{
-				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+				if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 				{
 					if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
 					{
-						InitReelmapInnerUp();
+						m_mgrReelmap->InitReelmapInnerUp();
 						if (bDualTestInner)
-							InitReelmapInnerDn();
+							m_mgrReelmap->InitReelmapInnerDn();
 					}
 				}
 			}
 		}
 
-		OpenReelmap();
+		m_mgrReelmap->OpenReelmap();
 		SetAlignPosUp();
 
 		InitReelmapDisp();
 		InitCamImgDisp();
-		//if (m_pDlgMenu02)
-		//{
-		//	m_pDlgMenu02->ChgModelUp();
-		//
-		//	if (bDualTest)
-		//		m_pDlgMenu02->ChgModelDn();
-		//}
-		//
-		//if (m_pDlgMenu01)
-		//{
-		//	m_pDlgMenu01->InitCadImgUp();
-		//}
-		//
-		//if (bGetCurrentInfoEng)
-		//{
-		//	if (pDoc->GetTestMode() == MODE_OUTER)
-		//	{
-		//		if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-		//		{
-		//			if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
-		//			{
-		//				if (m_pDlgMenu06)
-		//				{
-		//					m_pDlgMenu06->InitCadImgUp();
-		//					if (bDualTestInner)
-		//						m_pDlgMenu06->InitCadImgDn();
-		//
-		//					m_pDlgMenu06->InitGL();
-		//					m_bDrawGL_Menu06 = TRUE;
-		//					m_pDlgMenu06->RefreshRmap();
-		//				}
-		//
-		//			}
-		//		}
-		//	}
-		//}
-		//
-		//if (m_pDlgMenu01)
-		//{
-		//	if (!bDualTest)
-		//	{
-		//		m_pDlgMenu01->InitGL();
-		//		m_bDrawGL_Menu01 = TRUE;
-		//		m_pDlgMenu01->RefreshRmap();
-		//	}
-		//}
 	}
 
 
@@ -2588,120 +2682,65 @@ void CGvisRTR_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 				AfxMessageBox(_T("Error - IsLastJob(1)..."));
 			}
 
-			InitReelmapDn();
+			m_mgrReelmap->InitReelmapDn();
 			SetAlignPosDn();
 
 			InitReelmapDisp();
 			InitCamImgDisp();
-
-			//if (m_pDlgMenu02)
-			//	m_pDlgMenu02->ChgModelDn();
-			//
-			//if (m_pDlgMenu01)
-			//{
-			//	m_pDlgMenu01->InitCadImgDn();
-			//	if (nAoi == 1)
-			//	{
-			//		if (bGetCurrentInfoEng)
-			//		{
-			//			if (pDoc->GetTestMode() == MODE_OUTER)
-			//			{
-			//				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-			//				{
-			//					if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
-			//					{
-			//						if (m_pDlgMenu06)
-			//						{
-			//							m_pDlgMenu06->InitCadImgUp();
-			//							if (bDualTestInner)
-			//								m_pDlgMenu06->InitCadImgDn();
-			//
-			//							m_pDlgMenu06->InitGL();
-			//							m_bDrawGL_Menu06 = TRUE;
-			//							m_pDlgMenu06->RefreshRmap();
-			//						}
-			//
-			//					}
-			//				}
-			//			}
-			//		}
-			//
-			//		m_pDlgMenu01->InitGL();
-			//		m_bDrawGL_Menu01 = TRUE;
-			//		m_pDlgMenu01->RefreshRmap();
-			//	}
-			//}
 		}
 	}
 }
 
 void CGvisRTR_PunchView::SetAlignPos()
 {
-	if (m_pMotion)
-	{
-		m_pMotion->m_dAlignPosX[0][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
-		m_pMotion->m_dAlignPosX[0][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
-
-		m_pMotion->m_dAlignPosX[1][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
-		m_pMotion->m_dAlignPosX[1][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
-	}
+	if (m_mgrPunch)
+		m_mgrPunch->SetAlignPos();
 }
 
 void CGvisRTR_PunchView::SetAlignPosUp()
 {
-	if (m_pMotion)
-	{
-		m_pMotion->m_dAlignPosX[0][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
-		m_pMotion->m_dAlignPosX[0][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
-	}
+	if (m_mgrPunch)
+		m_mgrPunch->SetAlignPosUp();
 }
 
 void CGvisRTR_PunchView::SetAlignPosDn()
 {
-	if (m_pMotion)
-	{
-		m_pMotion->m_dAlignPosX[1][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
-		m_pMotion->m_dAlignPosX[1][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
-	}
+	if (m_mgrPunch)
+		m_mgrPunch->SetAlignPosDn();
 }
 
 void CGvisRTR_PunchView::ModelChange(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn 
 {
+	if (!m_mgrStatus || !m_mgrStatus->PcrShare) return;
+	stPcrShare* PcrShare = (m_mgrStatus->PcrShare);
+
 	if (nAoi == 0)
 	{
-		pDoc->SetModelInfoUp();
-		pView->OpenReelmapUp(); // At Start...
-		pView->SetPathAtBufUp();
-		if (pView->m_pDlgMenu01)
+		m_mgrProcedure->SetModelInfoUp();
+		m_mgrReelmap->OpenReelmapUp(); // At Start...
+		m_mgrReelmap->SetPathAtBufUp();
+		if (m_pDlgMenu01)
 		{
-			pView->m_pDlgMenu01->UpdateData();
+			m_pDlgMenu01->UpdateData();
 		}
 
-		pDoc->m_pSpecLocal->MakeDir(pDoc->Status.PcrShare[0].sModel, pDoc->Status.PcrShare[0].sLayer);
+		MakeDir(PcrShare[0].sModel, PcrShare[0].sLayer);
 
 		if (pDoc->GetTestMode() == MODE_OUTER)
 		{
-			OpenReelmapInner();
+			m_mgrReelmap->OpenReelmapInner();
 		}
 	}
 	else if (nAoi == 1)
 	{
-		pDoc->SetModelInfoDn();
-		pView->OpenReelmapDn(); // At Start...
-		pView->SetPathAtBufDn();
-		if (pView->m_pDlgMenu01)
+		m_mgrProcedure->SetModelInfoDn();
+		m_mgrReelmap->OpenReelmapDn(); // At Start...
+		m_mgrReelmap->SetPathAtBufDn();
+		if (m_pDlgMenu01)
 		{
-			pView->m_pDlgMenu01->UpdateData();
+			m_pDlgMenu01->UpdateData();
 		}
-		pDoc->m_pSpecLocal->MakeDir(pDoc->Status.PcrShare[1].sModel, pDoc->Status.PcrShare[1].sLayer);
+		MakeDir(PcrShare[1].sModel, PcrShare[1].sLayer);
 	}
 }
 
@@ -2748,21 +2787,10 @@ void CGvisRTR_PunchView::UpdateProcessNum(CString sProcessNum)
 
 void CGvisRTR_PunchView::ClrMkInfo()
 {
-	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
-	pDoc->ClrPcr();
-	if (pDoc->m_pReelMap)
-		pDoc->m_pReelMap->Clear();
-	if (pDoc->m_pReelMapUp)
-		pDoc->m_pReelMapUp->Clear();
-	if (bDualTest)
-	{
-		if (pDoc->m_pReelMapDn)
-			pDoc->m_pReelMapDn->Clear();
-		if (pDoc->m_pReelMapAllUp)
-			pDoc->m_pReelMapAllUp->Clear();
-		if (pDoc->m_pReelMapAllDn)
-			pDoc->m_pReelMapAllDn->Clear();
-	}
+	if (!m_mgrReelmap) return;
+	if (m_mgrReelmap)
+		m_mgrReelmap->ClrMkInfo();
+
 	if (m_pDlgMenu01)
 	{
 		m_pDlgMenu01->ResetMkInfo();
@@ -2772,14 +2800,15 @@ void CGvisRTR_PunchView::ClrMkInfo()
 		m_pDlgMenu01->UpdateRst();
 	}
 
-
 	CString sLot, sLayerUp, sLayerDn;
 	BOOL bDualTestInner;
 	if (pDoc->GetCurrentInfoEng())
 	{
 		if (pDoc->GetTestMode() == MODE_OUTER)
 		{
-			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+			CCamMaster* pMasterInner = m_mgrReelmap->m_MasterInner;
+			if (!pMasterInner) return;
+			if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
 			{
 				if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, sLayerUp))
 				{
@@ -2795,4 +2824,372 @@ void CGvisRTR_PunchView::ClrMkInfo()
 	}
 
 	UpdateWorking();
+}
+
+void CGvisRTR_PunchView::DoLoadMstInfo()
+{
+	m_bLoadMstInfo = TRUE;
+}
+
+BOOL CGvisRTR_PunchView::LoadMstInfo()
+{
+	CCamMaster* pMaster = m_mgrReelmap->m_Master;
+	CCamMaster* pMasterInner = m_mgrReelmap->m_MasterInner;
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	CString sLot, sLayerUp, sLayerDn;
+	BOOL bDualTestInner, bGetCurrentInfoEng;
+
+	bGetCurrentInfoEng = pDoc->GetCurrentInfoEng(); // TRUE: MODE_INNER or MODE_OUTER
+	pDoc->GetCamPxlRes();
+
+	if (IsLastJob(0)) // Up : Check Empty (sPathCamSpecDir, sModelUp, sLayerUp)
+	{
+		if (bGetCurrentInfoEng)
+		{
+			pMaster[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, pDoc->m_sEngLayerUp);
+			pMaster[0].LoadMstInfo();
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+				{
+					if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+					{
+						pMasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp);
+						pMasterInner[0].LoadMstInfo();
+					}
+				}
+			}
+		}
+		else
+		{
+			pMaster[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModelUp, pDoc->WorkingInfo.LastJob.sLayerUp);
+			pMaster[0].LoadMstInfo();
+		}
+	}
+
+	if (IsLastJob(1)) // Dn : Check Empty (sPathCamSpecDir, sModelUp, sLayerUp)
+	{
+		if (bGetCurrentInfoEng)
+		{
+			pMaster[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->m_sEngModel,
+				pDoc->m_sEngLayerDn,
+				pDoc->m_sEngLayerUp);
+
+			pMaster[1].LoadMstInfo();
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+				{
+					if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
+					{
+						pMasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->m_sEngModel,
+							sLayerDn,
+							sLayerUp);
+						pMasterInner[1].LoadMstInfo();
+					}
+				}
+			}
+		}
+		else
+		{
+			pMaster[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->WorkingInfo.LastJob.sModelUp,
+				pDoc->WorkingInfo.LastJob.sLayerDn,
+				pDoc->WorkingInfo.LastJob.sLayerUp);
+
+			pMaster[1].LoadMstInfo();
+		}
+	}
+
+	//if (m_pDts)
+	//{
+	//	if (m_pDts->IsUseDts())
+	//	{
+	//		pMasterDB.WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.LastJob.sLotUp);
+	//	}
+	//}
+
+	SetAlignPos();
+
+	// Reelmap 정보 Loading.....
+	if(m_mgrReelmap)
+		m_mgrReelmap->InitReelmap(); // Delete & New
+
+	if (bGetCurrentInfoEng)
+	{
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+			{
+				if (pMasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+				{
+					// Reelmap 정보 Loading.....
+					m_mgrReelmap->InitReelmapInner(); // Delete & New
+
+					if (m_pDlgMenu06)
+					{
+						m_pDlgMenu06->InitGL();
+						m_pDlgMenu06->RefreshRmap();
+						m_pDlgMenu06->InitCadImg();
+						m_pDlgMenu06->SetPnlNum();
+						m_pDlgMenu06->SetPnlDefNum();
+
+						if (bDualTestInner)
+							m_pDlgMenu06->SelMap(ALL);
+						else
+							m_pDlgMenu06->SelMap(UP);
+					}
+				}
+				else
+				{
+					MsgBox(_T("InitReelmapInner()를 위한 GetItsSerialInfo의 정보가 없습니다.")); // syd-20231127
+					return FALSE;
+				}
+			}
+		}
+	}
+
+	if (m_pDlgMenu01)
+	{
+		m_pDlgMenu01->InitGL();
+		m_bDrawGL_Menu01 = TRUE;
+		m_pDlgMenu01->RefreshRmap();
+		m_pDlgMenu01->InitCadImg();
+		m_pDlgMenu01->SetPnlNum();
+		m_pDlgMenu01->SetPnlDefNum();
+	}
+
+	if (m_pDlgMenu02)
+	{
+		m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
+		m_pDlgMenu02->InitCadImg();
+	}
+#ifndef TEST_MODE
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->RedrawWindow();
+
+	DispMsg(_T("릴맵을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+	OpenReelmap();
+#endif
+	SetPathAtBuf(); // Reelmap path를 설정함.
+					//LoadPcrFromBuf();
+
+	int nSrl = pDoc->GetLastShotMk();
+	SetMkFdLen();
+	if (nSrl >= 0)
+	{
+		if (bDualTest)
+			m_pDlgMenu01->SelMap(ALL);
+		else
+			m_pDlgMenu01->SelMap(UP);
+	}
+
+	return TRUE;
+}
+
+void CGvisRTR_PunchView::UpdateWorking()
+{
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->UpdateWorking();
+}
+
+BOOL CGvisRTR_PunchView::GetEngInfo()
+{
+	if (!m_mgrProcedure || !m_mgrProcedure->m_pEngrave)	return FALSE;	
+	return m_mgrProcedure->m_pEngrave->GetEngInfo();
+}
+
+void CGvisRTR_PunchView::SetEngInfo(BOOL bOn)
+{
+	if (!m_mgrProcedure || !m_mgrProcedure->m_pEngrave)	return;
+	return m_mgrProcedure->m_pEngrave->SetEngInfo(bOn);
+}
+
+BOOL CGvisRTR_PunchView::GetEngOpInfo()
+{
+	if (!m_mgrProcedure || !m_mgrProcedure->m_pEngrave)	return FALSE;
+	return m_mgrProcedure->m_pEngrave->GetEngOpInfo();
+}
+
+void CGvisRTR_PunchView::SetEngOpInfo(BOOL bOn)
+{
+	if (!m_mgrProcedure || !m_mgrProcedure->m_pEngrave)	return;
+	return m_mgrProcedure->m_pEngrave->SetEngOpInfo(bOn);
+}
+
+BOOL CGvisRTR_PunchView::IsLastJob(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+{
+	switch (nAoi)
+	{
+	case 0: // AOI-Up
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerUp.IsEmpty())
+			return FALSE;
+		break;
+	case 1: // AOI-Dn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	case 2: // AOI-UpDn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerUp.IsEmpty())
+			return FALSE;
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sModelUp.IsEmpty() ||
+			pDoc->WorkingInfo.LastJob.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+BOOL CGvisRTR_PunchView::GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption)		// 내층에서의 ITS 시리얼의 정보
+{
+	if (!m_mgrProcedure) return FALSE;
+	return m_mgrProcedure->GetItsSerialInfo(nItsSerial, bDualTest, sLot, sLayerUp, sLayerDn, nOption);
+}
+
+BOOL CGvisRTR_PunchView::MakeDir(CString sModel, CString sLayer)
+{
+	CString sMsg = _T("");
+	CFileFind finder;
+	CString sPath;
+#ifdef TEST_MODE
+	//if(!finder.FindFile(PATH_LOCAL_SPEC))
+	if (!pDoc->DirectoryExists(PATH_LOCAL_SPEC))
+		CreateDirectory(PATH_LOCAL_SPEC, NULL);
+
+	if (sModel.IsEmpty() || sLayer.IsEmpty())
+	{
+		sMsg.Format(_T("모델이나 레이어명이 없습니다."));
+		pView->ClrDispMsg();
+		AfxMessageBox(sMsg);
+		return FALSE;
+	}
+
+	sPath.Format(_T("%s\\%s"), PATH_LOCAL_SPEC, sModel);
+	//if(!finder.FindFile(sPath))
+	if (!pDoc->DirectoryExists(sPath))
+		CreateDirectory(sPath, NULL);
+
+	sPath.Format(_T("%s\\%s\\%s"), PATH_LOCAL_SPEC, sModel, sLayer);
+	//if(!finder.FindFile(sPath))
+	if (!pDoc->DirectoryExists(sPath))
+		CreateDirectory(sPath, NULL);
+#else
+	sPath.Format(_T("%s"), PATH_LOCAL_SPEC);
+	//if(!finder.FindFile(sPath))
+	if (!pDoc->DirectoryExists(sPath))
+		CreateDirectory(sPath, NULL);
+
+	if (sModel.IsEmpty() || sLayer.IsEmpty())
+	{
+		sMsg.Format(_T("모델이나 레이어명이 없습니다."));
+		pView->ClrDispMsg();
+		AfxMessageBox(sMsg);
+		return FALSE;
+	}
+
+	sPath.Format(_T("%s\\%s"), PATH_LOCAL_SPEC, sModel);
+	//if(!finder.FindFile(sPath))
+	if (!pDoc->DirectoryExists(sPath))
+		CreateDirectory(sPath, NULL);
+
+	sPath.Format(_T("%s\\%s\\%s"), PATH_LOCAL_SPEC, sModel, sLayer);
+	//if(!finder.FindFile(sPath))
+	if (!pDoc->DirectoryExists(sPath))
+		CreateDirectory(sPath, NULL);
+#endif
+	return TRUE;
+}
+
+double CGvisRTR_PunchView::GetEnc(int nAxis)
+{
+	if (!m_mgrPunch) return 0.0;
+	return m_mgrPunch->GetEnc(nAxis);
+}
+void CGvisRTR_PunchView::SetCompletedSerial(int nSerial)
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.49"));
+		return;
+	}
+	if (nSerial > 0)
+	{
+		CString str, sPath = PATH_WORKING_INFO;
+		str.Format(_T("%d"), nSerial);
+		pDoc->WorkingInfo.LastJob.sCompletedSerialUp = str;
+		::WritePrivateProfileString(_T("Last Job"), _T("Completed SerialUp"), str, sPath);
+		pDoc->WorkingInfo.LastJob.sCompletedSerialDn = str;
+		::WritePrivateProfileString(_T("Last Job"), _T("Completed SerialDn"), str, sPath);
+
+		if (m_mgrReelmap)
+			m_mgrReelmap->SetCompletedSerial(nSerial);
+	}
+}
+
+BOOL CGvisRTR_PunchView::IsShowLive()
+{
+	if (m_pDlgMenu02)
+	{
+		if (m_pDlgMenu02->IsWindowVisible())
+			return TRUE;
+	}
+	return FALSE;
+}
+
+void CGvisRTR_PunchView::ShowLive(BOOL bShow)
+{
+	if (bShow)
+	{
+		if (!IsShowLive())
+			SetTimer(TIM_SHOW_MENU02, 30, NULL);
+	}
+	else
+	{
+		if (IsShowLive())
+			SetTimer(TIM_SHOW_MENU01, 30, NULL);
+	}
+}
+
+void CGvisRTR_PunchView::SetMkFdLen()
+{
+	if (m_mgrFeeding)
+		m_mgrFeeding->SetMkFdLen();
+}
+
+BOOL CGvisRTR_PunchView::ChkLotCutPos()
+{
+	if (pDoc->WorkingInfo.LastJob.bLotSep && pDoc->m_bDoneChgLot)
+	{
+		double dFdTotLen = m_mgrFeeding->GetMkFdLen();
+		double dLotCutPos = _tstof(pDoc->WorkingInfo.LastJob.sLotCutPosLen)*1000.0;
+		if (dFdTotLen >= dLotCutPos)
+		{
+			pDoc->WorkingInfo.LastJob.bLotSep = FALSE;
+			m_mgrReelmap->UpdateData();
+			MpeWrite(_T("MB440184"), 0);	// 로트분리사용(PC가 On시키고, PC가 확인하고 Off시킴)
+
+			::WritePrivateProfileString(_T("Last Job"), _T("Use Lot seperate"), _T("0"), PATH_WORKING_INFO);
+
+			if (m_pDlgMenu01)
+				m_pDlgMenu01->UpdateData();
+
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }

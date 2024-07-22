@@ -37,13 +37,25 @@ class CEngrave : public CWnd
 	void StopClient();
 	BOOL CheckResponse(int nCmd, CString sResponse);
 	BOOL WaitResponse();
+	double GetAoiUpFdLen();
+	double GetAoiDnFdLen();
+	void SetAoiFdPitch(double dPitch);
+	void SetMkFdPitch(double dPitch);
+	void SetMarkShiftData(int nCamNum);
+	void SetMarkFinalData(int nCamNum);
 	CString CharToString(char *szStr);
+	void StringToChar(CString str, char *szStr);
+	void SetUserName(CString sName);
+	void SetOnePnlLen(CString sLength);
+	void SetTempStopLen(CString sLength);
+	void SetLotCutPosLen(CString sLength);
+	void SetUltraSonicStTim(CString sTime);
+	long GetMpeData(int nSection, int nName);
 
 public:
 	CEngrave(CString sAddrCli, CString sAddrSvr, CString sPortSvr, CWnd* pParent = NULL);
 	~CEngrave();
 
-	stBtnStatus BtnStatus;
 	BOOL m_bRcvSig[_SigInx::_EndIdx];
 
 	BOOL m_bGetOpInfo, m_bGetInfo, m_bGetEngInfo;
@@ -143,28 +155,7 @@ public:
 	void SetSignalEngrave();
 	void SetSignalUncoiler();
 
-	// SetSysData
-	BOOL SetSysData();
-	void SetOpInfo();
-	void SetInfo();
-	void SetTotRatio();
-	void SetStTime();
-	void SetRunTime();
-	void SetEdTime();
-	void SetStripRatio();
-	void SetDef();
-	void Set2DReader();
-	void SetEngInfo();
-	void SetFdInfo();
-	void SetAoiInfo();
-	void SetMkInfo();
-	void SetMkInfoLf();
-	void SetMkInfoRt();
-
-	// Communcation - Sub Item
-
 	// SetOpInfo()
-	void SetOpName();
 	void SetDualTest();
 	void SetDispContRun();
 	void SetDispLotEnd();
@@ -222,22 +213,6 @@ public:
 	void SetLotSerial();
 	void SetMkVerfyLen();
 
-	// SetTotRatio()
-	void SetDefNumUp();
-	void SetDefRtoUp();
-	void SetGoodNumUp();
-	void SetGoodRtoUp();
-	void SetTestNumUp();
-	void SetDefNumDn();
-	void SetDefRtoDn();
-	void SetGoodNumDn();
-	void SetGoodRtoDn();
-	void SetTestNumDn();
-	void SetDefNumTot();
-	void SetDefRtoTot();
-	void SetGoodNumTot();
-	void SetGoodRtoTot();
-	void SetTestNumTot();
 
 	// Set2DReader()
 	void Set2DEngLen();
@@ -331,9 +306,6 @@ public:
 	// Set Engrave Data
 	void SetEngraveAoiDist();
 	void SetEngraveFdPitch();
-	//void IsSetEngraveAoiDist();
-	//void IsSetEngraveFdPitch();
-
 	// End for SetSysData()
 
 	// Start Switch
@@ -607,9 +579,6 @@ public:
 
 	// On Running Auto
 	BOOL UpdateWorking();
-	BOOL UpdateRst();
-	BOOL UpdateTotRatio();
-	BOOL UpdateStripRatio();
 	BOOL UpdateDef();
 
 	void SwMenu01UpdateWorking(BOOL bOn);
@@ -618,6 +587,11 @@ public:
 
 	// SetteingEng
 	void Set2DOffsetInitPosMove(BOOL bOn);
+
+	BOOL GetEngInfo();
+	void SetEngInfo(BOOL bOn);
+	BOOL GetEngOpInfo();
+	void SetEngOpInfo(BOOL bOn);
 
 protected:
 	afx_msg LRESULT wmClientReceived(WPARAM wParam, LPARAM lParam);

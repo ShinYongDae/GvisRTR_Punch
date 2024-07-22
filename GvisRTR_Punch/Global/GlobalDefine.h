@@ -677,6 +677,7 @@ struct stSystem
 	BOOL bSaveMkImg, bSaveGrabImg;
 	BOOL bStripPcsRgnBin;
 	BOOL bUseDTS, bUseITS;
+	CString sPassword;
 
 	// Sapp3 code
 	int m_nSapp3Code[10];
@@ -727,6 +728,7 @@ struct stSystem
 		bStripPcsRgnBin = FALSE;
 		bUseDTS = FALSE;
 		bUseITS = FALSE;
+		sPassword = _T("gvis");
 
 		m_nSapp3Code[0] = 0; m_nSapp3Code[1] = 0; m_nSapp3Code[2] = 0; m_nSapp3Code[3] = 0; m_nSapp3Code[4] = 0;
 		m_nSapp3Code[5] = 0; m_nSapp3Code[6] = 0; m_nSapp3Code[7] = 0; m_nSapp3Code[8] = 0; m_nSapp3Code[9] = 0;
@@ -871,6 +873,7 @@ struct stMarking
 	CString sMarkingToqOffset;
 	CString sMeasurePosX[4], sMeasurePosY[4];
 	CString sAverDist;
+	CString sMarkingDisp1Toq, sMarkingDisp2Toq;
 	int nMkCnt;
 	int nMkLimit;
 
@@ -885,6 +888,8 @@ struct stMarking
 		sMarkingAcc = _T("");
 		sMarkingToq = _T("");
 		sMarkingToqOffset = _T("");
+		sMarkingDisp1Toq = _T("");
+		sMarkingDisp2Toq = _T("");
 
 		for (int i = 0; i < 4; i++)
 		{

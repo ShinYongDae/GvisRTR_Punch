@@ -73,8 +73,9 @@ typedef struct tagSocketData {
 #define EVT_CONDROP			0x0002	// Connection dropped
 #define EVT_ZEROLENGTH		0x0003	// Zero length message
 #define EVT_CONSUCCESS_EX	0x0004	// Connection established
-
+#ifndef BUFFER_DATA_SIZE
 #define BUFFER_DATA_SIZE	15752 //170206 lgh expend
+#endif
 #define HOSTNAME_SIZE	    MAX_PATH
 #define STRING_LENGTH	    40
 #define PROTOCOL_DEFAULT_LENGTH 52

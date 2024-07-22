@@ -10,6 +10,7 @@
 #endif
 
 #include "GvisRTR_PunchDoc.h"
+#include "safelockdoc.h"
 
 #include <propkey.h>
 
@@ -22,6 +23,9 @@
 extern CGvisRTR_PunchView* pView;
 
 CGvisRTR_PunchDoc* pDoc;
+
+CCriticalSection g_LogLockAuto;
+CCriticalSection g_LogLockPLC;
 
 // CGvisRTR_PunchDoc
 
@@ -44,6 +48,8 @@ CGvisRTR_PunchDoc::CGvisRTR_PunchDoc()
 
 	m_nAoiCamInfoStrPcs[0] = 0;
 	m_nAoiCamInfoStrPcs[1] = 0;
+
+	m_bDoneChgLot = FALSE;
 
 	LoadWorkingInfo();
 }
@@ -190,12 +196,6 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 	else
 		m_bDebugGrabAlign = FALSE;
 
-	//if (0 < ::GetPrivateProfileString(_T("DTS"), _T("UseIts"), NULL, szData, sizeof(szData), PATH_WORKING_INFO))
-	//	m_bUseIts = _ttoi(szData) ? TRUE : FALSE;
-	//else
-	//	m_bUseIts = FALSE;
-
-	// 20160926 - syd
 	if (0 < ::GetPrivateProfileString(_T("System"), _T("USE_RTR_SHIFT_ADJUST"), NULL, szData, sizeof(szData), sPath))
 	{
 		m_bUseRTRYShiftAdjust = (BOOL)(_ttoi(szData) ? TRUE : FALSE);
@@ -212,9 +212,9 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 
 
 	if (0 < ::GetPrivateProfileString(_T("System"), _T("Password"), NULL, szData, sizeof(szData), sPath))
-		pDoc->m_sPassword = CString(szData);
+		m_sPassword = CString(szData);
 	else
-		pDoc->m_sPassword = _T("gvis");
+		m_sPassword = _T("gvis");
 
 	if (0 < ::GetPrivateProfileString(_T("System"), _T("MachineName"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.System.sMcName = CString(szData);
@@ -711,15 +711,15 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 		m_nDelayShow = 500;
 
 	// [Last Job]
-	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("MkSt"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bMkSt = _ttoi(szData) > 0 ? TRUE : FALSE;
-	else
-		pView->m_bMkSt = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("MkSt"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bMkSt = _ttoi(szData) > 0 ? TRUE : FALSE;
+	//else
+	//	pView->m_bMkSt = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("MkStAuto"), NULL, szData, sizeof(szData), sPath))
-		pView->m_nMkStAuto = _ttoi(szData);
-	else
-		pView->m_nMkStAuto = 0;
+	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("MkStAuto"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_nMkStAuto = _ttoi(szData);
+	//else
+	//	pView->m_nMkStAuto = 0;
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Process Code"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.LastJob.sProcessNum = CString(szData);
@@ -912,8 +912,8 @@ BOOL CGvisRTR_PunchDoc::LoadWorkingInfo()
 	else
 		WorkingInfo.LastJob.nMergingLayer = 0; 	// [0]:AOI-Up , [1]:AOI-Dn
 
-	if (pDoc->m_pReelMap)
-		pDoc->m_pReelMap->m_bUseTempPause = WorkingInfo.LastJob.bTempPause;
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->m_bUseTempPause = WorkingInfo.LastJob.bTempPause;
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Temporary Pause Length"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.LastJob.sTempPauseLen = CString(szData);
@@ -3043,17 +3043,6 @@ void CGvisRTR_PunchDoc::SetEngraveAoiDist(double dLen)
 	pView->MpeWrite(_T("ML45024"), lData);	// 각인부에서 AOI(상)까지 거리 (단위 mm * 1000)
 }
 
-void CGvisRTR_PunchDoc::SetEngBufInitPos(double dPos)
-{
-	CString sData, sPath = PATH_WORKING_INFO;
-	sData.Format(_T("%.3f"), dPos);
-	WorkingInfo.Motion.sStEngBufPos = sData;
-	::WritePrivateProfileString(_T("Motion"), _T("START_ENG_BUFFER_POSITION"), sData, sPath);
-	long lData = (long)(dPos * 1000.0);
-	pView->MpeWrite(_T("ML45028"), lData);	// 각인부 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
-}
-
-
 double CGvisRTR_PunchDoc::GetOffsetInitPos()
 {
 	TCHAR szData[200];
@@ -3234,8 +3223,7 @@ BOOL CGvisRTR_PunchDoc::GetAoiUpVsStatus()
 
 int CGvisRTR_PunchDoc::GetLastShotMk()	// m_pDlgFrameHigh에서 얻거나 없으면, sPathOldFile폴더의 ReelMapDataDn.txt에서 _T("Info"), _T("Marked Shot") 찾음.
 {
-	if (!pView->m_mgrStatus)
-		return 0;
+	if (!pView->m_mgrStatus) return 0;
 
 	stGeneral& General = (pView->m_mgrStatus->General);
 
@@ -3408,7 +3396,7 @@ void CGvisRTR_PunchDoc::SetOnePnlLen(double dLen)
 	sVal.Format(_T("%.3f"), dLen);
 	WorkingInfo.LastJob.sOnePnlLen = sVal;
 	WorkingInfo.Motion.sMkFdDist = WorkingInfo.Motion.sAoiFdDist = sVal;
-	m_pReelMap->m_dPnlLen = dLen;
+	pView->m_mgrReelmap->SetOnePnlLen(dLen);
 	::WritePrivateProfileString(_T("Last Job"), _T("One Panel Length"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_DIST"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_DIST"), sVal, sPath);
@@ -3506,17 +3494,6 @@ double CGvisRTR_PunchDoc::GetAoiFdPitch()
 	return (_tstof(WorkingInfo.Motion.sAoiFdLead));
 }
 
-void CGvisRTR_PunchDoc::SetMkFdPitch(double dPitch)
-{
-	CString sPath = PATH_WORKING_INFO;
-	CString sVal;
-	sVal.Format(_T("%.3f"), dPitch);
-	WorkingInfo.Motion.sMkFdLead = sVal;
-	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_DRUM_LEAD_PITCH"), sVal, sPath);
-	long lData = (long)(dPitch * 1000.0);
-	pView->MpeWrite(_T("ML45014"), lData);	// 마킹부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
-}
-
 double CGvisRTR_PunchDoc::GetMkFdPitch()
 {
 	return (_tstof(WorkingInfo.Motion.sMkFdLead));
@@ -3543,11 +3520,6 @@ void CGvisRTR_PunchDoc::SetFdErrRng(double dRng)
 	sVal.Format(_T("%.3f"), dRng);
 	WorkingInfo.Motion.sLmtFdAdjOffSet = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("ADJUST_LIMIT_FEEDING_OFFSET"), sVal, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetFdDiffRng();	//_ItemInx::_FdDiffRng
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetFdErrRng()
@@ -3562,11 +3534,6 @@ void CGvisRTR_PunchDoc::SetFdErrNum(int nNum)
 	sVal.Format(_T("%d"), nNum);
 	WorkingInfo.Motion.sLmtFdOvrNum = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("ADJUST_LIMIT_FEEDING_OVER_NUM"), sVal, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetFdDiffNum();	//_ItemInx::_FdDiffNum
-	//#endif
 }
 
 int CGvisRTR_PunchDoc::GetFdErrNum()
@@ -3580,15 +3547,8 @@ void CGvisRTR_PunchDoc::SetBufInitPos(double dPos)
 	sData.Format(_T("%.3f"), dPos);
 	WorkingInfo.Motion.sStBufPos = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("START_BUFFER_POSITION"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPos * 1000.0);
 	pView->MpeWrite(_T("ML45016"), lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetMkBuffInitPos();	//_ItemInx::_MkBuffInitPos
-												//#endif
 }
 
 void CGvisRTR_PunchDoc::SetEngBufInitPos(double dPos)
@@ -3597,10 +3557,8 @@ void CGvisRTR_PunchDoc::SetEngBufInitPos(double dPos)
 	sData.Format(_T("%.3f"), dPos);
 	WorkingInfo.Motion.sStEngBufPos = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("START_ENG_BUFFER_POSITION"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPos * 1000.0);
 	pView->MpeWrite(_T("ML45028"), lData);	// 각인부 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
-#endif
 }
 
 void CGvisRTR_PunchDoc::SetBufInitPos(double dVel, double dAcc)
@@ -3624,17 +3582,9 @@ void CGvisRTR_PunchDoc::SetAoiMkDist(double dLen)
 	CString sData, sPath = PATH_WORKING_INFO;
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.sFdMkAoiInitDist = sData;
-	//::WritePrivateProfileString(_T("Motion"), _T("FEEDING_INIT_DIST_OFFSET"), sData, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_PUNCH_AOI_INIT_DIST"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
 	pView->MpeWrite(_T("ML45008"), lData);	// AOI(하)에서 마킹까지 거리 (단위 mm * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetAoiMkLen();	//_ItemInx::_AoiMkLen
-												//#endif
 }
 
 void CGvisRTR_PunchDoc::SetAoiAoiDist(int nShot)
@@ -3643,15 +3593,8 @@ void CGvisRTR_PunchDoc::SetAoiAoiDist(int nShot)
 	sData.Format(_T("%d"), nShot);
 	WorkingInfo.Motion.sFdAoiAoiDistShot = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_AOI_AOI_SHOT_NUM"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(nShot * 1000);
 	pView->MpeWrite(_T("ML45010"), lData);	// AOI(상)에서 AOI(하) Shot수 (단위 Shot수 * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetAoiBuffShotNum();	//_ItemInx::_AoiBuffShotNum
-												//#endif
 }
 
 double CGvisRTR_PunchDoc::GetAoiMkDist()
@@ -3742,6 +3685,21 @@ double CGvisRTR_PunchDoc::GetMarkingAcc1()
 	return (_tstof(WorkingInfo.Marking[0].sMarkingAcc));
 }
 
+double CGvisRTR_PunchDoc::GetMarkingToq()
+{
+	return (_tstof(WorkingInfo.Motion.sMkTq));
+}
+
+void CGvisRTR_PunchDoc::SetMarkingToq(double dToq)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+	sData.Format(_T("%.3f"), dToq);
+	WorkingInfo.Motion.sMkTq = sData;
+	::WritePrivateProfileString(_T("Motion"), _T("MARKING_TENSION_SERVO_TORQUE"), sData, sPath);
+	long lData = (long)(dToq * 1000.0);
+	pView->MpeWrite(_T("ML45044"), lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
+}
+
 void CGvisRTR_PunchDoc::SetMarkingToq1(double dToq)
 {
 	CString sData, sPath = PATH_WORKING_INFO;
@@ -3769,11 +3727,6 @@ void CGvisRTR_PunchDoc::SetPosX1_1(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[0].sMeasurePosX[0] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSX1"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX1Lf();	//_ItemInx::_MkHgtPosX1Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX1_1()
@@ -3787,11 +3740,6 @@ void CGvisRTR_PunchDoc::SetPosY1_1(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[0].sMeasurePosY[0] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSY1"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY1Lf();	//_ItemInx::_MkHgtPosY1Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY1_1()
@@ -3805,11 +3753,6 @@ void CGvisRTR_PunchDoc::SetPosX1_2(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[0].sMeasurePosX[1] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSX2"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX2Lf();	//_ItemInx::_MkHgtPosX2Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX1_2()
@@ -3823,11 +3766,6 @@ void CGvisRTR_PunchDoc::SetPosY1_2(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[0].sMeasurePosY[1] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSY2"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY2Lf();	//_ItemInx::_MkHgtPosY2Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY1_2()
@@ -3841,11 +3779,6 @@ void CGvisRTR_PunchDoc::SetPosX1_3(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[0].sMeasurePosX[2] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSX3"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX3Lf();	//_ItemInx::_MkHgtPosX3Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX1_3()
@@ -3859,11 +3792,6 @@ void CGvisRTR_PunchDoc::SetPosY1_3(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[0].sMeasurePosY[2] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSY3"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY3Lf();	//_ItemInx::_MkHgtPosY3Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY1_3()
@@ -3877,11 +3805,6 @@ void CGvisRTR_PunchDoc::SetPosX1_4(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[0].sMeasurePosX[3] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSX4"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX4Lf();	//_ItemInx::_MkHgtPosX4Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX1_4()
@@ -3895,11 +3818,6 @@ void CGvisRTR_PunchDoc::SetPosY1_4(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[0].sMeasurePosY[3] = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_MEASURE_POSY4"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY4Lf();	//_ItemInx::_MkHgtPosY4Lf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY1_4()
@@ -3913,11 +3831,6 @@ void CGvisRTR_PunchDoc::SetAverDist1(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Marking[0].sAverDist = sData;
 	::WritePrivateProfileString(_T("Marking0"), _T("MARKING_AVER_DIST"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtAvgPosLf();	//_ItemInx::_MkHgtAvgPosLf
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetAverDist1()
@@ -4030,11 +3943,6 @@ void CGvisRTR_PunchDoc::SetPosX2_1(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[1].sMeasurePosX[0] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSX1"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX1Rt();	//_ItemInx::_MkHgtPosX1Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX2_1()
@@ -4048,11 +3956,6 @@ void CGvisRTR_PunchDoc::SetPosY2_1(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[1].sMeasurePosY[0] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSY1"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY1Rt();	//_ItemInx::_MkHgtPosY1Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY2_1()
@@ -4066,11 +3969,6 @@ void CGvisRTR_PunchDoc::SetPosX2_2(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[1].sMeasurePosX[1] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSX2"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX2Rt();	//_ItemInx::_MkHgtPosX2Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX2_2()
@@ -4084,11 +3982,6 @@ void CGvisRTR_PunchDoc::SetPosY2_2(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[1].sMeasurePosY[1] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSY2"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY2Rt();	//_ItemInx::_MkHgtPosY2Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY2_2()
@@ -4102,11 +3995,6 @@ void CGvisRTR_PunchDoc::SetPosX2_3(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[1].sMeasurePosX[2] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSX3"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX3Rt();	//_ItemInx::_MkHgtPosX3Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX2_3()
@@ -4120,11 +4008,6 @@ void CGvisRTR_PunchDoc::SetPosY2_3(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[1].sMeasurePosY[2] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSY3"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY3Rt();	//_ItemInx::_MkHgtPosY3Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY2_3()
@@ -4138,11 +4021,6 @@ void CGvisRTR_PunchDoc::SetPosX2_4(double dPosX)
 	sData.Format(_T("%.3f"), dPosX);
 	WorkingInfo.Marking[1].sMeasurePosX[3] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSX4"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosX4Rt();	//_ItemInx::_MkHgtPosX4Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosX2_4()
@@ -4156,11 +4034,6 @@ void CGvisRTR_PunchDoc::SetPosY2_4(double dPosY)
 	sData.Format(_T("%.3f"), dPosY);
 	WorkingInfo.Marking[1].sMeasurePosY[3] = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_MEASURE_POSY4"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtPosY4Rt();	//_ItemInx::_MkHgtPosY4Rt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetPosY2_4()
@@ -4174,11 +4047,6 @@ void CGvisRTR_PunchDoc::SetAverDist2(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Marking[1].sAverDist = sData;
 	::WritePrivateProfileString(_T("Marking1"), _T("MARKING_AVER_DIST"), sData, sPath);
-
-	//#ifdef USE_ENGRAVE
-	//	if (pView && pView->m_pEngrave)
-	//		pView->m_pEngrave->SetMkHgtAvgPosRt();	//_ItemInx::_MkHgtAvgPosRt
-	//#endif
 }
 
 double CGvisRTR_PunchDoc::GetAverDist2()
@@ -4192,23 +4060,12 @@ void CGvisRTR_PunchDoc::SetTotalReelDist(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Lot.sTotalReelDist = sData;
 	::WritePrivateProfileString(_T("Lot"), _T("LOT_TOTAL_REEL_DIST"), sData, sPath);
-
-
 	WorkingInfo.LastJob.sReelTotLen = sData;
-	if (m_pReelMap)
-		m_pReelMap->m_dTotLen = _tstof(sData) * 1000.0;
 	::WritePrivateProfileString(_T("Last Job"), _T("Reel Total Length"), sData, PATH_WORKING_INFO);
-
-#ifdef USE_MPE
 	long lData = (long)(dDist * 1000.0);
-	if (pView && pView->m_pMpe)
-		pView->MpeWrite(_T("ML45000"), lData);	// 전체 Reel 길이 (단위 M * 1000)
-#endif
-
-													//#ifdef USE_ENGRAVE
-													//	if (pView && pView->m_pEngrave)
-													//		pView->m_pEngrave->SetTotReelLen();	//_ItemInx::_TotReelLen
-													//#endif
+	pView->MpeWrite(_T("ML45000"), lData);	// 전체 Reel 길이 (단위 M * 1000)
+	//if (m_pReelMap)
+	//	m_pReelMap->m_dTotLen = _tstof(sData) * 1000.0;
 }
 
 double CGvisRTR_PunchDoc::GetTotalReelDist()
@@ -4222,21 +4079,12 @@ void CGvisRTR_PunchDoc::SetSeparateDist(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Lot.sSeparateDist = sData;
 	::WritePrivateProfileString(_T("Lot"), _T("LOT_SEPAREATE_DIST"), sData, sPath);
-
 	pDoc->WorkingInfo.LastJob.sLotSepLen = sData;
-	if (pDoc->m_pReelMap)
-		pDoc->m_pReelMap->m_dLotLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Lot Seperate Length"), sData, PATH_WORKING_INFO);
-
-#ifdef USE_MPE
 	long lData = (long)(dDist * 1000.0);
 	pView->MpeWrite(_T("ML45002"), lData);	// Lot 분리 길이 (단위 M * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetLotCutLen();	//_ItemInx::_SetData
-												//#endif
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->m_dLotLen = _tstof(sData);
 }
 
 double CGvisRTR_PunchDoc::GetSeparateDist()
@@ -4250,24 +4098,12 @@ void CGvisRTR_PunchDoc::SetCuttingDist(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Lot.sCuttingDist = sData;
 	::WritePrivateProfileString(_T("Lot"), _T("LOT_CUTTING_DIST"), sData, sPath);
-
 	pDoc->WorkingInfo.LastJob.sLotCutPosLen = sData;
-	if (pDoc->m_pReelMap)
-		pDoc->m_pReelMap->m_dLotCutPosLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Lot Cut Position Length"), sData, PATH_WORKING_INFO);
-
-#ifdef USE_MPE
-	//pView->IoWrite("ML45004", long(_tstof(sVal)*1000.0));	// Lot 분리 후 절단위치 (단위 M * 1000)
-	// 	pView->MpeWrite(_T("ML45004", long(_tstof(sVal)*1000.0));
-
 	long lData = (long)(dDist * 1000.0);
 	pView->MpeWrite(_T("ML45004"), lData);	// Lot 분리 후 절단위치 (단위 M * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetLotCutPosLen();	//_ItemInx::_LotCutPosLen
-												//#endif
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->m_dLotCutPosLen = _tstof(sData);
 }
 
 double CGvisRTR_PunchDoc::GetCuttingDist()
@@ -4281,25 +4117,12 @@ void CGvisRTR_PunchDoc::SetStopDist(double dDist)
 	sData.Format(_T("%.3f"), dDist);
 	WorkingInfo.Lot.sStopDist = sData;
 	::WritePrivateProfileString(_T("Lot"), _T("LOT_STOP_DIST"), sData, sPath);
-
-
 	pDoc->WorkingInfo.LastJob.sTempPauseLen = sData;
-	if (pDoc->m_pReelMap)
-		pDoc->m_pReelMap->m_dTempPauseLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Temporary Pause Length"), sData, PATH_WORKING_INFO);
-
-#ifdef USE_MPE
-	//pView->IoWrite("ML45006", long(_tstof(sVal)*1000.0));	// 일시정지 길이 (단위 M * 1000)
-	// 	pView->MpeWrite(_T("ML45006"), long(_tstof(sVal)*1000.0));
-
 	long lData = (long)(dDist * 1000.0);
 	pView->MpeWrite(_T("ML45006"), lData);	// 일시정지 길이 (단위 M * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetTempStopLen();	//_ItemInx::_TempStopLen
-												//#endif
+	//if (pDoc->m_pReelMap)
+	//	pDoc->m_pReelMap->m_dTempPauseLen = _tstof(sData);
 }
 
 double CGvisRTR_PunchDoc::GetStopDist()
@@ -4313,15 +4136,8 @@ void CGvisRTR_PunchDoc::SetAOIToq(double dToq)
 	sData.Format(_T("%.3f"), dToq);
 	WorkingInfo.Motion.sAoiTq = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_TENSION_SERVO_TORQUE"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dToq * 1000.0);
 	pView->MpeWrite(_T("ML45042"), lData);	// 검사부 Tension 모터 토크값 (단위 Kgf * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetAoiTqVal();	//_ItemInx::_AoiTqVal
-												//#endif
 }
 
 double CGvisRTR_PunchDoc::GetAOIToq()
@@ -4329,26 +4145,17 @@ double CGvisRTR_PunchDoc::GetAOIToq()
 	return (_tstof(WorkingInfo.Motion.sAoiTq));
 }
 
-void CGvisRTR_PunchDoc::SetMarkingToq(double dToq)
-{
-	CString sData, sPath = PATH_WORKING_INFO;
-	sData.Format(_T("%.3f"), dToq);
-	WorkingInfo.Motion.sMkTq = sData;
-	::WritePrivateProfileString(_T("Motion"), _T("MARKING_TENSION_SERVO_TORQUE"), sData, sPath);
-#ifdef USE_MPE
-	long lData = (long)(dToq * 1000.0);
-	pView->MpeWrite(_T("ML45044"), lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
-#endif
-
-												//#ifdef USE_ENGRAVE
-												//	if (pView && pView->m_pEngrave)
-												//		pView->m_pEngrave->SetMkTqVal();	//_ItemInx::_MkTqVal
-												//#endif
-}
-
 double CGvisRTR_PunchDoc::GetEngraveToq()
 {
 	return (_tstof(WorkingInfo.Motion.sEngraveTq));
+}
+
+void CGvisRTR_PunchDoc::SetEngraveToq(double dToq)
+{
+	CString sData, sPath = PATH_WORKING_INFO;
+	sData.Format(_T("%.3f"), dToq);
+	WorkingInfo.Motion.sEngraveTq = sData;
+	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_TENSION_SERVO_TORQUE"), sData, sPath);
 }
 
 BOOL CGvisRTR_PunchDoc::GetCurrentInfoEng()
@@ -4528,8 +4335,8 @@ void CGvisRTR_PunchDoc::DelPcrAll()
 	DelPcrUp();
 	DelPcrDn();
 
-	pView->m_bIsBuf[0] = FALSE;
-	pView->m_bIsBuf[1] = FALSE;
+	//pView->m_bIsBuf[0] = FALSE;
+	//pView->m_bIsBuf[1] = FALSE;
 
 }
 
@@ -4603,4 +4410,457 @@ CString CGvisRTR_PunchDoc::GetProcessNum()
 		sCode = CString(szData);
 
 	return sCode;
+}
+
+void CGvisRTR_PunchDoc::DelItsAll(CString strPath)
+{
+	if (m_pFile)
+	{
+		m_pFile->DelItsAll(strPath);
+	}
+}
+
+int CGvisRTR_PunchDoc::GetItsDefCode(int nDefCode)
+{
+	if (!pView->m_mgrReelmap)
+		return 0;
+
+	char* cBigDefCode = pView->m_mgrReelmap->m_cBigDefCode;
+	char* cBigDefCode = pView->m_mgrReelmap->m_cBigDefCode;
+
+	CString sDefCode;
+	sDefCode.Format(_T("%c"), cBigDefCode[nDefCode]);
+
+	// [Sapp3Code]
+	if (sDefCode == _T("N"))		//1 NICK = 137 -> m_nSapp3Code[SAPP3_NICK]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_NICK];
+	else if (sDefCode == _T("D"))	//2 SPACE_EXTRA_PROTRUSION = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] : PROTRUSION
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("A"))	//3 SPACE_EXTRA_PROTRUSION = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] : SPACE 
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("O"))	//4 OPEN = 102 -> m_nSapp3Code[SAPP3_OPEN]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_OPEN];
+	else if (sDefCode == _T("S"))	//5 SHORT = 129 -> m_nSapp3Code[SAPP3_SHORT]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT];
+	else if (sDefCode == _T("U"))	//6 USHORT = 129 -> m_nSapp3Code[SAPP3_USHORT]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_USHORT];
+	else if (sDefCode == _T("I"))	//7 PINHOLE = 134 -> m_nSapp3Code[SAPP3_PINHOLE]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_PINHOLE];
+	else if (sDefCode == _T("H"))	//8 HMISS_HPOS_HBAD = 309 -> m_nSapp3Code[	SAPP3_HMISS_HPOS_HBAD] : No Hole
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD];
+	else if (sDefCode == _T("E"))	//9 SPACE_EXTRA_PROTRUSION = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION] : EXTRA
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("P"))	//10 PAD = 316 -> m_nSapp3Code[SAPP3_PAD]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_PAD];
+	else if (sDefCode == _T("L"))	//11 HMISS_HPOS_HBAD = 309 -> m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] : Hole Align
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD];
+	else if (sDefCode == _T("X"))	//12 POI -> m_nSapp3Code[SAPP3_SHORT]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SHORT];
+	else if (sDefCode == _T("T"))	//13 VH_POSITION = 379 -> m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] : VH Align
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF];
+	else if (sDefCode == _T("M"))	//14 VH_MISS = 379 -> m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] : No VH
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF];
+	else if (sDefCode == _T("F"))	//15 HMISS_HPOS_HBAD = 309 -> m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD] : Hole Defect
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_HMISS_HPOS_HBAD];
+	else if (sDefCode == _T("C"))	//16 HOPEN = 308 -> m_nSapp3Code[SAPP3_HOPEN]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_HOPEN];
+	else if (sDefCode == _T("G"))	//17 VH_OPEN = 379 -> m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] : VH Open
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF];
+	else if (sDefCode == _T("V"))	//18 VH_DEF = 379 -> m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF] : VH Def
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_VHOPEN_NOVH_VHALIGN_VHDEF];
+	else if (sDefCode == _T("K"))	//19 E.Nick = 137 -> m_nSapp3Code[SAPP3_NICK]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_NICK];
+	else if (sDefCode == _T("R"))	//20 E.Prot = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("B"))	//21 E.Space = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("J"))	//22 UDD1 = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("Q"))	//23 Narrow = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("W"))	//24 Wide = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+	else if (sDefCode == _T("?"))	//25 Light = 160 -> m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION]
+		return WorkingInfo.System.m_nSapp3Code[SAPP3_SPACE_EXTRA_PROTRUSION];
+
+	return 0;
+}
+
+BOOL CGvisRTR_PunchDoc::Shift2Mk(int nSerial)
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.23"));
+		return 0;
+	}
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	stModelInfo stInfo;
+	CString sSrc, sDest;
+
+	BOOL bRst[4] = { 0 };
+	if (m_pFile)
+	{
+		sSrc.Format(_T("%s%04d.pcr"), WorkingInfo.System.sPathVrsBufUp, nSerial);
+		if (!GetPcrInfo(sSrc, stInfo))
+		{
+			pView->DispStsBar(_T("E(2)"), 5);
+			pView->ClrDispMsg();
+			AfxMessageBox(_T("Error-GetPcrInfo(2)"));
+			return FALSE;
+		}
+
+		if (!MakeMkDir(stInfo))
+		{
+			pView->ClrDispMsg();
+			AfxMessageBox(_T("Error-MakeMkDir()"));
+			return FALSE;
+		}
+		sDest.Format(_T("%s%s\\%s\\%s\\%04d.pcr"), pDoc->WorkingInfo.System.sPathOldFile, stInfo.sModel,
+			stInfo.sLot, stInfo.sLayer, nSerial);
+
+		bRst[0] = m_pFile->Copy(sSrc, sDest);			// 마킹한 파일을 복사한다.
+		bRst[1] = m_pFile->DeleteFolerOrFile(sSrc);		// 마킹한 파일을 지운다.
+
+
+		if (bDualTest)
+		{
+			sSrc.Format(_T("%s%04d.pcr"), WorkingInfo.System.sPathVrsBufDn, nSerial);
+			if (!GetPcrInfo(sSrc, stInfo))
+			{
+				pView->DispStsBar(_T("E(3)"), 5);
+				pView->ClrDispMsg();
+				AfxMessageBox(_T("Error-GetPcrInfo(3)"));
+				return FALSE;
+			}
+
+			if (!MakeMkDir(stInfo))
+			{
+				pView->ClrDispMsg();
+				AfxMessageBox(_T("Error-MakeMkDir()"));
+				return FALSE;
+			}
+			sDest.Format(_T("%s%s\\%s\\%s\\%04d.pcr"), pDoc->WorkingInfo.System.sPathOldFile, stInfo.sModel,
+				stInfo.sLot, stInfo.sLayer, nSerial);
+			bRst[2] = m_pFile->Copy(sSrc, sDest);			// 마킹한 파일을 복사한다.
+			bRst[3] = m_pFile->DeleteFolerOrFile(sSrc);		// 마킹한 파일을 지운다.
+		}
+		else
+		{
+			bRst[2] = TRUE;
+			bRst[3] = TRUE;
+		}
+	}
+	else
+		return FALSE;
+
+	if (bRst[0] && bRst[1] && bRst[2] && bRst[3])
+	{
+		SetLastSerial(nSerial);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+BOOL CGvisRTR_PunchDoc::DirectoryExists(LPCTSTR szPath)
+{
+	DWORD dwAttrib = GetFileAttributes(szPath);
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+void CGvisRTR_PunchDoc::StringToChar(CString str, char* pCh) // char* returned must be deleted... 
+{
+	wchar_t*	wszStr;
+	int				nLenth;
+
+	USES_CONVERSION;
+	//1. CString to wchar_t* conversion
+	wszStr = T2W(str.GetBuffer(str.GetLength()));
+
+	//2. wchar_t* to char* conversion
+	nLenth = WideCharToMultiByte(CP_ACP, 0, wszStr, -1, NULL, 0, NULL, NULL); //char* 형에 대한길이를 구함 
+
+	//3. wchar_t* to char* conversion
+	WideCharToMultiByte(CP_ACP, 0, wszStr, -1, pCh, nLenth, 0, 0);
+	return;
+}
+
+BOOL CGvisRTR_PunchDoc::GetPcrInfo(CString sPath, stModelInfo &stInfo)
+{
+	return pView->m_mgrReelmap->GetPcrInfo(sPath, stInfo);
+}
+
+BOOL CGvisRTR_PunchDoc::MakeMkDir()
+{
+	return pView->m_mgrReelmap->MakeMkDir();
+}
+
+void CGvisRTR_PunchDoc::MakeImageDirUp(int nSerial)
+{
+	CString strDefImgPathS, strDefImgPathD, strMakeFolderPath;
+	CString sLot = WorkingInfo.LastJob.sLotUp;
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImagePos"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImagePos"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\CadImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\CadImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImagePos\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImagePos\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\CadImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\CadImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerUp,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+}
+
+void CGvisRTR_PunchDoc::MakeImageDirDn(int nSerial)
+{
+	CString strDefImgPathS, strDefImgPathD, strMakeFolderPath;
+	CString sLot = WorkingInfo.LastJob.sLotDn;
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp);
+	else
+		strMakeFolderPath.Format(_T("%s%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImagePos"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImagePos"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\CadImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\CadImage"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\DefImagePos\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\DefImagePos\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
+
+	if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
+		strMakeFolderPath.Format(_T("%s\\%s\\%s\\%s\\CadImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+	else
+		strMakeFolderPath.Format(_T("%s%s\\%s\\%s\\CadImage\\%d"), WorkingInfo.System.sPathOldFile,
+			WorkingInfo.LastJob.sModelUp,
+			sLot,
+			WorkingInfo.LastJob.sLayerDn,
+			nSerial);
+
+	if (!pDoc->DirectoryExists(strMakeFolderPath))
+		CreateDirectory(strMakeFolderPath, NULL);
 }
