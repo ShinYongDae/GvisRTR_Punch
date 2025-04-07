@@ -188,7 +188,7 @@ BOOL CManagerFeeding::MpeWrite(CString strRegAddr, long lData, BOOL bCheck)
 {
 	if (!m_pMpe)
 		return FALSE;
-	return MpeWrite(strRegAddr, lData, bCheck);
+	return m_pMpe->Write(strRegAddr, lData, bCheck);
 }
 
 BOOL CManagerFeeding::IsAuto()
